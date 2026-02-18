@@ -11,6 +11,11 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import useAuth from "../../context/auth/useAuth"
 import logo from "../../assets/logo.png"
+import {
+  sanitizeRegistrationField,
+  validateRegistrationField,
+  validateRegistrationForm
+} from "../../utils/validators"
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -24,23 +29,58 @@ const Register = () => {
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [fieldErrors, setFieldErrors] = useState({})
+  const [touchedFields, setTouchedFields] = useState({})
 
   const navigate = useNavigate()
   const { register } = useAuth()
 
   const handleChange = (e) => {
     const { name, value } = e.target
+    const nextValue = sanitizeRegistrationField(name, value)
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: nextValue
+    }))
+
+    if (touchedFields[name]) {
+      const nextError = validateRegistrationField(name, nextValue)
+      setFieldErrors((prev) => ({
+        ...prev,
+        [name]: nextError
+      }))
+    }
+  }
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target
+    const nextError = validateRegistrationField(name, value)
+
+    setTouchedFields((prev) => ({
+      ...prev,
+      [name]: true
+    }))
+
+    setFieldErrors((prev) => ({
+      ...prev,
+      [name]: nextError
     }))
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    const validationErrors = validateRegistrationForm(formData)
+    setFieldErrors(validationErrors)
+    setTouchedFields(
+      Object.keys(formData).reduce((acc, key) => {
+        acc[key] = true
+        return acc
+      }, {})
+    )
 
-    if (Object.values(formData).some((value) => !value.trim())) {
-      setError("All fields are required")
+    if (Object.keys(validationErrors).length > 0) {
+      setError("Please fix the highlighted fields.")
       return
     }
 
@@ -49,11 +89,11 @@ const Register = () => {
 
     try {
       const payload = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        contactNumber: formData.contactNumber,
-        username: formData.username,
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim().toLowerCase(),
+        contactNumber: formData.contactNumber.trim(),
+        username: formData.username.trim(),
         password: formData.password
       }
 
@@ -134,6 +174,9 @@ const Register = () => {
                     name="firstName"
                     value={formData.firstName}
                     onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={Boolean(touchedFields.firstName && fieldErrors.firstName)}
+                    helperText={touchedFields.firstName ? fieldErrors.firstName : ""}
                   />
                 </Grid>
 
@@ -146,6 +189,9 @@ const Register = () => {
                     name="lastName"
                     value={formData.lastName}
                     onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={Boolean(touchedFields.lastName && fieldErrors.lastName)}
+                    helperText={touchedFields.lastName ? fieldErrors.lastName : ""}
                   />
                 </Grid>
 
@@ -160,6 +206,9 @@ const Register = () => {
                     placeholder="...@gmail.com"
                     value={formData.email}
                     onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={Boolean(touchedFields.email && fieldErrors.email)}
+                    helperText={touchedFields.email ? fieldErrors.email : ""}
                   />
                 </Grid>
 
@@ -174,6 +223,10 @@ const Register = () => {
                     placeholder="09XXXXXXXXX"
                     value={formData.contactNumber}
                     onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={Boolean(touchedFields.contactNumber && fieldErrors.contactNumber)}
+                    helperText={touchedFields.contactNumber ? fieldErrors.contactNumber : ""}
+                    inputProps={{ maxLength: 11, inputMode: "numeric" }}
                   />
                 </Grid>
 
@@ -186,6 +239,9 @@ const Register = () => {
                     name="username"
                     value={formData.username}
                     onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={Boolean(touchedFields.username && fieldErrors.username)}
+                    helperText={touchedFields.username ? fieldErrors.username : ""}
                   />
                 </Grid>
 
@@ -199,6 +255,9 @@ const Register = () => {
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={Boolean(touchedFields.password && fieldErrors.password)}
+                    helperText={touchedFields.password ? fieldErrors.password : ""}
                   />
                 </Grid>
 

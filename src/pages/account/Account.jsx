@@ -10,6 +10,11 @@ import {
 import { useState } from "react";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import useAuth from "../../context/auth/useAuth";
+import {
+  sanitizeAccountField,
+  validateAccountField,
+  validateAccountForm,
+} from "../../utils/validators";
 
 export default function Account() {
   const { user, updateProfile } = useAuth();
@@ -27,18 +32,43 @@ export default function Account() {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [saveError, setSaveError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [touchedFields, setTouchedFields] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const nextValue = sanitizeAccountField(name, value);
+    setFormData((prev) => ({ ...prev, [name]: nextValue }));
+
+    if (touchedFields[name]) {
+      const nextError = validateAccountField(name, nextValue);
+      setFieldErrors((prev) => ({ ...prev, [name]: nextError }));
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+
+    setTouchedFields((prev) => ({ ...prev, [name]: true }));
+
+    const nextError = validateAccountField(name, value);
+    setFieldErrors((prev) => ({ ...prev, [name]: nextError }));
   };
 
   const handleSave = async () => {
     setSaveMessage("");
     setSaveError("");
 
-    if (!formData.name.trim() || !formData.email.trim() || !formData.contactNumber.trim()) {
-      setSaveError("Username, email, and contact number are required.");
+    const validationErrors = validateAccountForm(formData);
+    setFieldErrors(validationErrors);
+    setTouchedFields({
+      name: true,
+      email: true,
+      contactNumber: true,
+    });
+
+    if (Object.keys(validationErrors).length > 0) {
+      setSaveError("Please fix the highlighted fields.");
       return;
     }
 
@@ -46,7 +76,7 @@ export default function Account() {
       setSaving(true);
       await updateProfile({
         name: formData.name.trim(),
-        email: formData.email.trim(),
+        email: formData.email.trim().toLowerCase(),
         contactNumber: formData.contactNumber.trim(),
       });
       setSaveMessage("Account details updated successfully.");
@@ -112,6 +142,9 @@ export default function Account() {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                error={Boolean(touchedFields.name && fieldErrors.name)}
+                helperText={touchedFields.name ? fieldErrors.name : ""}
               />
             </Grid>
 
@@ -125,6 +158,7 @@ export default function Account() {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
+                onBlur={handleBlur}
               />
             </Grid>
 
@@ -137,6 +171,9 @@ export default function Account() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                error={Boolean(touchedFields.email && fieldErrors.email)}
+                helperText={touchedFields.email ? fieldErrors.email : ""}
               />
             </Grid>
 
@@ -149,6 +186,10 @@ export default function Account() {
                 name="contactNumber"
                 value={formData.contactNumber}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                error={Boolean(touchedFields.contactNumber && fieldErrors.contactNumber)}
+                helperText={touchedFields.contactNumber ? fieldErrors.contactNumber : ""}
+                inputProps={{ maxLength: 11, inputMode: "numeric" }}
               />
             </Grid>
 
