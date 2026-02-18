@@ -1,0 +1,12 @@
+.sidebar {
+  width: 260px;
+  min-height: 100vh;
+  background-color: #E8E1C4;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 20px;
+}
