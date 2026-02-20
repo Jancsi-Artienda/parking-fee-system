@@ -116,7 +116,7 @@ const Login = () => {
                       onChange={(e) => setRememberMe(e.target.checked)}
                     />
                   }
-                  label="Remember Password"
+                  label="Remember me"
                 />
 
                 <Link to="forgotpassword" style={{ fontSize: 14 }}>

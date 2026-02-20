@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import pool from "../db.js";
+import { getJwtSecret } from "../jwt.js";
 
 const router = express.Router();
 
@@ -171,7 +172,7 @@ router.post("/login", async (req, res) => {
 
     const token = jwt.sign(
       { sub: user.usertable_id, email: user.company_email },
-      process.env.JWT_SECRET || "dev-secret",
+      getJwtSecret(),
       { expiresIn: "7d" }
     );
 
@@ -197,7 +198,7 @@ router.patch("/profile", async (req, res) => {
 
   let payload;
   try {
-    payload = jwt.verify(token, process.env.JWT_SECRET || "dev-secret");
+    payload = jwt.verify(token, getJwtSecret());
   } catch {
     return res.status(401).json({ message: "Invalid token." });
   }

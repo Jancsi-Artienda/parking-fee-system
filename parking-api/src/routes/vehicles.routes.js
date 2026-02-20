@@ -1,9 +1,35 @@
 import express from "express";
+import jwt from "jsonwebtoken";
 import pool from "../db.js";
+import { getJwtSecret } from "../jwt.js";
 
 const router = express.Router();
 
-router.get("/", async (_req, res) => {
+function getBearerToken(req) {
+  const authHeader = req.headers.authorization || "";
+  return authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+}
+
+function requireAuth(req, res, next) {
+  const token = getBearerToken(req);
+
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized." });
+  }
+
+  try {
+    const payload = jwt.verify(token, getJwtSecret());
+    req.user = {
+      id: Number(payload.sub),
+      email: payload.email,
+    };
+    return next();
+  } catch {
+    return res.status(401).json({ message: "Invalid token." });
+  }
+}
+
+router.get("/", requireAuth, async (req, res) => {
   try {
     const [rows] = await pool.query(
       `SELECT
@@ -14,7 +40,10 @@ router.get("/", async (_req, res) => {
         vehicle_color,
         created_date
       FROM rfvehicle
+      WHERE employee_id = ?
       ORDER BY ticket_num DESC`
+      ,
+      [req.user.id]
     );
 
     return res.json(
@@ -34,7 +63,7 @@ router.get("/", async (_req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
   const { type = "", name = "", plate = "", color = "" } = req.body || {};
 
   if (!type.trim() || !name.trim() || !plate.trim()) {
@@ -46,7 +75,7 @@ router.post("/", async (req, res) => {
       `INSERT INTO rfvehicle
       (employee_id, vehicle, vehicle_model, vehicle_plate, vehicle_color, created_date)
       VALUES (?, ?, ?, ?, ?, NOW())`,
-      [0, type.trim(), name.trim(), plate.trim(), color.trim()]
+      [req.user.id, type.trim(), name.trim(), plate.trim(), color.trim()]
     );
 
     const [rows] = await pool.query(
@@ -58,8 +87,11 @@ router.post("/", async (req, res) => {
         vehicle_color,
         created_date
       FROM rfvehicle
+      WHERE employee_id = ?
       ORDER BY ticket_num DESC
       LIMIT 1`
+      ,
+      [req.user.id]
     );
 
     const row = rows[0];

@@ -13,6 +13,22 @@ let vehicles = [
   },
 ];
 
+function getAuthHeaders() {
+  try {
+    const rawUser = localStorage.getItem("user");
+    const parsedUser = rawUser ? JSON.parse(rawUser) : null;
+    const token = parsedUser?.token;
+
+    if (!token) {
+      return {};
+    }
+
+    return { Authorization: `Bearer ${token}` };
+  } catch {
+    return {};
+  }
+}
+
 export const vehicleService = {
   async getVehicles() {
     if (!import.meta.env.VITE_API_URL) {
@@ -20,7 +36,9 @@ export const vehicleService = {
       return [...vehicles];
     }
 
-    const response = await apiClient.get("/vehicles");
+    const response = await apiClient.get("/vehicles", {
+      headers: getAuthHeaders(),
+    });
     return response.data;
   },
 
@@ -38,7 +56,9 @@ export const vehicleService = {
       return newVehicle;
     }
 
-    const response = await apiClient.post("/vehicles", data);
+    const response = await apiClient.post("/vehicles", data, {
+      headers: getAuthHeaders(),
+    });
     return response.data;
   },
 };

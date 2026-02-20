@@ -4,8 +4,11 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes.js";
 import vehicleRoutes from "./routes/vehicles.routes.js";
 import pool from "./db.js";
+import { getJwtSecret } from "./jwt.js";
+
 
 dotenv.config();
+getJwtSecret();
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
