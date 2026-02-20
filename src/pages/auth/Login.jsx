@@ -1,21 +1,53 @@
-import React, { useState } from 'react'
+import { useState } from "react"
+import useAuth from "../../context/auth/useAuth"
 import {
   Box,
   Container,
+  TextField,
+  Button,
   Typography,
   Paper,
-  TextField,
-  Button
+  Checkbox,
+  FormControlLabel
 } from "@mui/material"
-import { useNavigate } from "react-router-dom"
-// 1. Ensure this import path is correct based on your folder structure
-import logo from "../../assets/logo.png" 
+import { Link, useNavigate } from "react-router-dom"
+import logo from "../../assets/logo.png"
 
-function ForgotPassword() {
+const Login = () => {
   const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState("")
-  const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
 
+  const navigate = useNavigate()
+  const {login} = useAuth()
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError("")
+
+    if (!email || !password) {
+      setError("Email and password are required")
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      await login(email, password)
+      navigate("/dashboard")
+    } catch (err) { 
+      if (err?.data?.message) {
+        setError(err.data.message)
+      } else {
+        setError("Login failed. Please try again.")
+      }
+    } finally {
+      setLoading(false)
+    }   
+  }
+  {/*Design*/}
   return (
     <Box
       sx={{
@@ -25,10 +57,95 @@ function ForgotPassword() {
         backgroundColor: "#F5F5F5"
       }}
     >
-      {/* LEFT SIDE - This matches the styling of your Login page */}
+      {/* LEFT SIDE – LOGIN FORM */}
       <Box
         sx={{
-          width: "35%", // Sized to match your Register/Login side panel
+          width: "50%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }}
+      >
+        <Container maxWidth="sm">
+          <Paper sx={{ p: 4, borderRadius: 3 }}>
+            <Typography variant="h4" fontWeight="bold" gutterBottom>
+              Parking Fee Login
+            </Typography> 
+
+            <Typography color="text.secondary" mb={3}>
+              Welcome back! Please sign in to continue
+            </Typography>
+
+            {error && (
+              <Typography color="error" mb={2}>
+                {error}
+              </Typography>
+            )}
+
+            <Box component="form" onSubmit={handleSubmit}>
+              <TextField
+                fullWidth
+                label="Email"
+                type="email"
+                margin="normal"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+
+              <TextField
+                fullWidth
+                label="Password"
+                type="password"
+                margin="normal"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mt: 1
+                }}
+              >
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                    />
+                  }
+                  label="Remember Password"
+                />
+
+                <Link to="forgotpassword" style={{ fontSize: 14 }}>
+                  Forgot Password 
+                </Link>
+              </Box>
+
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                sx={{ mt: 3, py: 1.2, borderRadius: 2 }}
+              >
+                {loading ? "Logging in..." : "Login" }
+                
+              </Button>
+            </Box>
+
+          <Typography align="center" sx={{ mt: 2 }}>
+             Don’t have an account? <Link to="/register">Register</Link>
+           </Typography>
+          </Paper>
+        </Container>
+      </Box>
+
+      {/* RIGHT SIDE – BRAND PANEL */}
+      <Box
+        sx={{
+          width: "50%",
           backgroundColor: "#FFF6D5",
           display: "flex",
           alignItems: "flex-start",
@@ -43,65 +160,8 @@ function ForgotPassword() {
           sx={{ width: "60%", maxWidth: "250px", height: "auto" }}
         />
       </Box>
-
-      {/* RIGHT SIDE - The Form Container */}
-      <Box
-        sx={{
-          width: "50%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center"
-        }}
-      >
-        <Container maxWidth="sm">
-          <Paper sx={{ p: 4, borderRadius: 3 }}>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>
-              Forgot Password
-            </Typography>
-
-            <Typography color="text.secondary" mb={3}>
-              Enter your email address to reset your password.
-            </Typography>
-
-            {error && (
-              <Typography color="error" mb={2}>
-                {error}
-              </Typography>
-            )}
-
-            <Box component="form">
-              <TextField
-                fullWidth
-                label="Email Address"
-                placeholder="...@gmail.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                margin="normal"
-              />
-              
-              <Button
-                fullWidth
-                variant="contained"
-                sx={{ mt: 3, py: 1.5, borderRadius: 2 }}
-              >
-                Send Reset Link
-              </Button>
-
-              <Box sx={{ mt: 2, textAlign: "center" }}>
-                <Button 
-                  variant="text" 
-                  onClick={() => navigate("/")}
-                  sx={{ textTransform: "none" }}
-                >
-                  Back to Login
-                </Button>
-              </Box>
-            </Box>
-          </Paper>
-        </Container>
-      </Box>
     </Box>
   )
 }
 
-export default ForgotPassword
+export default Login
