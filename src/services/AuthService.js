@@ -1,5 +1,21 @@
 import apiClient from "./apiClient";
 
+function getAuthHeaders() {
+  try {
+    const rawUser = localStorage.getItem("user");
+    const parsedUser = rawUser ? JSON.parse(rawUser) : null;
+    const token = parsedUser?.token;
+
+    if (!token) {
+      return {};
+    }
+
+    return { Authorization: `Bearer ${token}` };
+  } catch {
+    return {};
+  }
+}
+
 const AuthService = {
   async login(email, password) {
     if (!import.meta.env.VITE_API_URL) {
@@ -48,7 +64,9 @@ const AuthService = {
       });
     }
 
-    return apiClient.patch("/auth/profile", profileData);
+    return apiClient.patch("/auth/profile", profileData, {
+      headers: getAuthHeaders(),
+    });
   },
 };
 

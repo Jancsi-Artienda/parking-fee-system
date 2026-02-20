@@ -25,6 +25,7 @@ const Register = () => {
     contactNumber: "",
     username: "",
     password: "",
+    confirmPassword: "",
     vehicle: ""
     
   })
@@ -96,8 +97,7 @@ const Register = () => {
         email: formData.email.trim().toLowerCase(),
         contactNumber: formData.contactNumber.trim(),
         username: formData.username.trim(),
-        password: formData.password,
-        vehicle: formData.vehicle
+        password: formData.password
       }
 
       await register(payload)
@@ -255,7 +255,7 @@ const Register = () => {
                   <TextField
                     fullWidth
                     name="vehicle"
-                    value={formData.password}
+                    value={formData.vehicle}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touchedFields.vehicle && fieldErrors.vehicle)}
@@ -268,8 +268,8 @@ const Register = () => {
                   </Typography>
                   <TextField
                     fullWidth
-                    type=" password"
-                    name=" password"
+                    type="password"
+                    name="password"
                     value={formData.password}
                     onChange={handleChange}
                     onBlur={handleBlur}
@@ -284,13 +284,13 @@ const Register = () => {
                   </Typography>
                   <TextField
                     fullWidth
-                    type=" password"
-                    name=" password"
-                    value={formData.password}
+                    type="password"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    error={Boolean(touchedFields.password && fieldErrors.password)}
-                    helperText={touchedFields.password ? fieldErrors.password : ""}
+                    error={Boolean(touchedFields.confirmPassword && fieldErrors.confirmPassword)}
+                    helperText={touchedFields.confirmPassword ? fieldErrors.confirmPassword : ""}
                   />
                 </Grid> 
                 
