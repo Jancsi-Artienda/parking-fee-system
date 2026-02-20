@@ -8,7 +8,6 @@ import {
   Button
 } from "@mui/material"
 import { useNavigate } from "react-router-dom"
-// 1. Ensure this import path is correct based on your folder structure
 import logo from "../../assets/logo.png" 
 
 function ForgotPassword() {
@@ -28,7 +27,7 @@ function ForgotPassword() {
       {/* LEFT SIDE - This matches the styling of your Login page */}
       <Box
         sx={{
-          width: "35%", // Sized to match your Register/Login side panel
+          width: "50%", // Sized to match your Register/Login side panel
           backgroundColor: "#FFF6D5",
           display: "flex",
           alignItems: "flex-start",

@@ -24,7 +24,9 @@ const Register = () => {
     email: "",
     contactNumber: "",
     username: "",
-    password: ""
+    password: "",
+    vehicle: ""
+    
   })
 
   const [loading, setLoading] = useState(false)
@@ -94,7 +96,8 @@ const Register = () => {
         email: formData.email.trim().toLowerCase(),
         contactNumber: formData.contactNumber.trim(),
         username: formData.username.trim(),
-        password: formData.password
+        password: formData.password,
+        vehicle: formData.vehicle
       }
 
       await register(payload)
@@ -122,7 +125,7 @@ const Register = () => {
       {/* LEFT SIDE */}
       <Box
         sx={{
-          width: "50%",
+          width: "35%",
           backgroundColor: "#FFF6D5",
           display: "flex",
           alignItems: "flex-start",
@@ -147,7 +150,7 @@ const Register = () => {
           justifyContent: "center"
         }}
       >
-        <Container maxWidth="sm">
+        <Container maxWidth="sm" >
           <Paper sx={{ p: 4, borderRadius: 3 }}>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
               Create your account
@@ -247,19 +250,50 @@ const Register = () => {
 
                 <Grid size={6}>
                   <Typography variant="body2" fontWeight="bold">
+                   Number of your Vehicle
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    name="vehicle"
+                    value={formData.password}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={Boolean(touchedFields.vehicle && fieldErrors.vehicle)}
+                    helperText={touchedFields.vehicle ? fieldErrors.vehicle : ""}
+                  />
+                </Grid>
+                  <Grid size={6}>
+                  <Typography variant="body2" fontWeight="bold">
                     Password
                   </Typography>
                   <TextField
                     fullWidth
-                    type="password"
-                    name="password"
+                    type=" password"
+                    name=" password"
                     value={formData.password}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touchedFields.password && fieldErrors.password)}
                     helperText={touchedFields.password ? fieldErrors.password : ""}
                   />
-                </Grid>
+                </Grid> 
+
+                <Grid size={6}>
+                  <Typography variant="body2" fontWeight="bold">
+                    Confirm Password
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    type=" password"
+                    name=" password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={Boolean(touchedFields.password && fieldErrors.password)}
+                    helperText={touchedFields.password ? fieldErrors.password : ""}
+                  />
+                </Grid> 
+                
 
                 <Grid size={12}>
                   <Box display="flex" justifyContent="center">

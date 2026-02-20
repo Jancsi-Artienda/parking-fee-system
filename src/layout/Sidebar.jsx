@@ -10,6 +10,7 @@ import {
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
+import SummarizeIcon from '@mui/icons-material/Summarize';
 import logo from "../assets/logo.png";
 import useAuth from "../context/auth/useAuth";
 
@@ -21,6 +22,7 @@ export default function Sidebar() {
   const menuItems = [
     { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
     { text: "Vehicle", icon: <DirectionsCarIcon />, path: "/vehicle" },
+     { text: "Report", icon: <SummarizeIcon />, path: "/report" },
   ];
 
   const isAccountActive = location.pathname === "/account";
