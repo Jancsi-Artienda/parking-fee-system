@@ -1,4 +1,4 @@
-const GMAIL_REGEX = /^[^\s@]+@gmail\.com$/i;
+const GMAIL_REGEX = /^[a-z0-9](\.?[a-z0-9]){4,29}@gmail\.com$/i;
 
 export function sanitizeRegistrationField(name, value) {
   if (name === "contactNumber") {

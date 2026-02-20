@@ -1,147 +1,113 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Select,
-  MenuItem,
   Typography,
-  Button
+  Button,
+
 } from "@mui/material";
-import { LocalizationProvider } from "@mui/x-date-pickers";
+import { DataGrid } from "@mui/x-data-grid";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DatePicker } from "@mui/x-date-pickers";
-import { Print } from "@mui/icons-material";
 import { useVehicles } from "../../context/vehicleContext/useVehicles";
 
+// Initial empty rows
 const createInitialRows = () =>
   Array.from({ length: 15 }, (_, i) => ({
     id: i + 1,
     parkingDate: null,
     vehicleId: "",
-    amount: null
+    amount: "",
   }));
 
 export default function ParkingReportTable() {
   const { vehicles } = useVehicles();
-  const [rows, setRows] = useState(createInitialRows());
+  const [rows] = useState(createInitialRows());
 
-  const updateRow = (rowId, changes) => {
-    setRows(prev =>
-      prev.map(row =>
-        row.id === rowId ? { ...row, ...changes } : row
-      )
-    );
-  };
+  // Function to update the state when an input changes
 
+
+  const columns = [
+    {
+      field: "parkingDate",
+      headerName: "Date",
+      flex: 1,
+      headerAlign: "center",
+      renderCell: (params) => (
+        <Box sx={{ display: "flex", alignItems: "center", height: "100%" }}>
+      
+        
+        </Box>
+      ),
+    },
+    {
+      field: "vehicleId",
+      headerName: "Vehicle",
+      flex: 1.5,
+      headerAlign: "center",
+      align: "center",
+      valueGetter: (value, row) => {
+        
+        const vehicle = vehicles.find((v) => v.id === value);
+        return vehicle ? `${vehicle.type} - ${vehicle.name}` : "";
+      },
+    }, 
+    { 
+      field: "amount",
+      headerName: "Amount",
+      flex: 1,
+      headerAlign: "center",
+      align: "center",
+      editable: true,
+    }, 
+  ];
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Paper
-        elevation={6}
-        sx={{
-          width: "100%",
-          maxWidth: 1100,
-          minHeight: 450,
-          p: 3,
-          display: "flex",
-          flexDirection: "column",
-          borderRadius: 3,
-        }}
-      >
-        <Typography variant="h6" mb={2}>
-          Parking Fee Report
-        </Typography>
-
-        <TableContainer
+      <Paper sx={{ width: "100%", p: 3, borderRadius: "15px" }}>
+        <Box
           sx={{
-            maxHeight: 360,
-            border: "1px solid #dddddd",
-            borderRadius: 2,
-            flexGrow: 1,
-            overflowY: "auto",
-            mt: 1,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 4,
           }}
         >
-          <Table stickyHeader sx={{ tableLayout: "fixed" }}>
-            <TableHead>
-              <TableRow>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: "bold", width: "30%" }}
-                >
-                  Date
-                </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: "bold", width: "45%" }}
-                >
-                  Vehicle
-                </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: "bold", width: "25%" }}
-                >
-                  Amount
-                </TableCell>
-              </TableRow>
-            </TableHead>
+          <Typography variant="h5" sx={{ fontWeight: "500" }}>
+            Parking Fee Report
+          </Typography>
 
-            <TableBody>
-              {rows.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell>
-                    <DatePicker
-                      value={row.parkingDate}
-                      onChange={(date) =>
-                        updateRow(row.id, { parkingDate: date })
-                      }
-                      slotProps={{
-                        textField: { size: "small", fullWidth: true },
-                      }}
-                    />
-                  </TableCell>
-
-                  <TableCell>
-                    <Select
-                      fullWidth
-                      size="small"
-                      value={row.vehicleId}
-                      displayEmpty
-                      onChange={(e) =>
-                        updateRow(row.id, { vehicleId: e.target.value })
-                      }
-                    >
-                      <MenuItem value="">
-                        <em>Select Vehicle</em>
-                      </MenuItem>
-                      {vehicles.map((v) => (
-                        <MenuItem key={v.id} value={v.id}>
-                          {v.type} - {v.name} ({v.plate})
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </TableCell>
-
-                  <TableCell align="center" />
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-
-        <Box display="flex" justifyContent="flex-end" mt={2}>
           <Button
             variant="outlined"
-            startIcon={<Print />}
+            startIcon={<span>🖨️</span>}
             onClick={() => window.print()}
+            sx={{
+              borderRadius: "10px",
+              color: "black",
+              borderColor: "#7dc9ff",
+              textTransform: "none",
+            }}
           >
             Print
           </Button>
+        </Box>
+
+        <Box sx={{ height: 500, width: "100%" }}>
+          <DataGrid
+            rows={rows}
+            columns={columns}
+            rowHeight={70}
+            disableColumnSorting
+            disableColumnMenu
+            hideFooterPagination
+            
+            sx={{
+              border: "none",
+              "& .MuiDataGrid-columnHeaders": {
+                backgroundColor: "#f5f5f5",
+                fontWeight: "bold",
+              },
+            }}
+          />
         </Box>
       </Paper>
     </LocalizationProvider>
