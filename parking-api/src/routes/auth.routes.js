@@ -7,6 +7,23 @@ const router = express.Router();
 
 const GMAIL_REGEX = /^[^\s@]+@gmail\.com$/i;
 
+function splitFullName(name = "") {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return { firstName: "", lastName: "" };
+  }
+
+  const parts = trimmed.split(/\s+/);
+  if (parts.length === 1) {
+    return { firstName: parts[0], lastName: "" };
+  }
+
+  return {
+    firstName: parts[0],
+    lastName: parts.slice(1).join(" "),
+  };
+}
+
 async function hasContactNumberColumn() {
   const [rows] = await pool.query(
     `SELECT 1
@@ -167,6 +184,85 @@ router.post("/login", async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({ message: "Login failed.", detail: error.message });
+  }
+});
+
+router.patch("/profile", async (req, res) => {
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized." });
+  }
+
+  let payload;
+  try {
+    payload = jwt.verify(token, process.env.JWT_SECRET || "dev-secret");
+  } catch {
+    return res.status(401).json({ message: "Invalid token." });
+  }
+
+  const {
+    name = "",
+    email = "",
+    contactNumber = "",
+  } = req.body || {};
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedContactNumber = contactNumber.trim();
+  const { firstName, lastName } = splitFullName(name);
+
+  if (!name.trim() || !normalizedEmail || !normalizedContactNumber) {
+    return res.status(400).json({ message: "Name, email, and contact number are required." });
+  }
+
+  if (!GMAIL_REGEX.test(normalizedEmail)) {
+    return res.status(400).json({ message: "Email must be a valid @gmail.com address." });
+  }
+
+  if (!/^\d{11}$/.test(normalizedContactNumber)) {
+    return res.status(400).json({ message: "Contact number must be exactly 11 digits." });
+  }
+
+  try {
+    const userId = Number(payload.sub);
+    const canStoreContactNumber = await hasContactNumberColumn();
+
+    const [existingEmail] = await pool.query(
+      "SELECT usertable_id FROM users WHERE company_email = ? AND usertable_id <> ? LIMIT 1",
+      [normalizedEmail, userId]
+    );
+
+    if (existingEmail.length > 0) {
+      return res.status(409).json({ message: "Email already exists." });
+    }
+
+    if (canStoreContactNumber) {
+      await pool.query(
+        `UPDATE users
+         SET first_name = ?, last_name = ?, company_email = ?, contact_number = ?
+         WHERE usertable_id = ?
+         LIMIT 1`,
+        [firstName, lastName, normalizedEmail, normalizedContactNumber, userId]
+      );
+    } else {
+      await pool.query(
+        `UPDATE users
+         SET first_name = ?, last_name = ?, company_email = ?
+         WHERE usertable_id = ?
+         LIMIT 1`,
+        [firstName, lastName, normalizedEmail, userId]
+      );
+    }
+
+    return res.json({
+      id: userId,
+      name: `${firstName} ${lastName}`.trim(),
+      email: normalizedEmail,
+      contactNumber: normalizedContactNumber,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Profile update failed.", detail: error.message });
   }
 });
 
