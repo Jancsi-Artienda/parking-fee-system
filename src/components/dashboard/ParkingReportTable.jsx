@@ -13,7 +13,7 @@ import { useVehicles } from "../../context/vehicleContext/useVehicles";
 
 // Initial empty rows
 const createInitialRows = () =>
-  Array.from({ length: 15 }, (_, i) => ({
+  Array.from({ length: 4 }, (_, i) => ({
     id: i + 1,
     parkingDate: null,
     vehicleId: "",
