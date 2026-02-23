@@ -4,9 +4,15 @@ import {
   Button,
   Typography,
   Box,
-  Paper
+  Paper,
+  InputAdornment,
+  IconButton,
+  Snackbar,
+  Alert,
+  Grid
+
 } from "@mui/material"
-import Grid from "@mui/material/Grid"
+import { Visibility, VisibilityOff } from "@mui/icons-material"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import useAuth from "../../context/auth/useAuth"
@@ -27,13 +33,18 @@ const Register = () => {
     password: "",
     confirmPassword: "",
     vehicle: ""
-    
+
   })
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [fieldErrors, setFieldErrors] = useState({})
   const [touchedFields, setTouchedFields] = useState({})
+  const [openSuccess, setOpenSuccess] = useState(false)
+
+  // 1. States for toggling password visibility
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const navigate = useNavigate()
   const { register } = useAuth()
@@ -97,11 +108,14 @@ const Register = () => {
         email: formData.email.trim().toLowerCase(),
         contactNumber: formData.contactNumber.trim(),
         username: formData.username.trim(),
-        password: formData.password
+        password: formData.password,
+        confirmpassword: formData.confirmpassword,
+        vehicle: formData.vehicle
       }
 
       await register(payload)
-      navigate("/")
+      setOpenSuccess(true)
+      setTimeout(() => navigate("/"), 2000)
     } catch (err) {
       if (err?.data?.message) {
         setError(err.data.message)
@@ -250,7 +264,7 @@ const Register = () => {
 
                 <Grid size={6}>
                   <Typography variant="body2" fontWeight="bold">
-                   Number of your Vehicle
+                    Number of your Vehicle
                   </Typography>
                   <TextField
                     fullWidth
@@ -262,21 +276,30 @@ const Register = () => {
                     helperText={touchedFields.vehicle ? fieldErrors.vehicle : ""}
                   />
                 </Grid>
-                  <Grid size={6}>
+                <Grid size={6}>
                   <Typography variant="body2" fontWeight="bold">
                     Password
                   </Typography>
                   <TextField
                     fullWidth
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touchedFields.password && fieldErrors.password)}
                     helperText={touchedFields.password ? fieldErrors.password : ""}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
                   />
-                </Grid> 
+                </Grid>
 
                 <Grid size={6}>
                   <Typography variant="body2" fontWeight="bold">
@@ -284,16 +307,25 @@ const Register = () => {
                   </Typography>
                   <TextField
                     fullWidth
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={Boolean(touchedFields.confirmPassword && fieldErrors.confirmPassword)}
                     helperText={touchedFields.confirmPassword ? fieldErrors.confirmPassword : ""}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)} edge="end">
+                            {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
                   />
-                </Grid> 
-                
+                </Grid>
+
 
                 <Grid size={12}>
                   <Box display="flex" justifyContent="center">
@@ -312,7 +344,30 @@ const Register = () => {
           </Paper>
         </Container>
       </Box>
+      {/* 4. SUCCESS POP-UP MESSAGE */}
+      <Snackbar
+        open={openSuccess}
+        autoHideDuration={6000}
+        onClose={() => setOpenSuccess(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setOpenSuccess(false)} severity="success" sx={{ width: '100%' }}>
+          Registration Successful! Redirecting to login...
+        </Alert>
+      </Snackbar>
+
+      <Box sx={{ mt: 2, textAlign: "center" }}>
+        <Button
+          variant="text"
+          onClick={() => navigate("/")}
+          sx={{ textTransform: "none" }}
+        >
+         Back to Login 
+        </Button>
+      </Box>
     </Box>
+
+
   )
 }
 
