@@ -9,10 +9,9 @@ import {
   InputAdornment
 } from "@mui/material";
 import { useState } from "react";
-import { useVehicles } from "../../context/vehicleContext/useVehicles";
 
-export default function AddVehicleModal({ open, setOpen }) {
-  const { addVehicle } = useVehicles();
+export default function AddReportModal({ open, setOpen }) {
+  const { Report } = (Report);
 
   // 1. Simplified state to only include what you need
   const [formData, setFormData] = useState({

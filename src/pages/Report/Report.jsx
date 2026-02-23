@@ -13,7 +13,7 @@ import { useVehicles } from "../../context/vehicleContext/useVehicles";
 
 // Initial empty rows
 const createInitialRows = () =>
-    Array.from({ length: 15 }, (_, i) => ({
+    Array.from({ length: 4 }, (_, i) => ({
         id: i + 1,
         parkingDate: null,
         vehicleId: "",
@@ -85,15 +85,15 @@ export default function ParkingReportTable() {
                             color: "black",
                             borderColor: "#9a9999",
                             textTransform: "none",
-                            backgroundColor: "#00bfff", // Fixed casing
+                            borderColor: "#00bfff", // Fixed casing
                             '&:hover': {
-                                backgroundColor: "#9e9e9e", // Optional: ensures it looks interactive
-                                borderColor: "#7dc9ff",
+                                backgroundColor: "#ffffff", // Optional: ensures it looks interactive
+                              
                             }
                         }}
 
                     >
-                        Add Vehicle
+                        Add Report
                     </Button>
                 </Box>
 

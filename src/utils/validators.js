@@ -107,4 +107,29 @@ export function validateAccountForm(formData) {
   });
 
   return errors;
+
+
 }
+
+export function validateAddvehicleForm(formData) {
+   validateUppercase(data);
+  const validateUppercase = (data) => {
+    const fieldsToCheck = ["type", "name", "plate", "color"];
+
+    for (let field of fieldsToCheck) {
+      if (data[field] && data[field] !== data[field].toUpperCase()) {
+        throw new Error(`${field} must be uppercase only.`);
+      }
+    }
+  };
+}
+
+
+export const getPasswordStrength = (password) => {
+  return {
+    hasUppercase: /[A-Z]/.test(password),
+    hasLowercase: /[a-z]/.test(password),
+    hasNumber: /[0-9]/.test(password),
+    hasMinLength: password.length >= 8,
+  };
+};

@@ -7,8 +7,9 @@ import {
   Paper,
   InputAdornment,
   IconButton,
-  Snackbar,
-  Alert,
+  Dialog,
+  DialogContent,
+  DialogActions,
   Grid
 
 } from "@mui/material"
@@ -20,7 +21,8 @@ import logo from "../../assets/logo.png"
 import {
   sanitizeRegistrationField,
   validateRegistrationField,
-  validateRegistrationForm
+  validateRegistrationForm,
+  getPasswordStrength
 } from "../../utils/validators"
 
 const Register = () => {
@@ -48,6 +50,43 @@ const Register = () => {
 
   const navigate = useNavigate()
   const { register } = useAuth()
+
+  const passwordChecks = getPasswordStrength(formData.password);
+  const isPasswordStrong =
+    passwordChecks.hasUppercase &&
+    passwordChecks.hasLowercase &&
+    passwordChecks.hasNumber &&
+    passwordChecks.hasMinLength;
+
+  const [isUsernameAvailable, setIsUsernameAvailable] = useState(null)
+  const [checkingUsername, setCheckingUsername] = useState(false)
+
+  const checkUsername = async (username) => {
+    if (!username) return;
+
+    setCheckingUsername(true)
+    try {
+      const response = await fetch(`/api/check-username`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username })
+      })
+      const data = await response.json()
+      setIsUsernameAvailable(data.isAvailable)
+      setFieldErrors((prev) => ({
+        ...prev,
+        username: data.isAvailable ? "" : "Username is already taken"
+      }))
+    } catch (err) {
+      console.error(err)
+      setFieldErrors((prev) => ({
+        ...prev,
+        username: "Unable to check username"
+      }))
+    } finally {
+      setCheckingUsername(false)
+    }
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -109,7 +148,7 @@ const Register = () => {
         contactNumber: formData.contactNumber.trim(),
         username: formData.username.trim(),
         password: formData.password,
-        confirmpassword: formData.confirmpassword,
+        confirmpassword: formData.confirmPassword,
         vehicle: formData.vehicle
       }
 
@@ -256,9 +295,20 @@ const Register = () => {
                     name="username"
                     value={formData.username}
                     onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={Boolean(touchedFields.username && fieldErrors.username)}
-                    helperText={touchedFields.username ? fieldErrors.username : ""}
+                    onBlur={(e) => {
+                      handleBlur(e) // existing validation
+                      checkUsername(formData.username) // username uniqueness check
+                    }}
+                      error = { Boolean(touchedFields.username && fieldErrors.username)}
+                  helperText={
+                    touchedFields.username
+                      ? fieldErrors.username
+                      : checkingUsername
+                        ? "Checking..."
+                        : isUsernameAvailable
+                          ? "Username available ✅"
+                          : ""
+                  }
                   />
                 </Grid>
 
@@ -289,6 +339,7 @@ const Register = () => {
                     onBlur={handleBlur}
                     error={Boolean(touchedFields.password && fieldErrors.password)}
                     helperText={touchedFields.password ? fieldErrors.password : ""}
+
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
@@ -299,6 +350,38 @@ const Register = () => {
                       ),
                     }}
                   />
+                  <Box mt={1}>
+                    <Typography
+                      variant="caption"
+                      color={passwordChecks.hasUppercase ? "success.main" : "error.main"}
+                    >
+                      At least 1 uppercase letter
+                    </Typography>
+                    <br />
+
+                    <Typography
+                      variant="caption"
+                      color={passwordChecks.hasLowercase ? "success.main" : "error.main"}
+                    >
+                      At least 1 lowercase letter
+                    </Typography>
+                    <br />
+
+                    <Typography
+                      variant="caption"
+                      color={passwordChecks.hasNumber ? "success.main" : "error.main"}
+                    >
+                      At least 1 number
+                    </Typography>
+                    <br />
+
+                    <Typography
+                      variant="caption"
+                      color={passwordChecks.hasMinLength ? "success.main" : "error.main"}
+                    >
+                      Minimum 8 characters
+                    </Typography>
+                  </Box>
                 </Grid>
 
                 <Grid size={6}>
@@ -344,27 +427,34 @@ const Register = () => {
           </Paper>
         </Container>
       </Box>
-      {/* 4. SUCCESS POP-UP MESSAGE */}
-      <Snackbar
+      <Dialog
         open={openSuccess}
-        autoHideDuration={6000}
         onClose={() => setOpenSuccess(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            p: 3,
+            textAlign: "center",
+            minWidth: 350
+          }
+        }}
       >
-        <Alert onClose={() => setOpenSuccess(false)} severity="success" sx={{ width: '100%' }}>
-          Registration Successful! Redirecting to login...
-        </Alert>
-      </Snackbar>
+        <DialogContent>
+          <Typography variant="h6" fontWeight="bold" mb={2}>
+            Successfully registered
+          </Typography>
+        </DialogContent>
 
-      <Box sx={{ mt: 2, textAlign: "center" }}>
-        <Button
-          variant="text"
-          onClick={() => navigate("/")}
-          sx={{ textTransform: "none" }}
-        >
-         Back to Login 
-        </Button>
-      </Box>
+        <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
+          <Button
+            variant="contained"
+            onClick={() => setOpenSuccess(false)}
+            sx={{ mt: 3, py: 1.2, px: 5, borderRadius: 2 }}
+          >
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
 
 
