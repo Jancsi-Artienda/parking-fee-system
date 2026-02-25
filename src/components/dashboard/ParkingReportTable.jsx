@@ -18,7 +18,7 @@ function formatReportDate(value) {
 export default function ParkingReportTable({
   rows = [],
   loading = false,
-  title = "Parking Fee Report",
+  title = "Parking Logs",
   emptyMessage = "No reports found.",
   withPaper = true,
   maxRows,
