@@ -1,11 +1,7 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../jwt.js";
-import {
-  addVehicle,
-  deleteVehicle,
-  getVehicles,
-} from "../controller/vehicles.controller.js";
+import { addReport, getReports } from "../controller/reports.controller.js";
 
 const router = express.Router();
 
@@ -38,8 +34,7 @@ function requireAuth(req, res, next) {
   }
 }
 
-router.get("/", requireAuth, getVehicles);
-router.post("/", requireAuth, addVehicle);
-router.delete("/:id", requireAuth, deleteVehicle);
+router.get("/", requireAuth, getReports);
+router.post("/", requireAuth, addReport);
 
 export default router;

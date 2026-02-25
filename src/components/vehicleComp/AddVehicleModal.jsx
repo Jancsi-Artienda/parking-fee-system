@@ -5,10 +5,18 @@ import {
   DialogActions,
   Button,
   TextField,
-  Box
+  Box,
+  Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
-import { useState } from "react";
+import Swal from "sweetalert2";
+import { useRef, useState } from "react";
 import { useVehicles } from "../../context/vehicleContext/useVehicles";
+
+const VEHICLE_TYPE_OPTIONS = ["Car", "Motorcycle"];
 
 export default function AddVehicleModal({ open, setOpen }) {
   const { addVehicle } = useVehicles();
@@ -19,48 +27,114 @@ export default function AddVehicleModal({ open, setOpen }) {
     plate: "",
     color: ""
   });
+  const [submitting, setSubmitting] = useState(false);
+  const [localError, setLocalError] = useState("");
+  const submitLockRef = useRef(false);
 
   const handleChange = (e) => {
+    if (localError) {
+      setLocalError("");
+    }
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
   };
 
-  const handleAddVehicle = async () => {
-    if (!formData.type || !formData.name || !formData.plate) return;
-
-    await addVehicle(formData);
-
-    setFormData({
-      type: "",
-      name: "",
-      plate: "",
-      color: ""
-    });
-
+  const handleClose = () => {
+    if (submitting) return;
+    setLocalError("");
     setOpen(false);
   };
 
+  const handleAddVehicle = async () => {
+    if (submitLockRef.current || submitting) {
+      return;
+    }
+
+    if (!formData.type.trim() || !formData.name.trim() || !formData.plate.trim()) {
+      setLocalError("Type, model, and plate are required.");
+      return;
+    }
+
+    submitLockRef.current = true;
+    setSubmitting(true);
+    setLocalError("");
+    try {
+      await addVehicle({
+        type: formData.type.trim(),
+        name: formData.name.trim(),
+        plate: formData.plate.trim(),
+        color: formData.color.trim(),
+      });
+      await Swal.fire({
+        title: "Vehicle Added",
+        text: "Your vehicle was added successfully.",
+        icon: "success",
+        confirmButtonText: "OK",
+      });
+      setFormData({
+        type: "",
+        name: "",
+        plate: "",
+        color: "",
+      });
+      setOpen(false);
+    } catch (err) {
+      const message = err?.message || "Failed to add vehicle.";
+      setLocalError(message);
+      await Swal.fire({
+        title: "Add Vehicle Failed",
+        text: message,
+        icon: "error",
+        confirmButtonText: "Ok"
+      });
+    } finally {
+      setSubmitting(false);
+      submitLockRef.current = false;
+    }
+  };
+
   return (
-    <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Add new Vehicle</DialogTitle>
 
       <DialogContent>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
-          <TextField label="Vehicle Type" name="type" value={formData.type} onChange={handleChange} fullWidth />
+          <FormControl fullWidth>
+            <InputLabel id="vehicle-type-label">Vehicle Type</InputLabel>
+            <Select
+              labelId="vehicle-type-label"
+              label="Vehicle Type"
+              name="type"
+              value={formData.type}
+              onChange={handleChange}
+            >
+              {VEHICLE_TYPE_OPTIONS.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           <TextField label="Vehicle Model" name="name" value={formData.name} onChange={handleChange} fullWidth />
           <TextField label="Vehicle Plate No." name="plate" value={formData.plate} onChange={handleChange} fullWidth />
           <TextField label="Vehicle Color" name="color" value={formData.color} onChange={handleChange} fullWidth />
+          {localError ? <Typography color="error">{localError}</Typography> : null}
         </Box>
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={() => setOpen(false)} sx={{ textTransform: "none" }}>
+        <Button onClick={handleClose} sx={{ textTransform: "none" }} disabled={submitting}>
           Cancel
         </Button>
-        <Button variant="contained" onClick={handleAddVehicle} sx={{ textTransform: "none", borderRadius: "8px" }}>
-          Add Vehicle
+        <Button
+          variant="contained"
+          onClick={handleAddVehicle}
+          disabled={submitting}
+          sx={{ textTransform: "none", borderRadius: "8px" }}
+        >
+          {submitting ? "Adding..." : "Add Vehicle"}
         </Button>
       </DialogActions>
     </Dialog>

@@ -1,115 +1,112 @@
-import React, { useState } from "react";
-import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-
-} from "@mui/material";
+import { useMemo } from "react";
+import { Box, Paper, Typography } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { useVehicles } from "../../context/vehicleContext/useVehicles";
+import dayjs from "dayjs";
 
-// Initial empty rows
-const createInitialRows = () =>
-  Array.from({ length: 4 }, (_, i) => ({
-    id: i + 1,
-    parkingDate: null,
-    vehicleId: "",
-    amount: "",
-  }));
+function formatReportDate(value) {
+  if (!value) return "";
 
-export default function ParkingReportTable() {
-  const { vehicles } = useVehicles();
-  const [rows] = useState(createInitialRows());
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const parsed = dayjs(value, "YYYY-MM-DD", true);
+    return parsed.isValid() ? parsed.format("M/D/YYYY") : value;
+  }
 
-  // Function to update the state when an input changes
+  const parsed = dayjs(value);
+  return parsed.isValid() ? parsed.format("M/D/YYYY") : "";
+}
 
+export default function ParkingReportTable({
+  rows = [],
+  loading = false,
+  title = "Parking Fee Report",
+  emptyMessage = "No reports found.",
+  withPaper = true,
+  maxRows,
+}) {
+  const normalizedRows = useMemo(
+    () =>
+      (rows || []).map((row, index) => ({
+        ...row,
+        _rowId:
+          row.id ??
+          `${index}-${row.transDate || ""}-${row.vehicleModel || ""}-${row.amount || ""}`,
+      })),
+    [rows]
+  );
+  const displayRows = useMemo(() => {
+    if (!Number.isInteger(maxRows) || maxRows <= 0) {
+      return normalizedRows;
+    }
+    return normalizedRows.slice(0, maxRows);
+  }, [normalizedRows, maxRows]);
 
-  const columns = [
-    {
-      field: "parkingDate",
-      headerName: "Date",
-      flex: 1,
-      headerAlign: "center",
-      renderCell: (params) => (
-        <Box sx={{ display: "flex", alignItems: "center", height: "100%" }}>
-      
-        
-        </Box>
-      ),
-    },
-    {
-      field: "vehicleId",
-      headerName: "Vehicle",
-      flex: 1.5,
-      headerAlign: "center",
-      align: "center",
-      valueGetter: (value, row) => {
-        
-        const vehicle = vehicles.find((v) => v.id === value);
-        return vehicle ? `${vehicle.type} - ${vehicle.name}` : "";
+  const columns = useMemo(
+    () => [
+      {
+        field: "transDate",
+        headerName: "Date",
+        flex: 1,
+        headerAlign: "center",
+        align: "center",
+        valueGetter: (_value, row) => formatReportDate(row.transDate),
       },
-    }, 
-    { 
-      field: "amount",
-      headerName: "Amount",
-      flex: 1,
-      headerAlign: "center",
-      align: "center",
-      editable: true,
-    }, 
-  ];
-  return (
-    <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Paper sx={{ width: "100%", p: 3, borderRadius: "15px" }}>
-        <Box
+      {
+        field: "vehicleModel",
+        headerName: "Vehicle Model",
+        flex: 1.2,
+        headerAlign: "center",
+        align: "center",
+      },
+      {
+        field: "amount",
+        headerName: "Amount",
+        flex: 1,
+        headerAlign: "center",
+        align: "center",
+        valueGetter: (value) => `₱ ${Number(value || 0).toLocaleString()}`,
+      },
+    ],
+    []
+  );
+
+  const gridContent = (
+    <>
+      {title ? (
+        <Typography variant="h5" sx={{ fontWeight: 500, mb: 3 }}>
+          {title}
+        </Typography>
+      ) : null}
+
+      <Box sx={{ height: 500, width: "100%" }}>
+        <DataGrid
+          rows={displayRows}
+          columns={columns}
+          loading={loading}
+          rowHeight={70}
+          getRowId={(row) => row._rowId}
+          disableColumnSorting
+          disableColumnMenu
+          hideFooterPagination
+          localeText={{ noRowsLabel: emptyMessage }}
           sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 4,
+            border: "none",
+            "& .MuiDataGrid-columnHeaders": {
+              backgroundColor: "#f5f5f5",
+              fontWeight: "bold",
+            },
           }}
-        >
-          <Typography variant="h5" sx={{ fontWeight: "500" }}>
-            Parking Fee Report
-          </Typography>
+        />
+      </Box>
+    </>
+  );
 
-          <Button
-            variant="outlined"
-            startIcon={<span>🖨️</span>}
-            onClick={() => window.print()}
-            sx={{
-              borderRadius: "10px",
-              color: "black",
-              borderColor: "#7dc9ff",
-              textTransform: "none",
-            }}
-          >
-            Print
-          </Button>
-        </Box>
+  if (!withPaper) {
+    return gridContent;
+  }
 
-        <Box sx={{ height: 500, width: "100%" }}>
-          <DataGrid
-            rows={rows}
-            columns={columns}
-            rowHeight={70}
-            disableColumnSorting
-            disableColumnMenu
-            hideFooterPagination
-            
-            sx={{
-              border: "none",
-              "& .MuiDataGrid-columnHeaders": {
-                backgroundColor: "#f5f5f5",
-                fontWeight: "bold",
-              },
-            }}
-          />
-        </Box>
-      </Paper>
-    </LocalizationProvider>
+  return (
+    <Paper sx={{ width: "95%", p: 3, borderRadius: "15px" }} elevation={6}>
+      {gridContent}
+    </Paper>
   );
 }

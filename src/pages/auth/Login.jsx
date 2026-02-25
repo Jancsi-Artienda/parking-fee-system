@@ -1,5 +1,5 @@
-import { useState } from "react"
-import useAuth from "../../context/auth/useAuth"
+import { useState } from "react";
+import useAuth from "../../context/auth/useAuth";
 import {
   Box,
   Container,
@@ -8,69 +8,72 @@ import {
   Typography,
   Paper,
   Checkbox,
-  FormControlLabel
-} from "@mui/material"
-import { Link, useNavigate } from "react-router-dom"
-import logo from "../../assets/logo.png"
+  FormControlLabel,
+} from "@mui/material";
+import { Link, useNavigate } from "react-router-dom";
+import logo from "../../assets/logo.png";
+import { toast } from "sonner";
 
 const Login = () => {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [rememberMe, setRememberMe] = useState(false)
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const navigate = useNavigate()
-  const {login} = useAuth()
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError("")
+    e.preventDefault();
+    setError("");
 
     if (!email || !password) {
-      setError("Email and password are required")
-      return
+      setError("Email and password are required");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
 
     try {
-      await login(email, password)
-      navigate("/dashboard")
-    } catch (err) { 
+      await login(email, password);
+      toast.success("Logged in successfully");
+      navigate("/dashboard");
+    } catch (err) {
       if (err?.data?.message) {
-        setError(err.data.message)
+        setError(err.data.message);
+        toast.error(err.data.message);
       } else {
-        setError("Login failed. Please try again.")
+        setError("Login failed. Please try again.");
+        toast.error("Login failed. Please try again.");
       }
     } finally {
-      setLoading(false)
-    }   
-  }
-  {/*Design*/}
+      setLoading(false);
+    }
+  };
+
   return (
     <Box
       sx={{
         minHeight: "100vh",
         width: "100vw",
         display: "flex",
-        backgroundColor: "#F5F5F5"
+        backgroundColor: "#F5F5F5",
       }}
     >
-      {/* LEFT SIDE – LOGIN FORM */}
       <Box
         sx={{
           width: "50%",
           display: "flex",
           alignItems: "center",
-          justifyContent: "center"
+          justifyContent: "center",
         }}
       >
         <Container maxWidth="sm">
           <Paper sx={{ p: 4, borderRadius: 3 }}>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
               Parking Fee Login
-            </Typography> 
+            </Typography>
 
             <Typography color="text.secondary" mb={3}>
               Welcome back! Please sign in to continue
@@ -106,7 +109,7 @@ const Login = () => {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  mt: 1
+                  mt: 1,
                 }}
               >
                 <FormControlLabel
@@ -119,8 +122,8 @@ const Login = () => {
                   label="Remember me"
                 />
 
-                <Link to="forgotpassword" style={{ fontSize: 14 }}>
-                  Forgot Password 
+                <Link to="/forgotpassword" style={{ fontSize: 14 }}>
+                  Forgot Password
                 </Link>
               </Box>
 
@@ -130,19 +133,17 @@ const Login = () => {
                 variant="contained"
                 sx={{ mt: 3, py: 1.2, borderRadius: 2 }}
               >
-                {loading ? "Logging in..." : "Login" }
-                
+                {loading ? "Logging in..." : "Login"}
               </Button>
             </Box>
 
-          <Typography align="center" sx={{ mt: 2 }}>
-             Don’t have an account? <Link to="/register">Register</Link>
-           </Typography>
+            <Typography align="center" sx={{ mt: 2 }}>
+              Don&apos;t have an account? <Link to="/register">Register</Link>
+            </Typography>
           </Paper>
         </Container>
       </Box>
 
-      {/* RIGHT SIDE – BRAND PANEL */}
       <Box
         sx={{
           width: "50%",
@@ -150,7 +151,7 @@ const Login = () => {
           display: "flex",
           alignItems: "flex-start",
           justifyContent: "center",
-          p: 8
+          p: 8,
         }}
       >
         <Box
@@ -161,7 +162,7 @@ const Login = () => {
         />
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;

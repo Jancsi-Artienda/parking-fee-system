@@ -7,8 +7,9 @@ import {
   TextField,
   Button,
 } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import Swal from "sweetalert2";
 import useAuth from "../../context/auth/useAuth";
 import {
   sanitizeAccountField,
@@ -19,21 +20,32 @@ import {
 export default function Account() {
   const { user, updateProfile } = useAuth();
 
-  const displayName = user?.name || "John Paul";
-  const displayEmail = user?.email || "delfin@gmail.com";
-  const displayContact = user?.contactNumber || "09123456789";
+  const displayUsername = user?.username || "";
+  const displayName = user?.name || "";
+  const displayEmail = user?.email || "";
+  const displayContact = user?.contactNumber || "";
 
   const [formData, setFormData] = useState({
+    username: displayUsername,
     name: displayName,
     email: displayEmail,
     contactNumber: displayContact,
     password: "",
   });
   const [saving, setSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState("");
   const [saveError, setSaveError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [touchedFields, setTouchedFields] = useState({});
+
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      username: user?.username || "",
+      name: user?.name || "",
+      email: user?.email || "",
+      contactNumber: user?.contactNumber || "",
+    }));
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -56,12 +68,12 @@ export default function Account() {
   };
 
   const handleSave = async () => {
-    setSaveMessage("");
     setSaveError("");
 
     const validationErrors = validateAccountForm(formData);
     setFieldErrors(validationErrors);
     setTouchedFields({
+      username: true,
       name: true,
       email: true,
       contactNumber: true,
@@ -75,11 +87,17 @@ export default function Account() {
     try {
       setSaving(true);
       await updateProfile({
+        username: formData.username.trim(),
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
         contactNumber: formData.contactNumber.trim(),
       });
-      setSaveMessage("Account details updated successfully.");
+      await Swal.fire({
+        title: "Saved",
+        text: "Account details updated successfully.",
+        icon: "success",
+        confirmButtonText: "OK",
+      });
       setFormData((prev) => ({ ...prev, password: "" }));
     } catch (err) {
       setSaveError(err?.data?.message || err?.message || "Failed to update account details.");
@@ -115,7 +133,8 @@ export default function Account() {
           </Typography>
 
           <Box sx={{ textAlign: "center" }}>
-            <Typography>Username: {displayName}</Typography>
+            <Typography>Username: {displayUsername || "-"}</Typography>
+            <Typography>Full name: {displayName || "-"}</Typography>
             <Typography>Email address: {displayEmail}</Typography>
             <Typography>Contact number: {displayContact}</Typography>
           </Box>
@@ -136,6 +155,21 @@ export default function Account() {
             <Grid item xs={12} md={6}>
               <Typography variant="body2" fontWeight="bold" mb={0.5}>
                 Username
+              </Typography>
+              <TextField
+                fullWidth
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={Boolean(touchedFields.username && fieldErrors.username)}
+                helperText={touchedFields.username ? fieldErrors.username : ""}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Typography variant="body2" fontWeight="bold" mb={0.5}>
+                Full Name
               </Typography>
               <TextField
                 fullWidth
@@ -196,12 +230,6 @@ export default function Account() {
             {saveError && (
               <Grid item xs={12}>
                 <Typography color="error">{saveError}</Typography>
-              </Grid>
-            )}
-
-            {saveMessage && (
-              <Grid item xs={12}>
-                <Typography color="success.main">{saveMessage}</Typography>
               </Grid>
             )}
 

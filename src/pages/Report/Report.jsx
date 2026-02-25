@@ -1,121 +1,156 @@
-import React, { useState } from "react";
-import {
-    Box,
-    Paper,
-    Typography,
-    Button,
-
-} from "@mui/material";
-import { DataGrid } from "@mui/x-data-grid";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { useEffect, useState } from "react";
+import { Box, Paper, Typography, Button } from "@mui/material";
+import dayjs from "dayjs";
+import { toast } from "sonner";
+import AddReportModal from "../../components/Report/ReportModal";
+import ParkingReportTable from "../../components/dashboard/ParkingReportTable";
+import parkingReportService from "../../services/ParkingReportService";
 import { useVehicles } from "../../context/vehicleContext/useVehicles";
+import useAuth from "../../context/auth/useAuth";
+import useParkingFeePDF from "../../hooks/useParkingFeePDF";
 
-// Initial empty rows
-const createInitialRows = () =>
-    Array.from({ length: 4 }, (_, i) => ({
-        id: i + 1,
-        parkingDate: null,
-        vehicleId: "",
-        amount: "",
-    }));
+export default function Report() {
+  const { vehicles } = useVehicles();
+  const { user } = useAuth();
+  const { generatePDF, maxRows } = useParkingFeePDF();
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [openModal, setOpenModal] = useState(false);
 
-export default function ParkingReportTable() {
-    const { vehicles } = useVehicles();
-    const [rows] = useState(createInitialRows());
+  const handleExportPDF = () => {
+    if (loading) {
+      return;
+    }
 
-    // Function to update the state when an input changes
+    if (!rows.length) {
+      toast.error("No reports to export.");
+      return;
+    }
 
+    const normalizedRows = rows.map((row) => {
+      const parsedDate = dayjs(row.transDate);
+      return {
+        date: parsedDate.isValid() ? parsedDate.format("M/D/YYYY") : "",
+        carModel: row.vehicleModel || "",
+        amount: `PHP ${Number(row.amount || 0).toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}`,
+      };
+    });
 
-    const columns = [
-        {
-            field: "parkingDate",
-            headerName: "Date",
-            flex: 1,
-            headerAlign: "center",
-            renderCell: (params) => (
-                <Box sx={{ display: "flex", alignItems: "center", height: "100%" }}>
+    const validDates = rows
+      .map((row) => dayjs(row.transDate))
+      .filter((dateValue) => dateValue.isValid())
+      .sort((a, b) => a.valueOf() - b.valueOf());
 
+    let coverage = "N/A";
+    if (validDates.length === 1) {
+      coverage = validDates[0].format("MMMM D, YYYY");
+    } else if (validDates.length > 1) {
+      coverage = `${validDates[0].format("MMMM D, YYYY")} - ${validDates[
+        validDates.length - 1
+      ].format("MMMM D, YYYY")}`;
+    }
 
-                </Box>
-            ),
-        },
-        {
-            field: "vehicleId",
-            headerName: "Vehicle",
-            flex: 1.5,
-            headerAlign: "center",
-            align: "center",
-            valueGetter: (value, row) => {
+    const preparedBy = user?.name || user?.username || user?.email || "N/A";
 
-                const vehicle = vehicles.find((v) => v.id === value);
-                return vehicle ? `${vehicle.type} - ${vehicle.name}` : "";
-            },
-        },
-        {
-            field: "amount",
-            headerName: "Amount",
-            flex: 1,
-            headerAlign: "center",
-            align: "center",
-            editable: true,
-        },
-    ];
-    return (
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <Paper sx={{ width: "95%", p: 3, borderRadius: "15px" }}>
-                <Box
-                    sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        mb: 4,
-                    }}
-                >
-                    <Typography variant="h5" sx={{ fontWeight: "500" }}>
-                        Parking Fee Report
-                    </Typography>
+    generatePDF({
+      preparedBy,
+      coverage,
+      dateSubmitted: dayjs().format("MMMM D, YYYY"),
+      rows: normalizedRows,
+    });
 
-                    <Button
-                        variant="outlined"
-                        startIcon={<span>+</span>}
-                        onClick={() => window.print()}
-                        sx={{
-                            borderRadius: "10px",
-                            color: "black",
-                            borderColor: "#9a9999",
-                            textTransform: "none",
-                            borderColor: "#00bfff", // Fixed casing
-                            '&:hover': {
-                                backgroundColor: "#ffffff", // Optional: ensures it looks interactive
-                              
-                            }
-                        }}
+    if (rows.length > maxRows) {
+      toast.warning(`Exported first ${maxRows} rows only.`);
+    } else {
+      toast.success("Report PDF exported successfully.");
+    }
+  };
 
-                    >
-                        Add Report
-                    </Button>
-                </Box>
+  useEffect(() => {
+    const loadReports = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const data = await parkingReportService.getReports();
+        setRows(data);
+      } catch (err) {
+        setError(err?.data?.message || "Failed to load reports.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-                <Box sx={{ height: 500, width: "100%" }}>
-                    <DataGrid
-                        rows={rows}
-                        columns={columns}
-                        rowHeight={70}
-                        disableColumnSorting
-                        disableColumnMenu
-                        hideFooterPagination
+    loadReports();
+  }, []);
 
-                        sx={{
-                            border: "none",
-                            "& .MuiDataGrid-columnHeaders": {
-                                backgroundColor: "#f5f5f5",
-                                fontWeight: "bold",
-                            },
-                        }}
-                    />
-                </Box>
-            </Paper>
-        </LocalizationProvider>
-    );
+  const handleAddReport = async (payload) => {
+    const created = await parkingReportService.addReport(payload);
+    setRows((prev) => [
+      {
+        id: Date.now(),
+        ...created,
+      },
+      ...prev,
+    ]);
+  };
+
+  return (
+    <Paper sx={{ width: "95%", p: 3, borderRadius: "15px" }} elevation={6}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
+        <Typography variant="h5" sx={{ fontWeight: 500 }}>
+          Parking Fee Report
+        </Typography>
+
+        <Box sx={{ display: "flex", gap: 1.5 }}>
+          <Button
+            variant="outlined"
+            onClick={handleExportPDF}
+            disabled={loading}
+            sx={{ borderRadius: "10px", textTransform: "none" }}
+          >
+            Export PDF
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => setOpenModal(true)}
+            sx={{ borderRadius: "10px", textTransform: "none" }}
+          >
+            Add Report
+          </Button>
+        </Box>
+      </Box>
+
+      {error ? <Typography color="error">{error}</Typography> : null}
+
+      <Box sx={{ width: "100%" }}>
+        <ParkingReportTable
+          rows={rows}
+          loading={loading}
+          title={null}
+          emptyMessage="No reports yet."
+          withPaper={false}
+          maxRows={15}
+        />
+      </Box>
+
+      <AddReportModal
+        open={openModal}
+        setOpen={setOpenModal}
+        vehicles={vehicles}
+        onAddReport={handleAddReport}
+        existingReports={rows}
+      />
+    </Paper>
+  );
 }

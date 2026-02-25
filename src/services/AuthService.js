@@ -24,6 +24,7 @@ const AuthService = {
           resolve({
             data: {
               id: 1,
+              username: "test_user",
               email,
               name: "Test User",
             },
@@ -67,6 +68,22 @@ const AuthService = {
     return apiClient.patch("/auth/profile", profileData, {
       headers: getAuthHeaders(),
     });
+  },
+
+  async forgotPassword(email) {
+    if (!import.meta.env.VITE_API_URL) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({
+            data: {
+              message: "If an account exists for this email, a reset link has been sent.",
+            },
+          });
+        }, 500);
+      });
+    }
+
+    return apiClient.post("/auth/forgot-password", { email });
   },
 };
 

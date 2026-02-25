@@ -61,4 +61,17 @@ export const vehicleService = {
     });
     return response.data;
   },
+
+  async deleteVehicle(id) {
+    if (!import.meta.env.VITE_API_URL) {
+      await delay(300);
+      vehicles = vehicles.filter((item) => item.id !== id);
+      return { id };
+    }
+
+    await apiClient.delete(`/vehicles/${id}`, {
+      headers: getAuthHeaders(),
+    });
+    return { id };
+  },
 };

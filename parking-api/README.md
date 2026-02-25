@@ -28,6 +28,20 @@ JWT_SECRET=replace_with_a_strong_secret
 npm run dev
 ```
 
+## 3.1 Apply Core Table Migration
+
+Apply the schema migration before using auth/vehicle flows:
+
+```bash
+mysql -u root -p parkingfee < sql/001_harden_core_tables.sql
+```
+
+The migration adds/enforces:
+- `users.vehicle_limit`
+- unique keys: `users.employee_id`, `users.username`, `users.company_email`
+- `rfvehicle.ticket_num` as `AUTO_INCREMENT PRIMARY KEY`
+- foreign keys from `rfvehicle.employee_id` and `temp_ticket.employee_id` to `users.employee_id`
+
 ## 4. Endpoints
 
 - `GET /health`

@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes.js";
 import vehicleRoutes from "./routes/vehicles.routes.js";
+import reportRoutes from "./routes/reports.routes.js";
 import pool from "./db.js";
 import { getJwtSecret } from "./jwt.js";
 
@@ -32,6 +33,7 @@ app.get("/health", async (_req, res) => {
 
 app.use("/auth", authRoutes);
 app.use("/vehicles", vehicleRoutes);
+app.use("/reports", reportRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: `Route not found: ${req.method} ${req.originalUrl}` });

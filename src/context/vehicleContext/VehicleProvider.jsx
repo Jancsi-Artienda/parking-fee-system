@@ -1,14 +1,24 @@
 import { useEffect, useState } from "react";
 import { VehicleContext } from "./VehicleContext";
 import { vehicleService } from "../../services/VehicleService";
+import useAuth from "../auth/useAuth";
 
 export function VehicleProvider({ children }) {
+  const { user } = useAuth();
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const token = user?.token || null;
 
   useEffect(() => {
     const fetchVehicles = async () => {
+      if (!token && import.meta.env.VITE_API_URL) {
+        setVehicles([]);
+        setError("");
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError("");
 
@@ -23,7 +33,7 @@ export function VehicleProvider({ children }) {
     };
 
     fetchVehicles();
-  }, []);
+  }, [token]);
 
   const addVehicle = async (vehicleData) => {
     setError("");
@@ -39,8 +49,21 @@ export function VehicleProvider({ children }) {
     }
   };
 
+  const deleteVehicle = async (id) => {
+    setError("");
+
+    try {
+      await vehicleService.deleteVehicle(id);
+      setVehicles((prev) => prev.filter((vehicle) => vehicle.id !== id));
+    } catch (err) {
+      const message = err?.data?.message || "Failed to delete vehicle.";
+      setError(message);
+      throw new Error(message);
+    }
+  };
+
   return (
-    <VehicleContext.Provider value={{ vehicles, loading, error, addVehicle }}>
+    <VehicleContext.Provider value={{ vehicles, loading, error, addVehicle, deleteVehicle }}>
       {children}
     </VehicleContext.Provider>
   );

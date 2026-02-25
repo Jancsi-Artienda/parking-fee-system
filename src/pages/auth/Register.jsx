@@ -7,23 +7,20 @@ import {
   Paper,
   InputAdornment,
   IconButton,
-  Dialog,
-  DialogContent,
-  DialogActions,
-  Grid
-
-} from "@mui/material"
-import { Visibility, VisibilityOff } from "@mui/icons-material"
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import useAuth from "../../context/auth/useAuth"
-import logo from "../../assets/logo.png"
+  Grid,
+} from "@mui/material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
+import useAuth from "../../context/auth/useAuth";
+import logo from "../../assets/logo.png";
 import {
   sanitizeRegistrationField,
   validateRegistrationField,
   validateRegistrationForm,
-  getPasswordStrength
-} from "../../utils/validators"
+  getPasswordStrength,
+} from "../../utils/validators";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -32,113 +29,73 @@ const Register = () => {
     email: "",
     contactNumber: "",
     username: "",
+    vehicleNumber: "",
     password: "",
     confirmPassword: "",
-    vehicle: ""
+  });
 
-  })
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [touchedFields, setTouchedFields] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [fieldErrors, setFieldErrors] = useState({})
-  const [touchedFields, setTouchedFields] = useState({})
-  const [openSuccess, setOpenSuccess] = useState(false)
-
-  // 1. States for toggling password visibility
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-
-  const navigate = useNavigate()
-  const { register } = useAuth()
-
+  const navigate = useNavigate();
+  const { register } = useAuth();
   const passwordChecks = getPasswordStrength(formData.password);
-  const isPasswordStrong =
-    passwordChecks.hasUppercase &&
-    passwordChecks.hasLowercase &&
-    passwordChecks.hasNumber &&
-    passwordChecks.hasMinLength;
-
-  const [isUsernameAvailable, setIsUsernameAvailable] = useState(null)
-  const [checkingUsername, setCheckingUsername] = useState(false)
-
-  const checkUsername = async (username) => {
-    if (!username) return;
-
-    setCheckingUsername(true)
-    try {
-      const response = await fetch(`/api/check-username`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username })
-      })
-      const data = await response.json()
-      setIsUsernameAvailable(data.isAvailable)
-      setFieldErrors((prev) => ({
-        ...prev,
-        username: data.isAvailable ? "" : "Username is already taken"
-      }))
-    } catch (err) {
-      console.error(err)
-      setFieldErrors((prev) => ({
-        ...prev,
-        username: "Unable to check username"
-      }))
-    } finally {
-      setCheckingUsername(false)
-    }
-  }
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    const nextValue = sanitizeRegistrationField(name, value)
+    const { name, value } = e.target;
+    const nextValue = sanitizeRegistrationField(name, value);
 
     setFormData((prev) => ({
       ...prev,
-      [name]: nextValue
-    }))
+      [name]: nextValue,
+    }));
 
     if (touchedFields[name]) {
-      const nextError = validateRegistrationField(name, nextValue)
+      const nextError = validateRegistrationField(name, nextValue);
       setFieldErrors((prev) => ({
         ...prev,
-        [name]: nextError
-      }))
+        [name]: nextError,
+      }));
     }
-  }
+  };
 
   const handleBlur = (e) => {
-    const { name, value } = e.target
-    const nextError = validateRegistrationField(name, value)
+    const { name, value } = e.target;
+    const nextError = validateRegistrationField(name, value);
 
     setTouchedFields((prev) => ({
       ...prev,
-      [name]: true
-    }))
+      [name]: true,
+    }));
 
     setFieldErrors((prev) => ({
       ...prev,
-      [name]: nextError
-    }))
-  }
+      [name]: nextError,
+    }));
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    const validationErrors = validateRegistrationForm(formData)
-    setFieldErrors(validationErrors)
+    e.preventDefault();
+    const validationErrors = validateRegistrationForm(formData);
+    setFieldErrors(validationErrors);
     setTouchedFields(
       Object.keys(formData).reduce((acc, key) => {
-        acc[key] = true
-        return acc
+        acc[key] = true;
+        return acc;
       }, {})
-    )
+    );
 
     if (Object.keys(validationErrors).length > 0) {
-      setError("Please fix the highlighted fields.")
-      return
+      setError("Please fix the highlighted fields.");
+      return;
     }
 
-    setLoading(true)
-    setError("")
+    setLoading(true);
+    setError("");
 
     try {
       const payload = {
@@ -147,24 +104,29 @@ const Register = () => {
         email: formData.email.trim().toLowerCase(),
         contactNumber: formData.contactNumber.trim(),
         username: formData.username.trim(),
+        vehicleNumber: Number(formData.vehicleNumber),
         password: formData.password,
-        confirmpassword: formData.confirmPassword,
-        vehicle: formData.vehicle
-      }
+        confirmPassword: formData.confirmPassword,
+      };
 
-      await register(payload)
-      setOpenSuccess(true)
-      setTimeout(() => navigate("/"), 2000)
+      await register(payload);
+      await Swal.fire({
+        title: "Registered Successfully",
+        text: "Your account has been created.",
+        icon: "success",
+        confirmButtonText: "OK",
+      });
+      navigate("/");
     } catch (err) {
       if (err?.data?.message) {
-        setError(err.data.message)
+        setError(err.data.message);
       } else {
-        setError("Registration failed. Please try again.")
+        setError("Registration failed. Please try again.");
       }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <Box
@@ -172,10 +134,9 @@ const Register = () => {
         minHeight: "100vh",
         width: "100vw",
         display: "flex",
-        backgroundColor: "#F5F5F5"
+        backgroundColor: "#F5F5F5",
       }}
     >
-      {/* LEFT SIDE */}
       <Box
         sx={{
           width: "35%",
@@ -183,7 +144,7 @@ const Register = () => {
           display: "flex",
           alignItems: "flex-start",
           justifyContent: "center",
-          p: 8
+          p: 8,
         }}
       >
         <Box
@@ -194,16 +155,15 @@ const Register = () => {
         />
       </Box>
 
-      {/* RIGHT SIDE */}
       <Box
         sx={{
           width: "50%",
           display: "flex",
           alignItems: "center",
-          justifyContent: "center"
+          justifyContent: "center",
         }}
       >
-        <Container maxWidth="sm" >
+        <Container maxWidth="sm">
           <Paper sx={{ p: 4, borderRadius: 3 }}>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
               Create your account
@@ -295,37 +255,29 @@ const Register = () => {
                     name="username"
                     value={formData.username}
                     onChange={handleChange}
-                    onBlur={(e) => {
-                      handleBlur(e) // existing validation
-                      checkUsername(formData.username) // username uniqueness check
-                    }}
-                      error = { Boolean(touchedFields.username && fieldErrors.username)}
-                  helperText={
-                    touchedFields.username
-                      ? fieldErrors.username
-                      : checkingUsername
-                        ? "Checking..."
-                        : isUsernameAvailable
-                          ? "Username available ✅"
-                          : ""
-                  }
+                    onBlur={handleBlur}
+                    error={Boolean(touchedFields.username && fieldErrors.username)}
+                    helperText={touchedFields.username ? fieldErrors.username : ""}
                   />
                 </Grid>
 
                 <Grid size={6}>
                   <Typography variant="body2" fontWeight="bold">
-                    Number of your Vehicle
+                    Number of Vehicles
                   </Typography>
                   <TextField
                     fullWidth
-                    name="vehicle"
-                    value={formData.vehicle}
+                    type="number"
+                    name="vehicleNumber"
+                    value={formData.vehicleNumber}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    error={Boolean(touchedFields.vehicle && fieldErrors.vehicle)}
-                    helperText={touchedFields.vehicle ? fieldErrors.vehicle : ""}
+                    error={Boolean(touchedFields.vehicleNumber && fieldErrors.vehicleNumber)}
+                    helperText={touchedFields.vehicleNumber ? fieldErrors.vehicleNumber : ""}
+                    inputProps={{ min: 1 }}
                   />
                 </Grid>
+
                 <Grid size={6}>
                   <Typography variant="body2" fontWeight="bold">
                     Password
@@ -339,7 +291,6 @@ const Register = () => {
                     onBlur={handleBlur}
                     error={Boolean(touchedFields.password && fieldErrors.password)}
                     helperText={touchedFields.password ? fieldErrors.password : ""}
-
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
@@ -358,7 +309,6 @@ const Register = () => {
                       At least 1 uppercase letter
                     </Typography>
                     <br />
-
                     <Typography
                       variant="caption"
                       color={passwordChecks.hasLowercase ? "success.main" : "error.main"}
@@ -366,7 +316,6 @@ const Register = () => {
                       At least 1 lowercase letter
                     </Typography>
                     <br />
-
                     <Typography
                       variant="caption"
                       color={passwordChecks.hasNumber ? "success.main" : "error.main"}
@@ -374,7 +323,6 @@ const Register = () => {
                       At least 1 number
                     </Typography>
                     <br />
-
                     <Typography
                       variant="caption"
                       color={passwordChecks.hasMinLength ? "success.main" : "error.main"}
@@ -400,7 +348,10 @@ const Register = () => {
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
-                          <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)} edge="end">
+                          <IconButton
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            edge="end"
+                          >
                             {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
                           </IconButton>
                         </InputAdornment>
@@ -408,7 +359,6 @@ const Register = () => {
                     }}
                   />
                 </Grid>
-
 
                 <Grid size={12}>
                   <Box display="flex" justifyContent="center">
@@ -427,38 +377,8 @@ const Register = () => {
           </Paper>
         </Container>
       </Box>
-      <Dialog
-        open={openSuccess}
-        onClose={() => setOpenSuccess(false)}
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            p: 3,
-            textAlign: "center",
-            minWidth: 350
-          }
-        }}
-      >
-        <DialogContent>
-          <Typography variant="h6" fontWeight="bold" mb={2}>
-            Successfully registered
-          </Typography>
-        </DialogContent>
-
-        <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
-          <Button
-            variant="contained"
-            onClick={() => setOpenSuccess(false)}
-            sx={{ mt: 3, py: 1.2, px: 5, borderRadius: 2 }}
-          >
-            OK
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
+  );
+};
 
-
-  )
-}
-
-export default Register
+export default Register;

@@ -6,110 +6,188 @@ import {
   Button,
   TextField,
   Box,
-  InputAdornment
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Typography,
 } from "@mui/material";
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import dayjs from "dayjs";
+import Swal from "sweetalert2";
 
-export default function AddReportModal({ open, setOpen }) {
-  const { Report } = (Report);
-
-  // 1. Simplified state to only include what you need
+export default function AddReportModal({
+  open,
+  setOpen,
+  vehicles,
+  onAddReport,
+  existingReports = [],
+}) {
   const [formData, setFormData] = useState({
-    date: "",
-    name: "", // This is the Car Model
-    amount: ""
+    transDate: "",
+    vehicleId: "",
+    amount: "50",
   });
+  const [submitting, setSubmitting] = useState(false);
+  const [localError, setLocalError] = useState("");
+  const submitLockRef = useRef(false);
+
+  const usedDateKeys = useMemo(
+    () =>
+      new Set(
+        existingReports
+          .map((row) => row?.transDate)
+          .filter(Boolean)
+          .map((value) => dayjs(value).format("YYYY-MM-DD"))
+      ),
+    [existingReports]
+  );
+
+  const selectedDate = formData.transDate ? dayjs(formData.transDate) : null;
+  const isDuplicateDate =
+    !!selectedDate &&
+    selectedDate.isValid() &&
+    usedDateKeys.has(selectedDate.format("YYYY-MM-DD"));
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleAddVehicle = async () => {
-    // 2. Validation for the three fields
-    if (!formData.date || !formData.name || !formData.amount) {
-      alert("Please fill in all fields");
-      return;
-    }
-
-    await addVehicle(formData);
-
-    // 3. Reset form
-    setFormData({
-      date: "",
-      name: "",
-      amount: ""
-    });
-
+  const handleClose = () => {
+    if (submitting) return;
+    setLocalError("");
     setOpen(false);
   };
 
+  const handleAddReport = async () => {
+    if (submitLockRef.current || submitting) {
+      return;
+    }
+
+    if (!formData.transDate || !formData.vehicleId || !formData.amount) {
+      setLocalError("Date, vehicle, and amount are required.");
+      return;
+    }
+    if (isDuplicateDate) {
+      setLocalError("A report with this date already exists.");
+      return;
+    }
+
+    submitLockRef.current = true;
+    setSubmitting(true);
+    setLocalError("");
+
+    try {
+      await onAddReport({
+        transDate: formData.transDate,
+        vehicleId: Number(formData.vehicleId),
+        amount: Number(formData.amount)
+      });
+      setFormData({
+        transDate: "",
+        vehicleId: "",
+        amount: "50",
+      });
+      setOpen(false);
+
+      await Swal.fire({
+        title: "Report Added",
+        text: "Your report record was saved successfully.",
+        icon: "success",
+        confirmButtonText: "OK",
+      });
+    } catch (err) {
+      const message = err?.message || "Failed to add report.";
+      setLocalError(message);
+      await Swal.fire({
+        title: "Add Report Failed",
+        text: message,
+        icon: "error",
+        confirmButtonText: "OK",
+      });
+    } finally {
+      setSubmitting(false);
+      submitLockRef.current = false;
+    }
+  };
+
   return (
-    <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
-      <DialogTitle sx={{ fontWeight: "bold" }}>Add Vehicle Record</DialogTitle>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: "bold" }}>Add Report Record</DialogTitle>
 
-      <DialogContent>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 3, mt: 2 }}>
-          
-          {/* DATE FIELD */}
-          <TextField 
-            label="Date" 
-            name="date" 
-            type="date"
-            value={formData.date} 
-            onChange={handleChange} 
-            fullWidth 
-            InputLabelProps={{ shrink: true }} 
-          />
-          
-          {/* CAR MODEL FIELD */}
-          <TextField 
-            label="Car Model" 
-            name="name" 
-            placeholder="e.g. Toyota Vios"
-            value={formData.name} 
-            onChange={handleChange} 
-            fullWidth 
-          />
-          
-          {/* AMOUNT FIELD */}
-          <TextField 
-            label="Amount" 
-            name="amount" 
-            type="number"
-            value={formData.amount} 
-            onChange={handleChange} 
-            fullWidth 
-            InputProps={{
-              startAdornment: <InputAdornment position="start">₱</InputAdornment>,
-            }}
-          />
+        <DialogContent>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
+            <DatePicker
+              label="Transaction Date"
+              value={selectedDate}
+              onChange={(newValue) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  transDate: newValue && newValue.isValid() ? newValue.format("YYYY-MM-DD") : "",
+                }));
+              }}
+              shouldDisableDate={(dateValue) =>
+                usedDateKeys.has(dateValue.format("YYYY-MM-DD"))
+              }
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                  error: isDuplicateDate,
+                  helperText: isDuplicateDate ? "This date already has a report." : "",
+                },
+              }}
+            />
 
-        </Box>
-      </DialogContent>
+            <FormControl fullWidth>
+              <InputLabel id="vehicle-select-label">Vehicle</InputLabel>
+              <Select
+                labelId="vehicle-select-label"
+                label="Vehicle"
+                name="vehicleId"
+                value={formData.vehicleId}
+                onChange={handleChange}
+              >
+                {vehicles.map((vehicle) => (
+                  <MenuItem key={vehicle.id} value={vehicle.id}>
+                    {vehicle.type} - {vehicle.name} ({vehicle.plate})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
-      <DialogActions sx={{ px: 3, pb: 3 }}>
-        <Button 
-          onClick={() => setOpen(false)} 
-          sx={{ textTransform: "none", color: "gray" }}
-        >
-          Cancel
-        </Button>
-        <Button 
-          variant="contained" 
-          onClick={handleAddVehicle} 
-          sx={{ 
-            textTransform: "none", 
-            borderRadius: "8px",
-            px: 4,
-            backgroundColor: "#1976d2" 
-          }}
-        >
-          Add Record
-        </Button>
-      </DialogActions>
-    </Dialog>
+            <TextField
+              label="Amount"
+              name="amount"
+              type="number"
+              value={formData.amount}
+              onChange={handleChange}
+              fullWidth
+              inputProps={{ min: 1 }}
+            />
+
+            {localError ? <Typography color="error">{localError}</Typography> : null}
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={handleClose} disabled={submitting} sx={{ textTransform: "none", color: "gray" }}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleAddReport}
+            disabled={submitting || isDuplicateDate}
+            sx={{ textTransform: "none", borderRadius: "8px" }}
+          >
+            {submitting ? "Adding..." : "Add Record"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </LocalizationProvider>
   );
 }
