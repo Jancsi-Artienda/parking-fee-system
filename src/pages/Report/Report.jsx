@@ -27,12 +27,12 @@ export default function Report() {
       return;
     }
 
-    if (!rows.length) {
+    if (!filteredRows.length) {
       toast.error("No reports to export.");
       return;
     }
 
-    const normalizedRows = rows.map((row) => {
+    const normalizedRows = filteredRows.map((row) => {
       const parsedDate = dayjs(row.transDate);
       return {
         date: parsedDate.isValid() ? parsedDate.format("M/D/YYYY") : "",
@@ -44,7 +44,7 @@ export default function Report() {
       };
     });
 
-    const validDates = rows
+    const validDates = filteredRows
       .map((row) => dayjs(row.transDate))
       .filter((dateValue) => dateValue.isValid())
       .sort((a, b) => a.valueOf() - b.valueOf());
@@ -67,7 +67,7 @@ export default function Report() {
       rows: normalizedRows,
     });
 
-    if (rows.length > maxRows) {
+    if (filteredRows.length > maxRows) {
       toast.warning(`Exported first ${maxRows} rows only.`);
     } else {
       toast.success("Report PDF exported successfully.");
@@ -167,7 +167,7 @@ export default function Report() {
 
         <Box sx={{ width: "100%" }}>
           <ParkingReportTable
-            rows={rows}
+            rows={filteredRows}
             loading={loading}
             title={null}
             emptyMessage="No reports yet."
