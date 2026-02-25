@@ -1,6 +1,6 @@
 import { Card, Typography, Button, CardContent } from "@mui/material";
 
-export default function VehicleCard({ vehicle }) {
+export default function VehicleCard({ vehicle, onDelete, deleting }) {
   return (
     <Card
       elevation={6}
@@ -32,6 +32,8 @@ export default function VehicleCard({ vehicle }) {
 
         <Button
           size="small"
+          onClick={() => onDelete?.(vehicle.id)}
+          disabled={deleting}
           sx={{
             backgroundColor: "#E60000",
             color: "#fff",
@@ -42,7 +44,7 @@ export default function VehicleCard({ vehicle }) {
             },
           }}
         >
-          Delete
+          {deleting ? "Deleting..." : "Delete"}
         </Button>
       </CardContent>
     </Card>
