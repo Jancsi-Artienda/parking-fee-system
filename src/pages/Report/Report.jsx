@@ -93,6 +93,8 @@ export default function Report() {
 
   const handleAddReport = async (payload) => {
     const created = await parkingReportService.addReport(payload);
+    const createdDate = dayjs(created?.transDate);
+
     setRows((prev) => [
       {
         id: Date.now(),
@@ -100,6 +102,14 @@ export default function Report() {
       },
       ...prev,
     ]);
+
+    if (
+      createdDate.isValid() &&
+      ((startDate && createdDate.isBefore(startDate, "day")) ||
+        (endDate && createdDate.isAfter(endDate, "day")))
+    ) {
+      toast.info("Report added, but it is outside the selected coverage.");
+    }
   };
   const filteredRows = rows.filter((row) => {
     const rowDate = dayjs(row.transDate);
