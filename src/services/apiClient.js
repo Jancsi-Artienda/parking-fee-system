@@ -26,7 +26,11 @@ async function request(path, options = {}) {
   }
 
   if (!response.ok) {
-    const error = new Error("API request failed");
+    const backendMessage =
+      data && typeof data === "object" && typeof data.message === "string"
+        ? data.message
+        : "API request failed";
+    const error = new Error(backendMessage);
     error.status = response.status;
     error.data = data;
     throw error;

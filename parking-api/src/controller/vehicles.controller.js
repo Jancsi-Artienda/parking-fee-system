@@ -74,8 +74,12 @@ export async function getVehicles(req, res) {
 
 export async function addVehicle(req, res) {
   const { type = "", name = "", plate = "", color = "" } = req.body || {};
+  const normalizedType = type.trim();
+  const normalizedName = name.trim().toUpperCase();
+  const normalizedPlate = plate.trim().toUpperCase();
+  const normalizedColor = color.trim().toUpperCase();
 
-  if (!type.trim() || !name.trim() || !plate.trim()) {
+  if (!normalizedType || !normalizedName || !normalizedPlate) {
     return res.status(400).json({ message: "Type, name, and plate are required." });
   }
 
@@ -102,7 +106,7 @@ export async function addVehicle(req, res) {
       `INSERT INTO rfvehicle
       (employee_id, vehicle, vehicle_model, vehicle_plate, vehicle_color, created_date)
       VALUES (?, ?, ?, ?, ?, NOW())`,
-      [context.employeeId, type.trim(), name.trim(), plate.trim(), color.trim()]
+      [context.employeeId, normalizedType, normalizedName, normalizedPlate, normalizedColor]
     );
 
     const [rows] = await pool.query(

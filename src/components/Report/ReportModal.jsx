@@ -101,7 +101,7 @@ export default function AddReportModal({
         confirmButtonText: "OK",
       });
     } catch (err) {
-      const message = err?.message || "Failed to add report.";
+      const message = err?.data?.message || err?.message || "Failed to add report.";
       setLocalError(message);
       await Swal.fire({
         title: "Add Report Failed",

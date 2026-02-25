@@ -17,6 +17,7 @@ import { useRef, useState } from "react";
 import { useVehicles } from "../../context/vehicleContext/useVehicles";
 
 const VEHICLE_TYPE_OPTIONS = ["Car", "Motorcycle"];
+const UPPERCASE_FIELDS = new Set(["name", "plate", "color"]);
 
 export default function AddVehicleModal({ open, setOpen }) {
   const { addVehicle } = useVehicles();
@@ -32,12 +33,15 @@ export default function AddVehicleModal({ open, setOpen }) {
   const submitLockRef = useRef(false);
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+    const normalizedValue = UPPERCASE_FIELDS.has(name) ? value.toUpperCase() : value;
+
     if (localError) {
       setLocalError("");
     }
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: normalizedValue
     });
   };
 
@@ -63,9 +67,9 @@ export default function AddVehicleModal({ open, setOpen }) {
     try {
       await addVehicle({
         type: formData.type.trim(),
-        name: formData.name.trim(),
-        plate: formData.plate.trim(),
-        color: formData.color.trim(),
+        name: formData.name.trim().toUpperCase(),
+        plate: formData.plate.trim().toUpperCase(),
+        color: formData.color.trim().toUpperCase(),
       });
       setFormData({
         type: "",
