@@ -67,12 +67,6 @@ export default function AddVehicleModal({ open, setOpen }) {
         plate: formData.plate.trim(),
         color: formData.color.trim(),
       });
-      await Swal.fire({
-        title: "Vehicle Added",
-        text: "Your vehicle was added successfully.",
-        icon: "success",
-        confirmButtonText: "OK",
-      });
       setFormData({
         type: "",
         name: "",
@@ -80,6 +74,12 @@ export default function AddVehicleModal({ open, setOpen }) {
         color: "",
       });
       setOpen(false);
+      void Swal.fire({
+        title: "Vehicle Added",
+        text: "Your vehicle was added successfully.",
+        icon: "success",
+        confirmButtonText: "OK",
+      });
     } catch (err) {
       const message = err?.message || "Failed to add vehicle.";
       setLocalError(message);
