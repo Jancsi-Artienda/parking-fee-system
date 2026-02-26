@@ -25,6 +25,8 @@ export default function AddReportModal({
   vehicles,
   onAddReport,
   existingReports = [],
+  coverageFrom = null,
+  coverageTo = null,
 }) {
   const [formData, setFormData] = useState({
     transDate: "",
@@ -47,10 +49,20 @@ export default function AddReportModal({
   );
 
   const selectedDate = formData.transDate ? dayjs(formData.transDate) : null;
+  const coverageStart =
+    coverageFrom && dayjs(coverageFrom).isValid() ? dayjs(coverageFrom) : null;
+  const coverageEnd =
+    coverageTo && dayjs(coverageTo).isValid() ? dayjs(coverageTo) : null;
+  const hasValidCoverage = !!coverageStart && !!coverageEnd && !coverageStart.isAfter(coverageEnd, "day");
   const isDuplicateDate =
     !!selectedDate &&
     selectedDate.isValid() &&
     usedDateKeys.has(selectedDate.format("YYYY-MM-DD"));
+  const isOutsideCoverage =
+    !!selectedDate &&
+    selectedDate.isValid() &&
+    hasValidCoverage &&
+    (selectedDate.isBefore(coverageStart, "day") || selectedDate.isAfter(coverageEnd, "day"));
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -70,6 +82,14 @@ export default function AddReportModal({
 
     if (!formData.transDate || !formData.vehicleId || !formData.amount) {
       setLocalError("Date, vehicle, and amount are required.");
+      return;
+    }
+    if (!hasValidCoverage) {
+      setLocalError("Set a valid coverage range first.");
+      return;
+    }
+    if (isOutsideCoverage) {
+      setLocalError("Transaction date must be within the selected coverage range.");
       return;
     }
     if (isDuplicateDate) {
@@ -132,13 +152,19 @@ export default function AddReportModal({
                 }));
               }}
               shouldDisableDate={(dateValue) =>
-                usedDateKeys.has(dateValue.format("YYYY-MM-DD"))
+                usedDateKeys.has(dateValue.format("YYYY-MM-DD")) ||
+                (hasValidCoverage &&
+                  (dateValue.isBefore(coverageStart, "day") || dateValue.isAfter(coverageEnd, "day")))
               }
               slotProps={{
                 textField: {
                   fullWidth: true,
-                  error: isDuplicateDate,
-                  helperText: isDuplicateDate ? "This date already has a report." : "",
+                  error: isDuplicateDate || isOutsideCoverage,
+                  helperText: isDuplicateDate
+                    ? "This date already has a report."
+                    : isOutsideCoverage
+                      ? "Date is outside the selected coverage."
+                      : "",
                 },
               }}
             />
@@ -181,7 +207,7 @@ export default function AddReportModal({
           <Button
             variant="contained"
             onClick={handleAddReport}
-            disabled={submitting || isDuplicateDate}
+            disabled={submitting || isDuplicateDate || isOutsideCoverage}
             sx={{ textTransform: "none", borderRadius: "8px" }}
           >
             {submitting ? "Adding..." : "Add Record"}

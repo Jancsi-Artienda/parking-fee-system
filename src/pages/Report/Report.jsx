@@ -92,7 +92,31 @@ export default function Report() {
   }, []);
 
   const handleAddReport = async (payload) => {
-    const created = await parkingReportService.addReport(payload);
+    const coverageStart = startDate && dayjs(startDate).isValid() ? dayjs(startDate) : null;
+    const coverageEnd = endDate && dayjs(endDate).isValid() ? dayjs(endDate) : null;
+    const reportDate = dayjs(payload?.transDate);
+
+    if (!coverageStart || !coverageEnd) {
+      throw new Error("Select a valid coverage range before adding a report.");
+    }
+
+    if (coverageStart.isAfter(coverageEnd, "day")) {
+      throw new Error("Coverage start date cannot be after coverage end date.");
+    }
+
+    if (!reportDate.isValid()) {
+      throw new Error("Transaction date is required.");
+    }
+
+    if (reportDate.isBefore(coverageStart, "day") || reportDate.isAfter(coverageEnd, "day")) {
+      throw new Error("Transaction date must be within the selected coverage range.");
+    }
+
+    const created = await parkingReportService.addReport({
+      ...payload,
+      coverageFrom: coverageStart.format("YYYY-MM-DD"),
+      coverageTo: coverageEnd.format("YYYY-MM-DD"),
+    });
     const createdDate = dayjs(created?.transDate);
 
     setRows((prev) => [
@@ -192,6 +216,8 @@ export default function Report() {
           vehicles={vehicles}
           onAddReport={handleAddReport}
           existingReports={rows}
+          coverageFrom={startDate}
+          coverageTo={endDate}
         />
       </Paper>
     </LocalizationProvider>
