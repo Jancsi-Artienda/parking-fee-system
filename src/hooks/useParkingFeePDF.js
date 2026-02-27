@@ -56,8 +56,8 @@ export const useParkingFeePDF = () => {
 
     const tableX = leftMargin;
     const tableWidth = pageWidth - tableX * 2;
-    const colWidths = [40, 100, 40];
-    const rowHeight = 10;
+    const colWidths = [40, 90, 40];
+    const rowHeight = 5;
     const tableStartY = y;
 
     doc.setLineWidth(0.5);
@@ -89,9 +89,11 @@ export const useParkingFeePDF = () => {
     doc.setFontSize(11);
 
     const headers = ["Date", "Car Model", "Amount"];
+    const headerY = tableStartY + rowHeight / 2 +1;
+    
     currentX = tableX;
     headers.forEach((header, index) => {
-      doc.text(header, currentX + colWidths[index] / 2, tableStartY + 7, {
+      doc.text(header, currentX + colWidths[index] / 2, headerY, {
         align: "center",
       });
       currentX += colWidths[index];
@@ -104,21 +106,27 @@ export const useParkingFeePDF = () => {
       doc.setFontSize(10);
 
       printableRows.forEach((entry, index) => {
-        const rowY = tableStartY + rowHeight * (index + 1) + 7;
+        const rowY = tableStartY + rowHeight * (index + 1) + 4;
 
         currentX = tableX;
         if (entry.date) {
-          doc.text(truncateText(entry.date, 14), currentX + 3, rowY);
+          doc.text(truncateText(entry.date, 14), currentX + colWidths[0]/2, rowY,{
+            align: "center"
+          });
         }
 
         currentX += colWidths[0];
         if (entry.carModel) {
-          doc.text(truncateText(entry.carModel, 30), currentX + 3, rowY);
+          doc.text(truncateText(entry.carModel, 30), currentX + colWidths[1]/2, rowY,{
+            align: "center"
+          });
         }
 
         currentX += colWidths[1];
         if (entry.amount) {
-          doc.text(truncateText(entry.amount, 12), currentX + 3, rowY);
+          doc.text(truncateText(entry.amount, 12), currentX + colWidths[2]/2 - 0.5, rowY,{
+            align: "center"
+          });
         }
       });
     }

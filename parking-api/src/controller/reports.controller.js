@@ -44,6 +44,95 @@ async function getEmployeeIdByUserId(userId) {
   return Number.isInteger(employeeId) && employeeId > 0 ? employeeId : null;
 }
 
+function isValidDateInput(value) {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+export async function getReportCoverage(req, res) {
+  const employeeId = Number(req.user?.employeeId);
+  if (!Number.isInteger(employeeId) || employeeId <= 0) {
+    return res.status(401).json({ message: "Unauthorized." });
+  }
+
+  try {
+    const [rows] = await pool.query(
+      `SELECT
+        DATE_FORMAT(report_coverage_from, '%Y-%m-%d') AS report_coverage_from,
+        DATE_FORMAT(report_coverage_to, '%Y-%m-%d') AS report_coverage_to
+      FROM user_preferences
+      WHERE employee_id = ?
+      LIMIT 1`,
+      [employeeId]
+    );
+
+    if (rows.length === 0) {
+      return res.json({ coverageFrom: "", coverageTo: "" });
+    }
+
+    return res.json({
+      coverageFrom: rows[0].report_coverage_from || "",
+      coverageTo: rows[0].report_coverage_to || "",
+    });
+  } catch (error) {
+    if (error?.code === "ER_NO_SUCH_TABLE") {
+      return res.status(500).json({
+        message: "User preferences table is missing. Please run the latest migration.",
+        detail: error.message,
+      });
+    }
+    return res.status(500).json({ message: "Failed to fetch report coverage.", detail: error.message });
+  }
+}
+
+export async function updateReportCoverage(req, res) {
+  const employeeId = Number(req.user?.employeeId);
+  if (!Number.isInteger(employeeId) || employeeId <= 0) {
+    return res.status(401).json({ message: "Unauthorized." });
+  }
+
+  const { coverageFrom = "", coverageTo = "" } = req.body || {};
+  const normalizedCoverageFrom = String(coverageFrom).trim();
+  const normalizedCoverageTo = String(coverageTo).trim();
+
+  if (!isValidDateInput(normalizedCoverageFrom) || !isValidDateInput(normalizedCoverageTo)) {
+    return res.status(400).json({ message: "Coverage dates must use YYYY-MM-DD format." });
+  }
+
+  if (normalizedCoverageFrom > normalizedCoverageTo) {
+    return res.status(400).json({ message: "Coverage start date cannot be after coverage end date." });
+  }
+
+  try {
+    await pool.query(
+      `INSERT INTO user_preferences (employee_id, report_coverage_from, report_coverage_to)
+       VALUES (?, ?, ?) AS incoming
+       ON DUPLICATE KEY UPDATE
+         report_coverage_from = incoming.report_coverage_from,
+         report_coverage_to = incoming.report_coverage_to`,
+      [employeeId, normalizedCoverageFrom, normalizedCoverageTo]
+    );
+
+    return res.json({
+      coverageFrom: normalizedCoverageFrom,
+      coverageTo: normalizedCoverageTo,
+    });
+  } catch (error) {
+    if (error?.code === "ER_NO_SUCH_TABLE") {
+      return res.status(500).json({
+        message: "User preferences table is missing. Please run the latest migration.",
+        detail: error.message,
+      });
+    }
+    if (error?.code === "ER_NO_REFERENCED_ROW_2") {
+      return res.status(400).json({
+        message: "Unable to save coverage preferences for this user.",
+        detail: error.message,
+      });
+    }
+    return res.status(500).json({ message: "Failed to save report coverage.", detail: error.message });
+  }
+}
+
 export async function getReports(req, res) {
   try {
     const employeeId = await getEmployeeIdByUserId(req.user.id);

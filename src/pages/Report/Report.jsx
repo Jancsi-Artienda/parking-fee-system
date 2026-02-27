@@ -21,6 +21,70 @@ export default function Report() {
   const [openModal, setOpenModal] = useState(false);
   const [startDate, setStartDate] = useState(dayjs().startOf('month'));
   const [endDate, setEndDate] = useState(dayjs());
+  const [coverageLoaded, setCoverageLoaded] = useState(false);
+  const [coverageTouched, setCoverageTouched] = useState(false);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadCoveragePreference = async () => {
+      setCoverageLoaded(false);
+      try {
+        const data = await parkingReportService.getCoverage();
+        if (!isActive) {
+          return;
+        }
+        const savedStart = dayjs(data?.coverageFrom);
+        const savedEnd = dayjs(data?.coverageTo);
+        if (savedStart.isValid() && savedEnd.isValid() && !savedStart.isAfter(savedEnd, "day")) {
+          setStartDate(savedStart);
+          setEndDate(savedEnd);
+        }
+      } catch {
+        // Keep default coverage when preference load fails.
+      } finally {
+        if (isActive) {
+          setCoverageLoaded(true);
+        }
+      }
+    };
+
+    loadCoveragePreference();
+
+    return () => {
+      isActive = false;
+    };
+  }, [user?.id, user?.employeeId, user?.email]);
+
+  useEffect(() => {
+    if (!coverageLoaded || !coverageTouched) {
+      return;
+    }
+
+    const normalizedStart = dayjs(startDate);
+    const normalizedEnd = dayjs(endDate);
+
+    if (
+      !normalizedStart.isValid() ||
+      !normalizedEnd.isValid() ||
+      normalizedStart.isAfter(normalizedEnd, "day")
+    ) {
+      return;
+    }
+
+    const saveCoveragePreference = async () => {
+      try {
+        await parkingReportService.saveCoverage({
+          coverageFrom: normalizedStart.format("YYYY-MM-DD"),
+          coverageTo: normalizedEnd.format("YYYY-MM-DD"),
+        });
+      } catch {
+        // Keep report flow usable even when preference save fails.
+      }
+    };
+
+    saveCoveragePreference();
+  }, [coverageLoaded, coverageTouched, startDate, endDate]);
 
   const handleExportPDF = () => {
     if (loading) {
@@ -44,18 +108,13 @@ export default function Report() {
       };
     });
 
-    const validDates = filteredRows
-      .map((row) => dayjs(row.transDate))
-      .filter((dateValue) => dateValue.isValid())
-      .sort((a, b) => a.valueOf() - b.valueOf());
-
+    const coverageStart = dayjs(startDate);
+    const coverageEnd = dayjs(endDate);
     let coverage = "N/A";
-    if (validDates.length === 1) {
-      coverage = validDates[0].format("MMMM D, YYYY");
-    } else if (validDates.length > 1) {
-      coverage = `${validDates[0].format("MMMM D, YYYY")} - ${validDates[
-        validDates.length - 1
-      ].format("MMMM D, YYYY")}`;
+    if (coverageStart.isValid() && coverageEnd.isValid()) {
+      coverage = coverageStart.isSame(coverageEnd, "day")
+        ? coverageStart.format("MMMM D, YYYY")
+        : `${coverageStart.format("MMMM D, YYYY")} - ${coverageEnd.format("MMMM D, YYYY")}`;
     }
 
     const preparedBy = user?.name || user?.username || user?.email || "N/A";
@@ -167,13 +226,19 @@ export default function Report() {
               <DatePicker
                 label="From"
                 value={startDate}
-                onChange={(newValue) => setStartDate(newValue)}
+                onChange={(newValue) => {
+                  setCoverageTouched(true);
+                  setStartDate(newValue);
+                }}
                 slotProps={{ textField: { size: 'small' } }}
               />
               <DatePicker
                 label="To"
                 value={endDate}
-                onChange={(newValue) => setEndDate(newValue)}
+                onChange={(newValue) => {
+                  setCoverageTouched(true);
+                  setEndDate(newValue);
+                }}
                 slotProps={{ textField: { size: 'small' } }}
               />
             </Box>

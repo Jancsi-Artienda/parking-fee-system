@@ -21,6 +21,32 @@ const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 let reports = [];
 
 const parkingReportService = {
+  async getCoverage() {
+    if (!import.meta.env.VITE_API_URL) {
+      await delay(100);
+      return { coverageFrom: "", coverageTo: "" };
+    }
+
+    const response = await apiClient.get("/reports/coverage", {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  },
+
+  async saveCoverage({ coverageFrom, coverageTo }) {
+    if (!import.meta.env.VITE_API_URL) {
+      await delay(100);
+      return { coverageFrom, coverageTo };
+    }
+
+    const response = await apiClient.put(
+      "/reports/coverage",
+      { coverageFrom, coverageTo },
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  },
+
   async getReports() {
     if (!import.meta.env.VITE_API_URL) {
       await delay(200);

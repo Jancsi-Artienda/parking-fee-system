@@ -1,7 +1,12 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../jwt.js";
-import { addReport, getReports } from "../controller/reports.controller.js";
+import {
+  addReport,
+  getReportCoverage,
+  getReports,
+  updateReportCoverage,
+} from "../controller/reports.controller.js";
 
 const router = express.Router();
 
@@ -36,5 +41,7 @@ function requireAuth(req, res, next) {
 
 router.get("/", requireAuth, getReports);
 router.post("/", requireAuth, addReport);
+router.get("/coverage", requireAuth, getReportCoverage);
+router.put("/coverage", requireAuth, updateReportCoverage);
 
 export default router;

@@ -1,10 +1,37 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
+function readStoredToken() {
+  try {
+    const localUser = localStorage.getItem("user");
+    if (localUser) {
+      const parsedLocalUser = JSON.parse(localUser);
+      if (parsedLocalUser?.token) {
+        return parsedLocalUser.token;
+      }
+    }
+
+    const sessionUser = sessionStorage.getItem("user");
+    if (sessionUser) {
+      const parsedSessionUser = JSON.parse(sessionUser);
+      if (parsedSessionUser?.token) {
+        return parsedSessionUser.token;
+      }
+    }
+  } catch {
+    localStorage.removeItem("user");
+    sessionStorage.removeItem("user");
+  }
+
+  return "";
+}
+
 async function request(path, options = {}) {
   const url = `${API_BASE_URL}${path}`;
+  const token = readStoredToken();
 
   const defaultHeaders = {
     "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
   const config = {
