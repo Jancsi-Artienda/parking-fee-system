@@ -36,7 +36,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await login(email, password);
+      await login(email, password, { rememberMe });
       toast.success("Logged in successfully");
       navigate("/dashboard");
     } catch (err) {

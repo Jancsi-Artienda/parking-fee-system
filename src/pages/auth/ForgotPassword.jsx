@@ -7,7 +7,7 @@ import {
   TextField,
   Button,
 } from "@mui/material";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import AuthService from "../../services/AuthService";
 import logo from "../../assets/logo.png";
@@ -19,7 +19,7 @@ function ForgotPassword() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const [step, setStep] = useState("reset"); // "email" | "otp" | "reset" 
+  const [step, setStep] = useState("email"); // "email" | "otp" | "reset"
   const [otp, setOtp] = useState("");
   const [otpError, setOtpError] = useState("");
   const [submittingOtp, setSubmittingOtp] = useState(false);
@@ -74,7 +74,7 @@ function ForgotPassword() {
       });
       setStep("reset");  // Adjust route as needed
     } catch (err) {
-
+      setOtpError(err?.data?.message || "Invalid OTP. Please try again.");
     } finally {
       setSubmittingOtp(false);
     }
