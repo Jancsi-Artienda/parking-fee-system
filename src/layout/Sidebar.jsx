@@ -13,6 +13,7 @@ import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import SummarizeIcon from '@mui/icons-material/Summarize';
 import logo from "../assets/logo.png";
 import useAuth from "../context/auth/useAuth";
+import Swal from "sweetalert2";
 
 export default function Sidebar() {
   const location = useLocation();
@@ -27,7 +28,21 @@ export default function Sidebar() {
 
   const isAccountActive = location.pathname === "/account";
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    const result = await Swal.fire({
+      title: "Sign out",
+      text: "Are you sure?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#E60000",
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
     logout();
     navigate("/");
   };

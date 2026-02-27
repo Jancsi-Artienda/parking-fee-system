@@ -12,7 +12,7 @@ import {
   MenuItem,
   Typography,
 } from "@mui/material";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -36,6 +36,18 @@ export default function AddReportModal({
   const [submitting, setSubmitting] = useState(false);
   const [localError, setLocalError] = useState("");
   const submitLockRef = useRef(false);
+  const hasSingleVehicle = vehicles.length === 1;
+  const singleVehicle = hasSingleVehicle ? vehicles[0] : null;
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    if (hasSingleVehicle && singleVehicle?.id != null) {
+      setFormData((prev) => ({ ...prev, vehicleId: String(singleVehicle.id) }));
+    }
+  }, [open, hasSingleVehicle, singleVehicle]);
 
   const usedDateKeys = useMemo(
     () =>
@@ -169,22 +181,31 @@ export default function AddReportModal({
               }}
             />
 
-            <FormControl fullWidth>
-              <InputLabel id="vehicle-select-label">Vehicle</InputLabel>
-              <Select
-                labelId="vehicle-select-label"
+            {hasSingleVehicle ? (
+              <TextField
                 label="Vehicle"
-                name="vehicleId"
-                value={formData.vehicleId}
-                onChange={handleChange}
-              >
-                {vehicles.map((vehicle) => (
-                  <MenuItem key={vehicle.id} value={vehicle.id}>
-                    {vehicle.type} - {vehicle.name} ({vehicle.plate})
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+                value={`${singleVehicle?.type || ""} - ${singleVehicle?.name || ""} (${singleVehicle?.plate || ""})`}
+                fullWidth
+                InputProps={{ readOnly: true }}
+              />
+            ) : (
+              <FormControl fullWidth>
+                <InputLabel id="vehicle-select-label">Vehicle</InputLabel>
+                <Select
+                  labelId="vehicle-select-label"
+                  label="Vehicle"
+                  name="vehicleId"
+                  value={formData.vehicleId}
+                  onChange={handleChange}
+                >
+                  {vehicles.map((vehicle) => (
+                    <MenuItem key={vehicle.id} value={vehicle.id}>
+                      {vehicle.type} - {vehicle.name} ({vehicle.plate})
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
 
             <TextField
               label="Amount"
