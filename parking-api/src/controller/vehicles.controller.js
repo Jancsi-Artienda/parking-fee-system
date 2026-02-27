@@ -1,5 +1,7 @@
 import pool from "../db.js";
 
+const PLATE_REGEX = /^[A-Z0-9]{8}$/;
+
 async function getEmployeeContext(userId) {
   let rows;
   try {
@@ -81,6 +83,12 @@ export async function addVehicle(req, res) {
 
   if (!normalizedType || !normalizedName || !normalizedPlate) {
     return res.status(400).json({ message: "Type, name, and plate are required." });
+  }
+
+  if (!PLATE_REGEX.test(normalizedPlate)) {
+    return res.status(400).json({
+      message: "Plate number must be exactly 8 alphanumeric characters.",
+    });
   }
 
   try {

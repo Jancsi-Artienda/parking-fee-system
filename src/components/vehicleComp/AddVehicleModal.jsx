@@ -18,6 +18,7 @@ import { useVehicles } from "../../context/vehicleContext/useVehicles";
 
 const VEHICLE_TYPE_OPTIONS = ["Car", "Motorcycle"];
 const UPPERCASE_FIELDS = new Set(["name", "plate", "color"]);
+const PLATE_REGEX = /^[A-Z0-9]{8}$/;
 
 export default function AddVehicleModal({ open, setOpen }) {
   const { addVehicle } = useVehicles();
@@ -61,6 +62,12 @@ export default function AddVehicleModal({ open, setOpen }) {
       return;
     }
 
+    const normalizedPlate = formData.plate.trim().toUpperCase();
+    if (!PLATE_REGEX.test(normalizedPlate)) {
+      setLocalError("Plate number must be exactly 8 characters.");
+      return;
+    }
+
     submitLockRef.current = true;
     setSubmitting(true);
     setLocalError("");
@@ -68,7 +75,7 @@ export default function AddVehicleModal({ open, setOpen }) {
       await addVehicle({
         type: formData.type.trim(),
         name: formData.name.trim().toUpperCase(),
-        plate: formData.plate.trim().toUpperCase(),
+        plate: normalizedPlate,
         color: formData.color.trim().toUpperCase(),
       });
       setFormData({
@@ -122,7 +129,14 @@ export default function AddVehicleModal({ open, setOpen }) {
             </Select>
           </FormControl>
           <TextField label="Vehicle Model" name="name" value={formData.name} onChange={handleChange} fullWidth />
-          <TextField label="Vehicle Plate No." name="plate" value={formData.plate} onChange={handleChange} fullWidth />
+          <TextField
+            label="Vehicle Plate No."
+            name="plate"
+            value={formData.plate}
+            onChange={handleChange}
+            fullWidth
+            inputProps={{ maxLength: 8 }}
+          />
           <TextField label="Vehicle Color" name="color" value={formData.color} onChange={handleChange} fullWidth />
           {localError ? <Typography color="error">{localError}</Typography> : null}
         </Box>
