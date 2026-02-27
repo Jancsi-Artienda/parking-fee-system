@@ -7,31 +7,32 @@ function readStoredUser() {
   try {
     const localUser = localStorage.getItem("user");
     if (localUser) {
-      return { user: JSON.parse(localUser), storage: "local" };
+      return JSON.parse(localUser);
     }
 
     const sessionUser = sessionStorage.getItem("user");
     if (sessionUser) {
-      return { user: JSON.parse(sessionUser), storage: "session" };
+      // Backward compatibility for older temporary sessions.
+      const parsedSessionUser = JSON.parse(sessionUser);
+      localStorage.setItem("user", JSON.stringify(parsedSessionUser));
+      sessionStorage.removeItem("user");
+      return parsedSessionUser;
     }
   } catch {
     localStorage.removeItem("user");
     sessionStorage.removeItem("user");
   }
 
-  return { user: null, storage: "local" };
+  return null;
 }
 
 export const AuthProvider = ({ children }) => {
-  const [{ user: initialUser, storage: initialStorage }] = useState(() => [readStoredUser()]);
-  const [user, setUser] = useState(initialUser);
-  const [storageType, setStorageType] = useState(initialStorage);
+  const [user, setUser] = useState(() => readStoredUser());
   const [authError, setAuthError] = useState("");
 
   //const [loading, setLoading] = useState(false)
   // LOGIN
-  const login = async (email, password, options = {}) => {
-    const rememberMe = options.rememberMe !== false;
+  const login = async (email, password) => {
     setAuthError("");
     const response = await AuthService.login(email, password);
 
@@ -39,16 +40,8 @@ export const AuthProvider = ({ children }) => {
     const userData = response.data;
 
     setUser(userData);
-    const nextStorage = rememberMe ? "local" : "session";
-    setStorageType(nextStorage);
-
-    if (rememberMe) {
-      localStorage.setItem("user", JSON.stringify(userData));
-      sessionStorage.removeItem("user");
-    } else {
-      sessionStorage.setItem("user", JSON.stringify(userData));
-      localStorage.removeItem("user");
-    }
+    localStorage.setItem("user", JSON.stringify(userData));
+    sessionStorage.removeItem("user");
   };
 
   // REGISTER
@@ -64,11 +57,8 @@ export const AuthProvider = ({ children }) => {
     const response = await AuthService.updateProfile(profileData);
     const updatedUser = { ...(user || {}), ...response.data };
     setUser(updatedUser);
-    if (storageType === "session") {
-      sessionStorage.setItem("user", JSON.stringify(updatedUser));
-    } else {
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-    }
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    sessionStorage.removeItem("user");
     return updatedUser;
   };
 
@@ -76,7 +66,6 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     setAuthError("");
-    setStorageType("local");
     localStorage.removeItem("user");
     sessionStorage.removeItem("user");
   };

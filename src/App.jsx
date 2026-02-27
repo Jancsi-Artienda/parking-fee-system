@@ -5,6 +5,7 @@ import Dashboard from "./pages/dashboard/Dashboard"
 import Vehicle from "./pages/vehiclePG/Vehicle"
 import DashboardLayout from "./layout/DashboardLayout"
 import ProtectedRoute from "./routes/ProtectedRoute"
+import PublicRoute from "./routes/PublicRoute"
 import Account from "./pages/account/Account"
 import Report from "./pages/Report/Report"
 import ForgotPassword from "./pages/auth/ForgotPassword"
@@ -13,9 +14,9 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgotpassword" element={<ForgotPassword />} />
+        <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+        <Route path="/forgotpassword" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
 
         <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
           <Route path="/dashboard" element={<Dashboard />} />

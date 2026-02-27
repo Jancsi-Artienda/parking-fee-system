@@ -7,8 +7,6 @@ import {
   Button,
   Typography,
   Paper,
-  Checkbox,
-  FormControlLabel,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.png";
@@ -17,7 +15,6 @@ import { toast } from "sonner";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -36,7 +33,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await login(email, password, { rememberMe });
+      await login(email, password);
       toast.success("Logged in successfully");
       navigate("/dashboard");
     } catch (err) {
@@ -104,24 +101,7 @@ const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
               />
 
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  mt: 1,
-                }}
-              >
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                    />
-                  }
-                  label="Remember me"
-                />
-
+              <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
                 <Link to="/forgotpassword" style={{ fontSize: 14 }}>
                   Forgot Password
                 </Link>
