@@ -7,17 +7,20 @@ import {
   Button,
   Typography,
   Paper,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.png";
 import { toast } from "sonner";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -95,10 +98,19 @@ const Login = () => {
               <TextField
                 fullWidth
                 label="Password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 margin="normal"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
 
               <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
