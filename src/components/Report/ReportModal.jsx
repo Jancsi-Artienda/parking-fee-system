@@ -11,11 +11,14 @@ import {
   Select,
   MenuItem,
   Typography,
+  Chip,
+  Stack,
 } from "@mui/material";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
+import { PickersDay } from "@mui/x-date-pickers/PickersDay";
 import dayjs from "dayjs";
 import Swal from "sweetalert2";
 
@@ -29,10 +32,10 @@ export default function AddReportModal({
   coverageTo = null,
 }) {
   const [formData, setFormData] = useState({
-    transDate: "",
     vehicleId: "",
     amount: "50",
   });
+  const [selectedDates, setSelectedDates] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [localError, setLocalError] = useState("");
   const submitLockRef = useRef(false);
@@ -61,25 +64,57 @@ export default function AddReportModal({
     [existingReports]
   );
 
-  const selectedDate = formData.transDate ? dayjs(formData.transDate) : null;
   const coverageStart =
     coverageFrom && dayjs(coverageFrom).isValid() ? dayjs(coverageFrom) : null;
   const coverageEnd =
     coverageTo && dayjs(coverageTo).isValid() ? dayjs(coverageTo) : null;
   const hasValidCoverage = !!coverageStart && !!coverageEnd && !coverageStart.isAfter(coverageEnd, "day");
-  const isDuplicateDate =
-    !!selectedDate &&
-    selectedDate.isValid() &&
-    usedDateKeys.has(selectedDate.format("YYYY-MM-DD"));
-  const isOutsideCoverage =
-    !!selectedDate &&
-    selectedDate.isValid() &&
-    hasValidCoverage &&
-    (selectedDate.isBefore(coverageStart, "day") || selectedDate.isAfter(coverageEnd, "day"));
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const isDateDisabled = (dateValue) =>
+    usedDateKeys.has(dateValue.format("YYYY-MM-DD")) ||
+    (hasValidCoverage &&
+      (dateValue.isBefore(coverageStart, "day") || dateValue.isAfter(coverageEnd, "day")));
+
+  const handleDateAdd = (newValue) => {
+    if (!newValue || !newValue.isValid()) return;
+    const dateStr = newValue.format("YYYY-MM-DD");
+    if (selectedDates.includes(dateStr)) {
+      handleDateRemove(dateStr);
+      return;
+    }
+    if (isDateDisabled(newValue)) return;
+    setLocalError("");
+    setSelectedDates((prev) => [...prev, dateStr].sort());
+  };
+
+  const handleDateRemove = (dateStr) => {
+    setSelectedDates((prev) => prev.filter((d) => d !== dateStr));
+  };
+
+  const HighlightedDay = (props) => {
+    const { day, ...other } = props;
+    const isSelected = selectedDates.includes(day.format("YYYY-MM-DD"));
+
+    return (
+      <PickersDay
+        {...other}
+        day={day}
+        sx={{
+          ...(isSelected && {
+            backgroundColor: (theme) => theme.palette.primary.main,
+            color: (theme) => theme.palette.primary.contrastText,
+            "&:hover": {
+              backgroundColor: (theme) => theme.palette.primary.dark,
+            },
+          }),
+        }}
+      />
+    );
   };
 
   const handleClose = () => {
@@ -93,20 +128,12 @@ export default function AddReportModal({
       return;
     }
 
-    if (!formData.transDate || !formData.vehicleId || !formData.amount) {
-      setLocalError("Date, vehicle, and amount are required.");
+    if (selectedDates.length === 0 || !formData.vehicleId || !formData.amount) {
+      setLocalError("At least one date, vehicle, and amount are required.");
       return;
     }
     if (!hasValidCoverage) {
       setLocalError("Set a valid coverage range first.");
-      return;
-    }
-    if (isOutsideCoverage) {
-      setLocalError("Transaction date must be within the selected coverage range.");
-      return;
-    }
-    if (isDuplicateDate) {
-      setLocalError("A report with this date already exists.");
       return;
     }
 
@@ -116,28 +143,28 @@ export default function AddReportModal({
 
     try {
       await onAddReport({
-        transDate: formData.transDate,
+        transDates: selectedDates,
         vehicleId: Number(formData.vehicleId),
         amount: Number(formData.amount)
       });
       setFormData({
-        transDate: "",
         vehicleId: "",
         amount: "50",
       });
+      setSelectedDates([]);
       setOpen(false);
 
       await Swal.fire({
-        title: "Report Added",
-        text: "Your report record was saved successfully.",
+        title: "Reports Added",
+        text: `${selectedDates.length} report records were saved successfully.`,
         icon: "success",
         confirmButtonText: "OK",
       });
     } catch (err) {
-      const message = err?.data?.message || err?.message || "Failed to add report.";
+      const message = err?.data?.message || err?.message || "Failed to add reports.";
       setLocalError(message);
       await Swal.fire({
-        title: "Add Report Failed",
+        title: "Add Reports Failed",
         text: message,
         icon: "error",
         confirmButtonText: "OK",
@@ -155,32 +182,27 @@ export default function AddReportModal({
 
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
-            <DatePicker
-              label="Transaction Date"
-              value={selectedDate}
-              onChange={(newValue) => {
-                setFormData((prev) => ({
-                  ...prev,
-                  transDate: newValue && newValue.isValid() ? newValue.format("YYYY-MM-DD") : "",
-                }));
-              }}
-              shouldDisableDate={(dateValue) =>
-                usedDateKeys.has(dateValue.format("YYYY-MM-DD")) ||
-                (hasValidCoverage &&
-                  (dateValue.isBefore(coverageStart, "day") || dateValue.isAfter(coverageEnd, "day")))
-              }
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                  error: isDuplicateDate || isOutsideCoverage,
-                  helperText: isDuplicateDate
-                    ? "This date already has a report."
-                    : isOutsideCoverage
-                      ? "Date is outside the selected coverage."
-                      : "",
-                },
-              }}
+            <DateCalendar
+              onChange={handleDateAdd}
+              shouldDisableDate={isDateDisabled}
+              slots={{ day: HighlightedDay }}
             />
+            <Typography variant="body2" color="text.secondary">
+              Click a date to select or unselect it.
+            </Typography>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+              {selectedDates.map((dateStr) => {
+                return (
+                  <Chip
+                    key={dateStr}
+                    label={dayjs(dateStr).format("MMM D, YYYY")}
+                    onDelete={() => handleDateRemove(dateStr)}
+                    color="primary"
+                    variant="outlined"
+                  />
+                );
+              })}
+            </Box>
 
             {hasSingleVehicle ? (
               <TextField
@@ -229,7 +251,7 @@ export default function AddReportModal({
           <Button
             variant="contained"
             onClick={handleAddReport}
-            disabled={submitting || isDuplicateDate || isOutsideCoverage}
+            disabled={submitting}
             sx={{ textTransform: "none", borderRadius: "8px" }}
           >
             {submitting ? "Adding..." : "Add Record"}

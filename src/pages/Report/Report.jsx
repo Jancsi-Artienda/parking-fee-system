@@ -159,9 +159,9 @@ export default function Report() {
   }, []);
 
   const handleAddReport = async (payload) => {
+    const { transDates, vehicleId, amount } = payload;
     const coverageStart = startDate && dayjs(startDate).isValid() ? dayjs(startDate) : null;
     const coverageEnd = endDate && dayjs(endDate).isValid() ? dayjs(endDate) : null;
-    const reportDate = dayjs(payload?.transDate);
 
     if (!coverageStart || !coverageEnd) {
       throw new Error("Select a valid coverage range before adding a report.");
@@ -171,36 +171,33 @@ export default function Report() {
       throw new Error("Coverage start date cannot be after coverage end date.");
     }
 
-    if (!reportDate.isValid()) {
-      throw new Error("Transaction date is required.");
+    if (!Array.isArray(transDates) || transDates.length === 0) {
+      throw new Error("At least one transaction date is required.");
     }
 
-    if (reportDate.isBefore(coverageStart, "day") || reportDate.isAfter(coverageEnd, "day")) {
-      throw new Error("Transaction date must be within the selected coverage range.");
-    }
+    const createdReports = [];
+    for (const dateStr of transDates) {
+      const reportDate = dayjs(dateStr);
+      if (!reportDate.isValid()) continue;
 
-    const created = await parkingReportService.addReport({
-      ...payload,
-      coverageFrom: coverageStart.format("YYYY-MM-DD"),
-      coverageTo: coverageEnd.format("YYYY-MM-DD"),
-    });
-    const createdDate = dayjs(created?.transDate);
+      if (reportDate.isBefore(coverageStart, "day") || reportDate.isAfter(coverageEnd, "day")) {
+        continue; // Skip dates outside coverage (already validated in modal but safe to keep)
+      }
+
+      const created = await parkingReportService.addReport({
+        transDate: dateStr,
+        vehicleId,
+        amount,
+        coverageFrom: coverageStart.format("YYYY-MM-DD"),
+        coverageTo: coverageEnd.format("YYYY-MM-DD"),
+      });
+      createdReports.push(created);
+    }
 
     setRows((prev) => [
-      {
-        id: Date.now(),
-        ...created,
-      },
+      ...createdReports.map(r => ({ id: Date.now() + Math.random(), ...r })),
       ...prev,
     ]);
-
-    if (
-      createdDate.isValid() &&
-      ((startDate && createdDate.isBefore(startDate, "day")) ||
-        (endDate && createdDate.isAfter(endDate, "day")))
-    ) {
-      toast.info("Report added, but it is outside the selected coverage.");
-    }
   };
   const filteredRows = useMemo(
     () =>
