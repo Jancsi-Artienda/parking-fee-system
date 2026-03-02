@@ -334,3 +334,33 @@ export async function addReport(req, res) {
     return res.status(500).json({ message: "Failed to create report.", detail: error.message });
   }
 }
+
+export async function deleteReport(req, res) {
+  const transDate = String(req.params.transDate || "").trim();
+  if (!isValidDateInput(transDate)) {
+    return res.status(400).json({ message: "Invalid report date. Use YYYY-MM-DD." });
+  }
+
+  try {
+    const employeeId = await getEmployeeIdByUserId(req.user.id);
+    if (!employeeId) {
+      return res.status(404).json({ message: "User record not found." });
+    }
+
+    const [result] = await pool.query(
+      `DELETE FROM temp_ticket
+       WHERE employee_id = ?
+         AND DATE(trans_date) = DATE(?)
+       LIMIT 1`,
+      [employeeId, transDate]
+    );
+
+    if (!result.affectedRows) {
+      return res.status(404).json({ message: "Report not found." });
+    }
+
+    return res.json({ message: "Report deleted successfully." });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to delete report.", detail: error.message });
+  }
+}

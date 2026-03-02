@@ -1,6 +1,6 @@
-import pool from "../db.js";
+﻿import pool from "../db.js";
 
-const PLATE_REGEX = /^[A-Z0-9]{8}$/;
+const PLATE_REGEX = /^[A-Z]{3} [0-9]{4}$/;
 
 async function getEmployeeContext(userId) {
   let rows;
@@ -87,7 +87,7 @@ export async function addVehicle(req, res) {
 
   if (!PLATE_REGEX.test(normalizedPlate)) {
     return res.status(400).json({
-      message: "Plate number must be exactly 8 alphanumeric characters.",
+      message: "Plate number must follow format ABC 1234 (3 letters, space, 4 digits).",
     });
   }
 
@@ -177,3 +177,4 @@ export async function deleteVehicle(req, res) {
     return res.status(500).json({ message: "Failed to delete vehicle.", detail: error.message });
   }
 }
+

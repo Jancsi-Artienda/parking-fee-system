@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../jwt.js";
 import {
   addReport,
+  deleteReport,
   getReportCoverage,
   getReports,
   updateReportCoverage,
@@ -41,6 +42,7 @@ function requireAuth(req, res, next) {
 
 router.get("/", requireAuth, getReports);
 router.post("/", requireAuth, addReport);
+router.delete("/:transDate", requireAuth, deleteReport);
 router.get("/coverage", requireAuth, getReportCoverage);
 router.put("/coverage", requireAuth, updateReportCoverage);
 

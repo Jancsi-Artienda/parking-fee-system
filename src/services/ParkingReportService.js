@@ -76,6 +76,23 @@ const parkingReportService = {
     });
     return response.data;
   },
+
+  async deleteReport(transDate) {
+    if (!transDate) {
+      throw new Error("Transaction date is required.");
+    }
+
+    if (!import.meta.env.VITE_API_URL) {
+      await delay(200);
+      reports = reports.filter((row) => row.transDate !== transDate);
+      return { message: "Report deleted successfully." };
+    }
+
+    const response = await apiClient.delete(`/reports/${encodeURIComponent(transDate)}`, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  },
 };
 
 export default parkingReportService;

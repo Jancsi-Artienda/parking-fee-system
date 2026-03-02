@@ -1,4 +1,4 @@
-import {
+﻿import {
   Dialog,
   DialogTitle,
   DialogContent,
@@ -18,7 +18,9 @@ import { useVehicles } from "../../context/vehicleContext/useVehicles";
 
 const VEHICLE_TYPE_OPTIONS = ["Car", "Motorcycle"];
 const UPPERCASE_FIELDS = new Set(["name", "plate", "color"]);
-const PLATE_REGEX = /^[A-Z0-9]{8}$/;
+const PLATE_REGEX = /^[A-Z]{3} [0-9]{4}$/;
+const VEHICLE_LIMIT_ERROR_REGEX =
+  /(vehicle\s*limit|limit\s*reached|max(?:imum)?\s*vehicles?|cannot\s*add\s*more\s*vehicles?|no\s*more\s*vehicles?)/i;
 
 export default function AddVehicleModal({ open, setOpen }) {
   const { addVehicle } = useVehicles();
@@ -64,7 +66,7 @@ export default function AddVehicleModal({ open, setOpen }) {
 
     const normalizedPlate = formData.plate.trim().toUpperCase();
     if (!PLATE_REGEX.test(normalizedPlate)) {
-      setLocalError("Plate number must be exactly 8 characters.");
+      setLocalError("Plate number must follow format ABC 1234 (3 letters, space, 4 digits).");
       return;
     }
 
@@ -93,13 +95,26 @@ export default function AddVehicleModal({ open, setOpen }) {
       });
     } catch (err) {
       const message = err?.message || "Failed to add vehicle.";
-      setLocalError(message);
-      await Swal.fire({
-        title: "Add Vehicle Failed",
-        text: message,
-        icon: "error",
-        confirmButtonText: "Ok"
-      });
+      const isVehicleLimitError = VEHICLE_LIMIT_ERROR_REGEX.test(message);
+
+      if (isVehicleLimitError) {
+        setLocalError("");
+        setOpen(false);
+        await Swal.fire({
+          title: "Vehicle Limit Reached",
+          text: message,
+          icon: "warning",
+          confirmButtonText: "OK",
+        });
+      } else {
+        setLocalError(message);
+        await Swal.fire({
+          title: "Add Vehicle Failed",
+          text: message,
+          icon: "error",
+          confirmButtonText: "OK",
+        });
+      }
     } finally {
       setSubmitting(false);
       submitLockRef.current = false;
@@ -158,3 +173,4 @@ export default function AddVehicleModal({ open, setOpen }) {
     </Dialog>
   );
 }
+

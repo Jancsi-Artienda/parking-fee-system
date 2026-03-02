@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Box, Paper, Typography, Button } from "@mui/material";
 import dayjs from "dayjs";
 import { toast } from "sonner";
+import Swal from "sweetalert2";
 import AddReportModal from "../../components/Report/ReportModal";
 import ParkingReportTable from "../../components/dashboard/ParkingReportTable";
 import parkingReportService from "../../services/ParkingReportService";
@@ -23,6 +24,8 @@ export default function Report() {
   const [endDate, setEndDate] = useState(dayjs());
   const [coverageLoaded, setCoverageLoaded] = useState(false);
   const [coverageTouched, setCoverageTouched] = useState(false);
+  const [selectedRowIds, setSelectedRowIds] = useState([]);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     let isActive = true;
@@ -202,6 +205,49 @@ export default function Report() {
     );
   });
 
+  useEffect(() => {
+    if (!selectedRowIds.length) {
+      return;
+    }
+
+    const visibleRowIds = new Set(filteredRows.map((row) => row.id));
+    setSelectedRowIds((prev) => prev.filter((id) => visibleRowIds.has(id)));
+  }, [filteredRows, selectedRowIds.length]);
+
+  const selectedReport = filteredRows.find((row) => row.id === selectedRowIds[0]);
+
+  const handleDeleteSelected = async () => {
+    if (!selectedReport || deleting) {
+      return;
+    }
+
+    const confirmResult = await Swal.fire({
+      title: "Delete selected report?",
+      text: "This action cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#d32f2f",
+    });
+
+    if (!confirmResult.isConfirmed) {
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      await parkingReportService.deleteReport(selectedReport.transDate);
+      setRows((prev) => prev.filter((row) => row.transDate !== selectedReport.transDate));
+      setSelectedRowIds([]);
+      toast.success("Report deleted successfully.");
+    } catch (err) {
+      toast.error(err?.data?.message || "Failed to delete report.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Paper sx={{ width: "95%", p: 3, borderRadius: "15px" }} elevation={6}>
@@ -246,6 +292,15 @@ export default function Report() {
           <Box sx={{ display: "flex", gap: 1.5 }}>
             <Button
               variant="outlined"
+              color="error"
+              onClick={handleDeleteSelected}
+              disabled={loading || deleting || !selectedReport}
+              sx={{ borderRadius: "10px", textTransform: "none" }}
+            >
+              {deleting ? "Deleting..." : "Delete Selected"}
+            </Button>
+            <Button
+              variant="outlined"
               onClick={handleExportPDF}
               disabled={loading}
               sx={{ borderRadius: "10px", textTransform: "none" }}
@@ -272,6 +327,13 @@ export default function Report() {
             emptyMessage="No reports yet."
             withPaper={false}
             maxRows={15}
+            selectedRowIds={selectedRowIds}
+            onRowSelectionChange={(newSelectionModel) => {
+              const nextSelection = Array.isArray(newSelectionModel)
+                ? newSelectionModel
+                : Array.from(newSelectionModel || []);
+              setSelectedRowIds(nextSelection.slice(0, 1));
+            }}
           />
         </Box>
 

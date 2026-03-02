@@ -22,6 +22,8 @@ export default function ParkingReportTable({
   emptyMessage = "No reports found.",
   withPaper = true,
   maxRows,
+  selectedRowIds = [],
+  onRowSelectionChange,
 }) {
   const normalizedRows = useMemo(
     () =>
@@ -84,6 +86,8 @@ export default function ParkingReportTable({
           loading={loading}
           rowHeight={70}
           getRowId={(row) => row._rowId}
+          rowSelectionModel={selectedRowIds}
+          onRowSelectionModelChange={onRowSelectionChange}
           disableColumnSorting
           disableColumnMenu
           hideFooterPagination
