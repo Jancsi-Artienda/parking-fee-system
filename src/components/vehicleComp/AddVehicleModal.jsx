@@ -1,4 +1,4 @@
-﻿import {
+import {
   Dialog,
   DialogTitle,
   DialogContent,
@@ -23,7 +23,7 @@ const VEHICLE_LIMIT_ERROR_REGEX =
   /(vehicle\s*limit|limit\s*reached|max(?:imum)?\s*vehicles?|cannot\s*add\s*more\s*vehicles?|no\s*more\s*vehicles?)/i;
 
 export default function AddVehicleModal({ open, setOpen }) {
-  const { addVehicle } = useVehicles();
+  const { addVehicle, vehicles } = useVehicles();
 
   const [formData, setFormData] = useState({
     type: "",
@@ -34,6 +34,8 @@ export default function AddVehicleModal({ open, setOpen }) {
   const [submitting, setSubmitting] = useState(false);
   const [localError, setLocalError] = useState("");
   const submitLockRef = useRef(false);
+
+  const isLimitReached = Array.isArray(vehicles) && vehicles.length >= 1;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -153,6 +155,11 @@ export default function AddVehicleModal({ open, setOpen }) {
             inputProps={{ maxLength: 8 }}
           />
           <TextField label="Vehicle Color" name="color" value={formData.color} onChange={handleChange} fullWidth />
+          {isLimitReached ? (
+            <Typography color="warning.main" variant="body2" sx={{ fontWeight: 500 }}>
+              Vehicle limit reached. You can only register 1 vehicle. Delete your existing vehicle to register a new one.
+            </Typography>
+          ) : null}
           {localError ? <Typography color="error">{localError}</Typography> : null}
         </Box>
       </DialogContent>
@@ -164,7 +171,7 @@ export default function AddVehicleModal({ open, setOpen }) {
         <Button
           variant="contained"
           onClick={handleAddVehicle}
-          disabled={submitting}
+          disabled={submitting || isLimitReached}
           sx={{ textTransform: "none", borderRadius: "8px" }}
         >
           {submitting ? "Adding..." : "Add Vehicle"}
