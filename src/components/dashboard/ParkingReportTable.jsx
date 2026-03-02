@@ -22,17 +22,20 @@ export default function ParkingReportTable({
   emptyMessage = "No reports found.",
   withPaper = true,
   maxRows,
-  selectedRowIds = [],
   onRowSelectionChange,
 }) {
+  const hasControlledSelection = typeof onRowSelectionChange === "function";
+
   const normalizedRows = useMemo(
     () =>
-      (rows || []).map((row, index) => ({
-        ...row,
-        _rowId:
-          row.id ??
-          `${index}-${row.transDate || ""}-${row.vehicleModel || ""}-${row.amount || ""}`,
-      })),
+      (rows || [])
+        .filter(Boolean)
+        .map((row, index) => ({
+          ...row,
+          _rowId:
+            row.id ??
+            `${index}-${row.transDate || ""}-${row.vehicleModel || ""}-${row.amount || ""}`,
+        })),
     [rows]
   );
   const displayRows = useMemo(() => {
@@ -65,7 +68,7 @@ export default function ParkingReportTable({
         flex: 1,
         headerAlign: "center",
         align: "center",
-        valueGetter: (value) => `₱ ${Number(value || 0).toLocaleString()}`,
+        valueGetter: (value) => `PHP ${Number(value || 0).toLocaleString()}`,
       },
     ],
     []
@@ -86,12 +89,15 @@ export default function ParkingReportTable({
           loading={loading}
           rowHeight={70}
           getRowId={(row) => row._rowId}
-          rowSelectionModel={selectedRowIds}
-          onRowSelectionModelChange={onRowSelectionChange}
           disableColumnSorting
           disableColumnMenu
           hideFooterPagination
           localeText={{ noRowsLabel: emptyMessage }}
+          {...(hasControlledSelection
+            ? {
+                onRowSelectionModelChange: onRowSelectionChange,
+              }
+            : {})}
           sx={{
             border: "none",
             "& .MuiDataGrid-columnHeaders": {
@@ -114,3 +120,4 @@ export default function ParkingReportTable({
     </Paper>
   );
 }
+

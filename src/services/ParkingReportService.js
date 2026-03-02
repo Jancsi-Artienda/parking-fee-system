@@ -56,7 +56,15 @@ const parkingReportService = {
     const response = await apiClient.get("/reports", {
       headers: getAuthHeaders(),
     });
-    return response.data;
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+
+    if (Array.isArray(response.data?.reports)) {
+      return response.data.reports;
+    }
+
+    return [];
   },
 
   async addReport(payload) {

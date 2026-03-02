@@ -24,7 +24,7 @@ export function VehicleProvider({ children }) {
 
       try {
         const data = await vehicleService.getVehicles();
-        setVehicles([...data]);
+        setVehicles(Array.isArray(data) ? [...data] : []);
       } catch (err) {
         setError(err?.data?.message || "Failed to load vehicles.");
       } finally {

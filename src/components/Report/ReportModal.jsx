@@ -36,8 +36,9 @@ export default function AddReportModal({
   const [submitting, setSubmitting] = useState(false);
   const [localError, setLocalError] = useState("");
   const submitLockRef = useRef(false);
-  const hasSingleVehicle = vehicles.length === 1;
-  const singleVehicle = hasSingleVehicle ? vehicles[0] : null;
+  const safeVehicles = Array.isArray(vehicles) ? vehicles : [];
+  const hasSingleVehicle = safeVehicles.length === 1;
+  const singleVehicle = hasSingleVehicle ? safeVehicles[0] : null;
 
   useEffect(() => {
     if (!open) {

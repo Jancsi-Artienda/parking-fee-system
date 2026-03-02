@@ -9,7 +9,8 @@ import parkingReportService from "../../services/ParkingReportService";
 import { useVehicles } from "../../context/vehicleContext/useVehicles";
 import useAuth from "../../context/auth/useAuth";
 import useParkingFeePDF from "../../hooks/useParkingFeePDF";
-import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 export default function Report() {
@@ -26,6 +27,24 @@ export default function Report() {
   const [coverageTouched, setCoverageTouched] = useState(false);
   const [selectedRowIds, setSelectedRowIds] = useState([]);
   const [deleting, setDeleting] = useState(false);
+  const buildRowSelectionKey = (row, index = 0) =>
+    row?.id ?? `${index}-${row?.transDate || ""}-${row?.vehicleModel || ""}-${row?.amount || ""}`;
+
+  const extractSelectedIds = (selectionModel) => {
+    if (Array.isArray(selectionModel)) {
+      return selectionModel;
+    }
+
+    if (selectionModel?.ids instanceof Set) {
+      return Array.from(selectionModel.ids);
+    }
+
+    if (selectionModel && typeof selectionModel[Symbol.iterator] === "function") {
+      return Array.from(selectionModel);
+    }
+
+    return [];
+  };
 
   useEffect(() => {
     let isActive = true;
@@ -142,7 +161,12 @@ export default function Report() {
       setError("");
       try {
         const data = await parkingReportService.getReports();
-        setRows(data);
+        const normalizedRows = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.reports)
+            ? data.reports
+            : [];
+        setRows(normalizedRows);
       } catch (err) {
         setError(err?.data?.message || "Failed to load reports.");
       } finally {
@@ -197,7 +221,8 @@ export default function Report() {
       toast.info("Report added, but it is outside the selected coverage.");
     }
   };
-  const filteredRows = rows.filter((row) => {
+  const filteredRows = (Array.isArray(rows) ? rows : []).filter((row) => {
+    if (!row) return false;
     const rowDate = dayjs(row.transDate);
     return (
       (!startDate || rowDate.isAfter(startDate, 'day') || rowDate.isSame(startDate, 'day')) &&
@@ -210,11 +235,18 @@ export default function Report() {
       return;
     }
 
-    const visibleRowIds = new Set(filteredRows.map((row) => row.id));
-    setSelectedRowIds((prev) => prev.filter((id) => visibleRowIds.has(id)));
+    const visibleRowIds = new Set(
+      (filteredRows || []).map((row, index) => String(buildRowSelectionKey(row, index)))
+    );
+    setSelectedRowIds((prev) =>
+      (prev || []).filter((id) => visibleRowIds.has(String(id)))
+    );
   }, [filteredRows, selectedRowIds.length]);
 
-  const selectedReport = filteredRows.find((row) => row.id === selectedRowIds[0]);
+  const selectedReport = (filteredRows || []).find(
+    (row, index) =>
+      String(buildRowSelectionKey(row, index)) === String(selectedRowIds[0])
+  );
 
   const handleDeleteSelected = async () => {
     if (!selectedReport || deleting) {
@@ -329,9 +361,7 @@ export default function Report() {
             maxRows={15}
             selectedRowIds={selectedRowIds}
             onRowSelectionChange={(newSelectionModel) => {
-              const nextSelection = Array.isArray(newSelectionModel)
-                ? newSelectionModel
-                : Array.from(newSelectionModel || []);
+              const nextSelection = extractSelectedIds(newSelectionModel);
               setSelectedRowIds(nextSelection.slice(0, 1));
             }}
           />
