@@ -16,6 +16,7 @@ export const useParkingFeePDF = () => {
     coverage = "",
     dateSubmitted = "",
     rows = [],
+    totalAmount = "",
   } = {}) => {
     const doc = new jsPDF();
 
@@ -130,6 +131,18 @@ export const useParkingFeePDF = () => {
         }
       });
     }
+
+    y = tableStartY + rowHeight *(MAX_TABLE_ROWS + 0.2) + 10;
+    //doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    //want the total amount of the report
+    if (totalAmount) {
+      doc.text(truncateText(totalAmount, 15), leftMargin + 150, y - 1, {
+        align: "center",
+      });
+    }
+    doc.setLineWidth(0.3);
+    doc.line(leftMargin + 130, y, leftMargin + 170, y);
 
     y = tableStartY + rowHeight * (MAX_TABLE_ROWS + 1) + 20;
     doc.setFont("helvetica", "bold");
