@@ -150,7 +150,7 @@ const Login = () => {
           component="img"
           src={logo}
           alt="Parking Fee Logo"
-          sx={{ width: "60%", maxWidth: "250px", height: "auto" }}
+          sx={{ width: "100%", maxWidth: "600px", height: "auto" }}
         />
       </Box>
     </Box>

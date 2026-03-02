@@ -71,7 +71,7 @@ export default function Sidebar() {
           component="img"
           src={logo}
           alt="Parking Fee Logo"
-          sx={{ width: "70%", maxWidth: 150 }}
+          sx={{ width: "100%", maxWidth: 500 }}
         />
       </Box>
 

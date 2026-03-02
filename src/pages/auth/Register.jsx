@@ -151,7 +151,7 @@ const Register = () => {
           component="img"
           src={logo}
           alt="Parking Fee Logo"
-          sx={{ width: "60%", maxWidth: "250px", height: "auto" }}
+          sx={{ width: "100%", maxWidth: "600px", height: "auto" }}
         />
       </Box>
 
@@ -246,7 +246,7 @@ const Register = () => {
                   />
                 </Grid>
 
-                <Grid size={6}>
+                <Grid size={12}>
                   <Typography variant="body2" fontWeight="bold">
                     Username
                   </Typography>
@@ -261,22 +261,6 @@ const Register = () => {
                   />
                 </Grid>
 
-                <Grid size={6}>
-                  <Typography variant="body2" fontWeight="bold">
-                    Number of Vehicles
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    name="vehicleNumber"
-                    value={formData.vehicleNumber}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={Boolean(touchedFields.vehicleNumber && fieldErrors.vehicleNumber)}
-                    helperText={touchedFields.vehicleNumber ? fieldErrors.vehicleNumber : ""}
-                    inputProps={{ min: 1 }}
-                  />
-                </Grid>
 
                 <Grid size={6}>
                   <Typography variant="body2" fontWeight="bold">
@@ -301,35 +285,7 @@ const Register = () => {
                       ),
                     }}
                   />
-                  <Box mt={1}>
-                    <Typography
-                      variant="caption"
-                      color={passwordChecks.hasUppercase ? "success.main" : "error.main"}
-                    >
-                      At least 1 uppercase letter
-                    </Typography>
-                    <br />
-                    <Typography
-                      variant="caption"
-                      color={passwordChecks.hasLowercase ? "success.main" : "error.main"}
-                    >
-                      At least 1 lowercase letter
-                    </Typography>
-                    <br />
-                    <Typography
-                      variant="caption"
-                      color={passwordChecks.hasNumber ? "success.main" : "error.main"}
-                    >
-                      At least 1 number
-                    </Typography>
-                    <br />
-                    <Typography
-                      variant="caption"
-                      color={passwordChecks.hasMinLength ? "success.main" : "error.main"}
-                    >
-                      Minimum 8 characters
-                    </Typography>
-                  </Box>
+
                 </Grid>
 
                 <Grid size={6}>
@@ -370,6 +326,15 @@ const Register = () => {
                     >
                       {loading ? "Registering..." : "Register"}
                     </Button>
+                    <Box sx={{  mt: 3, py: 1.2, px: 5, borderRadius: 2   }}>
+                      <Button
+                        variant="text"
+                        onClick={() => navigate("/")}
+                        sx={{ textTransform: "none" }}
+                      >
+                        Back to Login
+                      </Button>
+                    </Box>
                   </Box>
                 </Grid>
               </Grid>
