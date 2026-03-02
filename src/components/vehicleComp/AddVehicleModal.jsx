@@ -1,4 +1,4 @@
-import {
+﻿import {
   Dialog,
   DialogTitle,
   DialogContent,
@@ -18,7 +18,6 @@ import { useVehicles } from "../../context/vehicleContext/useVehicles";
 
 const VEHICLE_TYPE_OPTIONS = ["Car", "Motorcycle"];
 const UPPERCASE_FIELDS = new Set(["name", "plate", "color"]);
-const PLATE_REGEX = /^[A-Z]{3} [0-9]{4}$/;
 const VEHICLE_LIMIT_ERROR_REGEX =
   /(vehicle\s*limit|limit\s*reached|max(?:imum)?\s*vehicles?|cannot\s*add\s*more\s*vehicles?|no\s*more\s*vehicles?)/i;
 
@@ -67,10 +66,6 @@ export default function AddVehicleModal({ open, setOpen }) {
     }
 
     const normalizedPlate = formData.plate.trim().toUpperCase();
-    if (!PLATE_REGEX.test(normalizedPlate)) {
-      setLocalError("Plate number must follow format ABC 1234 (3 letters, space, 4 digits).");
-      return;
-    }
 
     submitLockRef.current = true;
     setSubmitting(true);
@@ -152,7 +147,6 @@ export default function AddVehicleModal({ open, setOpen }) {
             value={formData.plate}
             onChange={handleChange}
             fullWidth
-            inputProps={{ maxLength: 8 }}
           />
           <TextField label="Vehicle Color" name="color" value={formData.color} onChange={handleChange} fullWidth />
           {isLimitReached ? (

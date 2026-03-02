@@ -1,6 +1,4 @@
-﻿import pool from "../db.js";
-
-const PLATE_REGEX = /^[A-Z]{3} [0-9]{4}$/;
+import pool from "../db.js";
 
 async function getEmployeeContext(userId) {
   let rows;
@@ -83,12 +81,6 @@ export async function addVehicle(req, res) {
 
   if (!normalizedType || !normalizedName || !normalizedPlate) {
     return res.status(400).json({ message: "Type, name, and plate are required." });
-  }
-
-  if (!PLATE_REGEX.test(normalizedPlate)) {
-    return res.status(400).json({
-      message: "Plate number must follow format ABC 1234 (3 letters, space, 4 digits).",
-    });
   }
 
   try {
