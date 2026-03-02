@@ -1,4 +1,5 @@
 import apiClient from "./apiClient";
+import dayjs from "dayjs";
 
 function getAuthHeaders() {
   try {
@@ -17,6 +18,10 @@ function getAuthHeaders() {
 }
 
 const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+const toApiDate = (value) => {
+  const parsed = dayjs(value);
+  return parsed.isValid() ? parsed.format("YYYY-MM-DD") : "";
+};
 
 let reports = [];
 
@@ -86,17 +91,18 @@ const parkingReportService = {
   },
 
   async deleteReport(transDate) {
-    if (!transDate) {
+    const normalizedDate = toApiDate(transDate);
+    if (!normalizedDate) {
       throw new Error("Transaction date is required.");
     }
 
     if (!import.meta.env.VITE_API_URL) {
       await delay(200);
-      reports = reports.filter((row) => row.transDate !== transDate);
+      reports = reports.filter((row) => toApiDate(row.transDate) !== normalizedDate);
       return { message: "Report deleted successfully." };
     }
 
-    const response = await apiClient.delete(`/reports/${encodeURIComponent(transDate)}`, {
+    const response = await apiClient.delete(`/reports/${encodeURIComponent(normalizedDate)}`, {
       headers: getAuthHeaders(),
     });
     return response.data;

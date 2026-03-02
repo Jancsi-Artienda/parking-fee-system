@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Box, Paper, Typography } from "@mui/material";
+import { Box, Button, Paper, Typography } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import dayjs from "dayjs";
 
@@ -23,6 +23,7 @@ export default function ParkingReportTable({
   withPaper = true,
   maxRows,
   onRowSelectionChange,
+  onDeleteRow,
 }) {
   const hasControlledSelection = typeof onRowSelectionChange === "function";
 
@@ -45,8 +46,8 @@ export default function ParkingReportTable({
     return normalizedRows.slice(0, maxRows);
   }, [normalizedRows, maxRows]);
 
-  const columns = useMemo(
-    () => [
+  const columns = useMemo(() => {
+    const baseColumns = [
       {
         field: "transDate",
         headerName: "Date",
@@ -70,9 +71,40 @@ export default function ParkingReportTable({
         align: "center",
         valueGetter: (value) => `PHP ${Number(value || 0).toLocaleString()}`,
       },
-    ],
-    []
-  );
+    ];
+
+    if (typeof onDeleteRow !== "function") {
+      return baseColumns;
+    }
+
+    return [
+      ...baseColumns,
+      {
+        field: "__actions",
+        headerName: "",
+        width: 130,
+        sortable: false,
+        filterable: false,
+        disableColumnMenu: true,
+        align: "right",
+        renderCell: (params) => (
+          <Button
+            size="small"
+            color="error"
+            variant="outlined"
+            className="row-delete-btn"
+            onClick={(event) => {
+              event.stopPropagation();
+              onDeleteRow(params.row);
+            }}
+            sx={{ textTransform: "none", minWidth: 96 }}
+          >
+            Delete
+          </Button>
+        ),
+      },
+    ];
+  }, [onDeleteRow]);
 
   const gridContent = (
     <>
@@ -103,6 +135,19 @@ export default function ParkingReportTable({
             "& .MuiDataGrid-columnHeaders": {
               backgroundColor: "#f5f5f5",
               fontWeight: "bold",
+            },
+            "& .row-delete-btn": {
+              opacity: 0,
+              pointerEvents: "none",
+              transition: "opacity 0.18s ease",
+            },
+            "& .MuiDataGrid-row:hover .row-delete-btn": {
+              opacity: 1,
+              pointerEvents: "auto",
+            },
+            "& .MuiDataGrid-row.Mui-selected .row-delete-btn": {
+              opacity: 1,
+              pointerEvents: "auto",
             },
           }}
         />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Box, Paper, Typography, Button } from "@mui/material";
 import dayjs from "dayjs";
 import { toast } from "sonner";
@@ -25,26 +25,7 @@ export default function Report() {
   const [endDate, setEndDate] = useState(dayjs());
   const [coverageLoaded, setCoverageLoaded] = useState(false);
   const [coverageTouched, setCoverageTouched] = useState(false);
-  const [selectedRowIds, setSelectedRowIds] = useState([]);
   const [deleting, setDeleting] = useState(false);
-  const buildRowSelectionKey = (row, index = 0) =>
-    row?.id ?? `${index}-${row?.transDate || ""}-${row?.vehicleModel || ""}-${row?.amount || ""}`;
-
-  const extractSelectedIds = (selectionModel) => {
-    if (Array.isArray(selectionModel)) {
-      return selectionModel;
-    }
-
-    if (selectionModel?.ids instanceof Set) {
-      return Array.from(selectionModel.ids);
-    }
-
-    if (selectionModel && typeof selectionModel[Symbol.iterator] === "function") {
-      return Array.from(selectionModel);
-    }
-
-    return [];
-  };
 
   useEffect(() => {
     let isActive = true;
@@ -221,35 +202,21 @@ export default function Report() {
       toast.info("Report added, but it is outside the selected coverage.");
     }
   };
-  const filteredRows = (Array.isArray(rows) ? rows : []).filter((row) => {
-    if (!row) return false;
-    const rowDate = dayjs(row.transDate);
-    return (
-      (!startDate || rowDate.isAfter(startDate, 'day') || rowDate.isSame(startDate, 'day')) &&
-      (!endDate || rowDate.isBefore(endDate, 'day') || rowDate.isSame(endDate, 'day'))
-    );
-  });
-
-  useEffect(() => {
-    if (!selectedRowIds.length) {
-      return;
-    }
-
-    const visibleRowIds = new Set(
-      (filteredRows || []).map((row, index) => String(buildRowSelectionKey(row, index)))
-    );
-    setSelectedRowIds((prev) =>
-      (prev || []).filter((id) => visibleRowIds.has(String(id)))
-    );
-  }, [filteredRows, selectedRowIds.length]);
-
-  const selectedReport = (filteredRows || []).find(
-    (row, index) =>
-      String(buildRowSelectionKey(row, index)) === String(selectedRowIds[0])
+  const filteredRows = useMemo(
+    () =>
+      (Array.isArray(rows) ? rows : []).filter((row) => {
+        if (!row) return false;
+        const rowDate = dayjs(row.transDate);
+        return (
+          (!startDate || rowDate.isAfter(startDate, "day") || rowDate.isSame(startDate, "day")) &&
+          (!endDate || rowDate.isBefore(endDate, "day") || rowDate.isSame(endDate, "day"))
+        );
+      }),
+    [rows, startDate, endDate]
   );
 
-  const handleDeleteSelected = async () => {
-    if (!selectedReport || deleting) {
+  const handleDeleteReport = async (reportRow) => {
+    if (!reportRow || deleting) {
       return;
     }
 
@@ -269,9 +236,18 @@ export default function Report() {
 
     setDeleting(true);
     try {
-      await parkingReportService.deleteReport(selectedReport.transDate);
-      setRows((prev) => prev.filter((row) => row.transDate !== selectedReport.transDate));
-      setSelectedRowIds([]);
+      await parkingReportService.deleteReport(reportRow.transDate);
+      const targetDate = dayjs(reportRow.transDate).isValid()
+        ? dayjs(reportRow.transDate).format("YYYY-MM-DD")
+        : String(reportRow.transDate || "");
+      setRows((prev) =>
+        prev.filter((row) => {
+          const rowDate = dayjs(row?.transDate).isValid()
+            ? dayjs(row.transDate).format("YYYY-MM-DD")
+            : String(row?.transDate || "");
+          return rowDate !== targetDate;
+        })
+      );
       toast.success("Report deleted successfully.");
     } catch (err) {
       toast.error(err?.data?.message || "Failed to delete report.");
@@ -324,15 +300,6 @@ export default function Report() {
           <Box sx={{ display: "flex", gap: 1.5 }}>
             <Button
               variant="outlined"
-              color="error"
-              onClick={handleDeleteSelected}
-              disabled={loading || deleting || !selectedReport}
-              sx={{ borderRadius: "10px", textTransform: "none" }}
-            >
-              {deleting ? "Deleting..." : "Delete Selected"}
-            </Button>
-            <Button
-              variant="outlined"
               onClick={handleExportPDF}
               disabled={loading}
               sx={{ borderRadius: "10px", textTransform: "none" }}
@@ -359,11 +326,7 @@ export default function Report() {
             emptyMessage="No reports yet."
             withPaper={false}
             maxRows={15}
-            selectedRowIds={selectedRowIds}
-            onRowSelectionChange={(newSelectionModel) => {
-              const nextSelection = extractSelectedIds(newSelectionModel);
-              setSelectedRowIds(nextSelection.slice(0, 1));
-            }}
+            onDeleteRow={handleDeleteReport}
           />
         </Box>
 
