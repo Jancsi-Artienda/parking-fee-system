@@ -9,6 +9,7 @@ let vehicles = [
     name: "NMAX",
     plate: "NPH 1234",
     color: "Blue",
+    limit: 1,
     registered: "02/09/2026",
   },
 ];
@@ -46,9 +47,16 @@ export const vehicleService = {
     if (!import.meta.env.VITE_API_URL) {
       await delay(300);
 
+      if (vehicles.length >= 1) {
+        const error = new Error("Vehicle limit reached. You can only register 1 vehicle.");
+        error.status = 400;
+        throw error;
+      }
+
       const newVehicle = {
         id: Date.now(),
         ...data,
+        limit: 1,
         registered: new Date().toLocaleDateString(),
       };
 

@@ -19,7 +19,6 @@ import {
   sanitizeRegistrationField,
   validateRegistrationField,
   validateRegistrationForm,
-  getPasswordStrength,
 } from "../../utils/validators";
 
 const Register = () => {
@@ -43,7 +42,6 @@ const Register = () => {
 
   const navigate = useNavigate();
   const { register } = useAuth();
-  const passwordChecks = getPasswordStrength(formData.password);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
