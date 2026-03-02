@@ -139,7 +139,7 @@ function ForgotPassword() {
           component="img"
           src={logo}
           alt="Parking Fee Logo"
-          sx={{ width: "100%", maxWidth: "600px", height: "auto" }}
+          sx={{ width: "60%", maxWidth: "600px", height: "auto" }}
         />
       </Box>
 
