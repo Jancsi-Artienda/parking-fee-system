@@ -129,27 +129,38 @@ const Register = () => {
   return (
     <Box
       sx={{
+        width: "100%",
         minHeight: "100vh",
-        width: "100vw",
+        // Linear gradient from a soft yellow to a brighter gold
+        background: "linear-gradient(135deg, #FFF6D5 0%, #FFD54F 100%)",
         display: "flex",
-        backgroundColor: "#F5F5F5",
+        justifyContent: "center",
+
       }}
     >
       <Box
         sx={{
-          width: "35%",
-          backgroundColor: "#FFF6D5",
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "center",
-          p: 8,
+          width: "80%", // Slightly larger for impact
+          maxWidth: "500px",
+          height: "auto",
+          // Optional: adds a subtle "lift" to your logo image
+          filter: "drop-shadow(0px 10px 20px rgba(0,0,0,0.1))",
+          p: 20
         }}
       >
         <Box
           component="img"
           src={logo}
           alt="Parking Fee Logo"
-          sx={{ width: "75%", maxWidth: "600px", height: "auto" }}
+          sx={{
+            position: "absolute",
+            top: 30,    // Distance from the top edge
+            left: 30,  // Distance from the right edge
+            width: "50%",
+            maxWidth: "300px",
+            height: "auto",
+            filter: "drop-shadow(0px 10px 20px rgba(0,0,0,0.1))",
+          }}
         />
       </Box>
 
@@ -324,7 +335,7 @@ const Register = () => {
                     >
                       {loading ? "Registering..." : "Register"}
                     </Button>
-                    <Box sx={{  mt: 3, py: 1.2, px: 5, borderRadius: 2   }}>
+                    <Box sx={{ mt: 3, py: 1.2, px: 5, borderRadius: 2 }}>
                       <Button
                         variant="text"
                         onClick={() => navigate("/")}

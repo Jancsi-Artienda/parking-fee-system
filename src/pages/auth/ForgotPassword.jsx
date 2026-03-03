@@ -119,36 +119,49 @@ function ForgotPassword() {
   return (
     <Box
       sx={{
+        width: "100%",
         minHeight: "100vh",
-        width: "100vw",
+        // Linear gradient from a soft yellow to a brighter gold
+        background: "linear-gradient(135deg, #FFF6D5 0%, #FFD54F 100%)",
         display: "flex",
-        backgroundColor: "#F5F5F5",
+        
       }}
     >
       <Box
         sx={{
-          width: "50%",
-          backgroundColor: "#FFF6D5",
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "center",
-          p: 8,
+          width: "30%", // Slightly larger for impact
+          maxWidth: "500px",
+          height: "auto",
+          // Optional: adds a subtle "lift" to your logo image
+          filter: "drop-shadow(0px 10px 20px rgba(0,0,0,0.1))",
+           
+
         }}
       >
         <Box
+
           component="img"
           src={logo}
           alt="Parking Fee Logo"
-          sx={{ width: "60%", maxWidth: "600px", height: "auto" }}
+          sx={{
+            position: "absolute",
+            top: 30,    // Distance from the top edge
+            left: 50,  // Distance from the right edge
+            width: "80%",
+          maxWidth: "300px",
+            height: "auto",
+            filter: "drop-shadow(0px 10px 20px rgba(0,0,0,0.1))",
+            
+          }}
         />
       </Box>
 
       <Box
         sx={{
-          width: "50%",
+          width: "40%",
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
+           justifyContent: "center",  
         }}
       >
         <Container maxWidth="sm">

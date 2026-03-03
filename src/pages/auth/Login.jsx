@@ -55,20 +55,30 @@ const Login = () => {
   return (
     <Box
       sx={{
+        width: "100%",
         minHeight: "100vh",
-        width: "100vw",
+        // Linear gradient from a soft yellow to a brighter gold
+        background: "linear-gradient(135deg, #FFF6D5 0%, #FFD54F 100%)",
         display: "flex",
-        backgroundColor: "#F5F5F5",
+        justifyContent: "center",
+
       }}
     >
+     
       <Box
         sx={{
-          width: "50%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          width: "80%", // Slightly larger for impact
+          maxWidth: "500px",
+          height: "auto",
+          // Optional: adds a subtle "lift" to your logo image
+          filter: "drop-shadow(0px 10px 20px rgba(0,0,0,0.1))",
+          p: 20
+
         }}
       >
+
+
+
         <Container maxWidth="sm">
           <Paper sx={{ p: 4, borderRadius: 3 }}>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
@@ -130,29 +140,32 @@ const Login = () => {
             </Box>
 
             <Typography align="center" sx={{ mt: 2 }}>
-              Don&apos;t have an account? <Link to="/register">Register</Link>
+              Don't have an account? <Link to="/register">Register</Link>
             </Typography>
           </Paper>
         </Container>
       </Box>
 
+
+
       <Box
+
+        component="img"
+        src={logo}
+        alt="Parking Fee Logo"
         sx={{
+          position: "absolute",
+          top: 30,    // Distance from the top edge
+          left: 30,  // Distance from the right edge
           width: "50%",
-          backgroundColor: "#FFF6D5",
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "center",
-          p: 8,
+          maxWidth: "300px",
+          height: "auto",
+          filter: "drop-shadow(0px 10px 20px rgba(0,0,0,0.1))",
+
         }}
-      >
-        <Box
-          component="img"
-          src={logo}
-          alt="Parking Fee Logo"
-          sx={{ width: "60%", maxWidth: "600px", height: "auto" }}
-        />
-      </Box>
+      />
+
+
     </Box>
   );
 };
