@@ -52,6 +52,7 @@ export default function ParkingReportTable({
         field: "transDate",
         headerName: "Date",
         flex: 1,
+        resizable: false,
         headerAlign: "center",
         align: "center",
         valueGetter: (_value, row) => formatReportDate(row.transDate),
@@ -60,6 +61,7 @@ export default function ParkingReportTable({
         field: "vehicleModel",
         headerName: "Vehicle Model",
         flex: 1.2,
+        resizable: false,
         headerAlign: "center",
         align: "center",
       },
@@ -67,6 +69,7 @@ export default function ParkingReportTable({
         field: "amount",
         headerName: "Amount",
         flex: 1,
+        resizable: false,
         headerAlign: "center",
         align: "center",
         valueGetter: (value) => `PHP ${Number(value || 0).toLocaleString()}`,
@@ -83,6 +86,7 @@ export default function ParkingReportTable({
         field: "__actions",
         headerName: "",
         width: 130,
+        resizable: false,
         sortable: false,
         filterable: false,
         disableColumnMenu: true,
@@ -121,6 +125,7 @@ export default function ParkingReportTable({
           loading={loading}
           rowHeight={70}
           getRowId={(row) => row._rowId}
+          disableColumnResize
           disableColumnSorting
           disableColumnMenu
           hideFooterPagination
@@ -135,6 +140,10 @@ export default function ParkingReportTable({
             "& .MuiDataGrid-columnHeaders": {
               backgroundColor: "#f5f5f5",
               fontWeight: "bold",
+            },
+            "& .MuiDataGrid-columnSeparator": {
+              pointerEvents: "none",
+              opacity: 0,
             },
             "& .row-delete-btn": {
               opacity: 0,
