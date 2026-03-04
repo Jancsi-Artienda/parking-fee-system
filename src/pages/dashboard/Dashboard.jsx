@@ -37,7 +37,7 @@ export default function Dashboard() {
           variant="h4"
           fontWeight="bold"
           gutterBottom
-          color="black"
+          color="blue"
         >
           Dashboard
         </Typography>

@@ -6,6 +6,7 @@ import {
   ListItemIcon,
   ListItemText,
   Button,
+  Divider,
 } from "@mui/material";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -23,7 +24,7 @@ export default function Sidebar() {
   const menuItems = [
     { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
     { text: "Vehicle", icon: <DirectionsCarIcon />, path: "/vehicle" },
-     { text: "Report", icon: <SummarizeIcon />, path: "/report" },
+    { text: "Report", icon: <SummarizeIcon />, path: "/report" },
   ];
 
   const isAccountActive = location.pathname === "/account";
@@ -50,12 +51,14 @@ export default function Sidebar() {
   return (
     <Box
       sx={{
-        width: 260,
-        height: "100vh",
-        backgroundColor: "#FFF6D5",
-        display: "flex",
-        flexDirection: "column", 
-        py: 3,
+        width: 280,
+        minHeight: "100vh",
+        backgroundColor: '#fff6d5', // Glass effect
+        backdropFilter: 'blur(30px)',
+        borderRight: '1px solid rgba(0, 0, 0, 0.43)',
+        display: 'flex',
+        flexDirection: 'column',
+        p: 2
       }}
     >
       {/* Logo */}
@@ -74,51 +77,51 @@ export default function Sidebar() {
           sx={{ width: "100%", maxWidth: 500 }}
         />
       </Box>
-
+      <Divider sx={{ mt: 2, mb: 1, mx: 2, borderColor: 'rgba(0, 0, 0, 0.1)' }} />
       {/* Navigation */}
-      <Box sx={{flexGrow: 0.8}}>
-      <List sx={{ px: 2, mt: 3 }}>
-        {menuItems.map((item) => {
-          const isActive = location.pathname === item.path;
+      <Box sx={{ flexGrow: 0.8 }}>
+        <List sx={{ px: 2, mt: 3 }}>
+          {menuItems.map((item) => {
+            const isActive = location.pathname === item.path;
 
-          return (
-            <ListItemButton
-              key={item.text}
-              component={NavLink}
-              style={{textDecoration: "none", color: "#000"}}
-              to={item.path}
-              disableRipple
-              sx={{
-                borderRadius: "14px",
-                mb: 2,
-                py: 1.5,
-                px: 2.5,
-                backgroundColor: isActive ? "#D6D6D6" : "#F2F2F2",
-                color: "#333",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
-                transition: "all 0.2s ease",
-
-                "&:hover": {
-                  backgroundColor: "#E0E0E0",
-                },
-
-                "& .MuiListItemIcon-root": {
-                  minWidth: 36,
+            return (
+              <ListItemButton
+                key={item.text}
+                component={NavLink}
+                style={{ textDecoration: "none", color: "#000" }}
+                to={item.path}
+                disableRipple
+                sx={{
+                  borderRadius: "14px",
+                  mb: 2,
+                  py: 1.5,
+                  px: 2.5,
+                  backgroundColor: isActive ? "#D6D6D6" : "#F2F2F2",
                   color: "#333",
-                },
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
+                  transition: "all 0.2s ease",
 
-                "& .MuiListItemText-primary": {
-                  fontWeight: isActive ? 600 : 500,
-                },
-              }}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          );
-        })}
-      </List>
-        </Box>
+                  "&:hover": {
+                    backgroundColor: "#E0E0E0",
+                  },
+
+                  "& .MuiListItemIcon-root": {
+                    minWidth: 36,
+                    color: "#333",
+                  },
+
+                  "& .MuiListItemText-primary": {
+                    fontWeight: isActive ? 600 : 500,
+                  },
+                }}
+              >
+                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemText primary={item.text} />
+              </ListItemButton>
+            );
+          })}
+        </List>
+      </Box>
 
       {/* Footer */}
       <Box sx={{ px: 2 }}>
@@ -132,7 +135,7 @@ export default function Sidebar() {
             borderRadius: "14px",
             textTransform: "none",
             boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
-            backgroundColor: isAccountActive ? "#BFBFBF" : "#CFCFCF",
+            backgroundColor: isAccountActive ? "#D6D6D6" : "#F2F2F2",
             color: "#000",
             "&:hover": {
               backgroundColor: "#B8B8B8",
