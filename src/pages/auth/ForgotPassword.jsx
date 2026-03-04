@@ -13,6 +13,7 @@ import AuthService from "../../services/AuthService";
 import logo from "../../assets/logo.png";
 import OTPcomp from "../../components/OTPcomp/OTPcomp";
 import Newpass from "../../components/OTPcomp/Newpass";
+import background from "../../assets/background.png";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -121,51 +122,48 @@ function ForgotPassword() {
       sx={{
         width: "100%",
         minHeight: "100vh",
-        // Linear gradient from a soft yellow to a brighter gold
-        background: "linear-gradient(135deg, #FFF6D5 0%, #FFD54F 100%)",
+        // Replace the gradient with your image path
+        backgroundImage: `url(${background})`,
+        backgroundSize: "cover",      // Ensures the image covers the whole area
+        backgroundPosition: "center", // Keeps the image centered
+        backgroundRepeat: "no-repeat",
         display: "flex",
-        
+        justifyContent: "center",
+        alignItems: "center",
+
       }}
     >
-      <Box
-        sx={{
-          width: "30%", // Slightly larger for impact
-          maxWidth: "500px",
-          height: "auto",
-          // Optional: adds a subtle "lift" to your logo image
-          filter: "drop-shadow(0px 10px 20px rgba(0,0,0,0.1))",
-           
 
-        }}
-      >
-        <Box
 
-          component="img"
-          src={logo}
-          alt="Parking Fee Logo"
-          sx={{
-            position: "absolute",
-            top: 30,    // Distance from the top edge
-            left: 50,  // Distance from the right edge
-            width: "80%",
-          maxWidth: "300px",
-            height: "auto",
-            filter: "drop-shadow(0px 10px 20px rgba(0,0,0,0.1))",
-            
-          }}
-        />
-      </Box>
 
-      <Box
-        sx={{
-          width: "40%",
-          display: "flex",
-          alignItems: "center",
-           justifyContent: "center",  
-        }}
-      >
-        <Container maxWidth="sm">
-          <Paper sx={{ p: 4, borderRadius: 3 }}>
+      <Container maxWidth="sm">
+        <Paper sx={{
+          p: 4,
+          borderRadius: 3,
+          // Increased from 0.73 to 0.85 for better readability
+          backgroundColor: 'rgba(239, 239, 239, 0.85)',
+          backdropFilter: 'blur(30px)',
+          WebkitBackdropFilter: 'blur(30px)', // Matched blur for Safari
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+        }}>
+          < Box sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            mb: 3
+          }}>
+            <Box
+              component="img"
+              src={logo}
+              alt="Parking Fee Logo"
+              sx={{
+                width: "100%",        // Adjusted for internal container fit
+                maxWidth: "220px",
+                height: "auto",
+                filter: "drop-shadow(0px 4px 10px rgba(0,0,0,0.1))",
+                // position: "absolute" REMOVED to keep it inside the flow
+              }}
+            />
 
             {/* 1. Header Logic: Hide if we are on the reset step */}
             {step !== "reset" && (
@@ -242,10 +240,11 @@ function ForgotPassword() {
                 error={error}
               />
             )}
-          </Paper>
-        </Container>
-      </Box>
+          </Box>
+        </Paper>
+      </Container>
     </Box>
+
   );
 }
 
