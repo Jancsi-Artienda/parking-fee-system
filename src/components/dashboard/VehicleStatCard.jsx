@@ -27,7 +27,7 @@ export default function VehicleStatCard({ totalVehicles }) {
               Registered Vehicles
             </Typography>
 
-            <Typography variant="h4" fontWeight="bold">
+            <Typography variant="h4" fontWeight="bold" align="center">
               {totalVehicles}
             </Typography>
           </Box>
