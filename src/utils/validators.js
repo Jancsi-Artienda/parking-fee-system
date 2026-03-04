@@ -1,5 +1,12 @@
 const GMAIL_REGEX = /^[a-z0-9](\.?[a-z0-9]){4,29}@gmail\.com$/i;
 
+function capitalizeFirstLetter(value) {
+  if (typeof value !== "string") return value;
+  const noLeadingSpace = value.replace(/^\s+/, "");
+  if (!noLeadingSpace) return "";
+  return noLeadingSpace.charAt(0).toUpperCase() + noLeadingSpace.slice(1);
+}
+
 export function sanitizeRegistrationField(name, value) {
   if (name === "contactNumber") {
     return value.replace(/\D/g, "").slice(0, 11);
@@ -10,7 +17,7 @@ export function sanitizeRegistrationField(name, value) {
   }
 
   if (name === "firstName" || name === "lastName") {
-    return value.replace(/\d/g, "");
+    return capitalizeFirstLetter(value.replace(/\d/g, ""));
   }
 
   return value;
@@ -97,7 +104,11 @@ export function sanitizeAccountField(name, value) {
   }
 
   if (name === "name") {
-    return value.replace(/\d/g, "");
+    const sanitized = value.replace(/\d/g, "");
+    return sanitized
+      .split(" ")
+      .map((part) => capitalizeFirstLetter(part))
+      .join(" ");
   }
 
   return value;

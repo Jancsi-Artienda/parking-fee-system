@@ -6,6 +6,12 @@ import { getJwtSecret } from "../jwt.js";
 
 const GMAIL_REGEX = /^[^\s@]+@gmail\.com$/i;
 
+function capitalizeFirstLetter(value = "") {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+}
+
 function splitFullName(name = "") {
   const trimmed = name.trim();
   if (!trimmed) {
@@ -14,12 +20,12 @@ function splitFullName(name = "") {
 
   const parts = trimmed.split(/\s+/);
   if (parts.length === 1) {
-    return { firstName: parts[0], lastName: "" };
+    return { firstName: capitalizeFirstLetter(parts[0]), lastName: "" };
   }
 
   return {
-    firstName: parts[0],
-    lastName: parts.slice(1).join(" "),
+    firstName: capitalizeFirstLetter(parts[0]),
+    lastName: parts.slice(1).map((part) => capitalizeFirstLetter(part)).join(" "),
   };
 }
 
@@ -62,8 +68,8 @@ export async function register(req, res) {
   } = req.body || {};
 
   const normalized = {
-    firstName: firstName.trim(),
-    lastName: lastName.trim(),
+    firstName: capitalizeFirstLetter(firstName),
+    lastName: capitalizeFirstLetter(lastName),
     email: email.trim().toLowerCase(),
     contactNumber: contactNumber.trim(),
     username: username.trim(),
