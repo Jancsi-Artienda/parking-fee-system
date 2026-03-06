@@ -1,30 +1,13 @@
 import { createContext, useState } from "react";
 import AuthService from "../../services/AuthService";
+import {
+  clearStoredUser,
+  readStoredUser,
+  storeUser,
+  updateStoredUser,
+} from "../../utils/authStorage";
 
 const AuthContext = createContext();
-
-function readStoredUser() {
-  try {
-    const localUser = localStorage.getItem("user");
-    if (localUser) {
-      return JSON.parse(localUser);
-    }
-
-    const sessionUser = sessionStorage.getItem("user");
-    if (sessionUser) {
-      // Backward compatibility for older temporary sessions.
-      const parsedSessionUser = JSON.parse(sessionUser);
-      localStorage.setItem("user", JSON.stringify(parsedSessionUser));
-      sessionStorage.removeItem("user");
-      return parsedSessionUser;
-    }
-  } catch {
-    localStorage.removeItem("user");
-    sessionStorage.removeItem("user");
-  }
-
-  return null;
-}
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => readStoredUser());
@@ -32,7 +15,7 @@ export const AuthProvider = ({ children }) => {
 
   //const [loading, setLoading] = useState(false)
   // LOGIN
-  const login = async (email, password) => {
+  const login = async (email, password, rememberMe = false) => {
     setAuthError("");
     const response = await AuthService.login(email, password);
 
@@ -40,8 +23,7 @@ export const AuthProvider = ({ children }) => {
     const userData = response.data;
 
     setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
-    sessionStorage.removeItem("user");
+    storeUser(userData, rememberMe);
   };
 
   // REGISTER
@@ -57,8 +39,7 @@ export const AuthProvider = ({ children }) => {
     const response = await AuthService.updateProfile(profileData);
     const updatedUser = { ...(user || {}), ...response.data };
     setUser(updatedUser);
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-    sessionStorage.removeItem("user");
+    updateStoredUser(updatedUser);
     return updatedUser;
   };
 
@@ -66,8 +47,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     setAuthError("");
-    localStorage.removeItem("user");
-    sessionStorage.removeItem("user");
+    clearStoredUser();
   };
 
   const value = {

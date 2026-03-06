@@ -1,19 +1,13 @@
 import apiClient from "./apiClient";
+import { getStoredToken } from "../utils/authStorage";
 
 function getAuthHeaders() {
-  try {
-    const rawUser = localStorage.getItem("user");
-    const parsedUser = rawUser ? JSON.parse(rawUser) : null;
-    const token = parsedUser?.token;
-
-    if (!token) {
-      return {};
-    }
-
-    return { Authorization: `Bearer ${token}` };
-  } catch {
+  const token = getStoredToken();
+  if (!token) {
     return {};
   }
+
+  return { Authorization: `Bearer ${token}` };
 }
 
 const AuthService = {
