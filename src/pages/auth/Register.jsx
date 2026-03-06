@@ -147,14 +147,13 @@ const Register = () => {
 
       <Container maxWidth="sm">
         <Paper sx={{
-          p: 4,
+          p: 4  ,
           borderRadius: 3,
-          // 1. Semi-transparent background is key for glass effect
+          // Increased from 0.73 to 0.85 for better readability
           backgroundColor: 'rgba(239, 239, 239, 0.85)',
-          // 2. Corrected spelling and camelCase
-          backdropFilter: 'blur(1px)',
-          // Or use your variable: backdropFilter: 'blur(var(--blur-md))',
-          border: '1px solid rgba(255, 255, 255, 0.2)'
+          backdropFilter: 'blur(30px)',
+          WebkitBackdropFilter: 'blur(30px)', // Matched blur for Safari
+          border: '1px solid rgba(255, 255, 255, 0.3)',
         }}>
           < Box sx={{
             display: "flex",

@@ -5,21 +5,22 @@ import { Outlet } from "react-router-dom";
 export default function DashboardLayout() {
   return (
     <Box sx={{ display: "flex", height: "100vh", width: "100%", backgroundColor: "#ffffff", overflow: "hidden" }}>
-      <Box sx={{height: "100%"}}>
+      <Box sx={{ height: "100%" }}>
         <Sidebar />
-      </Box>  
-      
+      </Box>
+
 
       {/* Main Content */}
-      <Box sx={{ 
-        flexGrow: 1, 
+      <Box sx={{
+        flexGrow: 1,
         p: { xs: 2, md: 4 },
-        bgcolor: "#FFFFFF",
+        backgroundColor: '#F8FAFC', // Glass effect
+        backdropFilter: 'blur(30px)',
         width: "100%",
         height: "100%",
-        overflowY: "auto" 
-       }}>
-        <Outlet/>
+        overflowY: "auto"
+      }}>
+        <Outlet />
       </Box>
     </Box>
   );
