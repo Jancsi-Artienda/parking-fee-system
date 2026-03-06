@@ -136,7 +136,7 @@ export default function Sidebar() {
             mb: 2,
             borderRadius: "16px",
             textTransform: "none",
-            borderColor:"#000000" ,
+            borderColor:"#efefef" ,
             boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
             backgroundColor: isAccountActive ? "#e2e2e2" : "#ededed",
             color: "#000",
@@ -156,13 +156,14 @@ export default function Sidebar() {
           sx={{
             backgroundColor: "#E60000",
             color: "#fff",
-            borderRadius: "14px",
-            py: 1.5,
+            borderRadius: "16px",
+            py: 0.8,
             textTransform: "none",
             fontWeight: 500,
             boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
             "&:hover": {
               backgroundColor: "#cc0000",
+             
             },
           }}
         >
