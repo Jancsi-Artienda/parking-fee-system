@@ -32,12 +32,12 @@ export default function Dashboard() {
 
   return (
     <Container maxWidth="lg">
-      <Box sx={{ mt: 4, mb: 6 }}>
+      <Box sx={{ mt: 4, mb: 6,borderRadius: "16px" }}>
         <Typography
           variant="h4"
           fontWeight="bold"
           gutterBottom
-          color="blue"
+          color=" #1a237e"
         >
           Dashboard
         </Typography>

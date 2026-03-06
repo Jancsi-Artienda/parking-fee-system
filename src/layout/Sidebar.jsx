@@ -7,6 +7,7 @@ import {
   ListItemText,
   Button,
   Divider,
+  
 } from "@mui/material";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -53,7 +54,7 @@ export default function Sidebar() {
       sx={{
         width: 280,
         minHeight: "100vh",
-        backgroundColor: '#fff6d5', // Glass effect
+        backgroundColor: 'rgb(237, 237, 237)', // Glass effect
         backdropFilter: 'blur(30px)',
         borderRight: '1px solid rgba(0, 0, 0, 0.43)',
         display: 'flex',
@@ -92,7 +93,7 @@ export default function Sidebar() {
                 to={item.path}
                 disableRipple
                 sx={{
-                  borderRadius: "14px",
+                  borderRadius: "16px",
                   mb: 2,
                   py: 1.5,
                   px: 2.5,
@@ -134,11 +135,12 @@ export default function Sidebar() {
             mb: 2,
             borderRadius: "14px",
             textTransform: "none",
+            borderColor:"#E0E0E0" ,
             boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
-            backgroundColor: isAccountActive ? "#D6D6D6" : "#F2F2F2",
+            backgroundColor: isAccountActive ? "#e2e2e2" : "#ededed",
             color: "#000",
             "&:hover": {
-              backgroundColor: "#B8B8B8",
+              backgroundColor: "#E0E0E0",
               borderColor: "transparent",
             },
           }}

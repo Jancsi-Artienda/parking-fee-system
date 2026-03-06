@@ -167,7 +167,7 @@ const Login = () => {
                   sx={{ margin: 0 }}
                 />
               </Box>
-              <Box sx={{ display: "flex", justifyContent: "flex-end", mt: -4}}>
+              <Box sx={{ display: "flex", justifyContent: "flex-end", mt: -4 }}>
                 <Link to="/forgotpassword" style={{ fontSize: 14 }}>
                   Forgot Password
                 </Link>
@@ -177,7 +177,16 @@ const Login = () => {
                 type="submit"
                 fullWidth
                 variant="contained"
-                sx={{ mt: 3, py: 1.2, borderRadius: 2 }}
+                sx={{
+                  mt: 3,
+                  py: 1.2,
+                  borderRadius: "16px",
+                  // Add these lines below:
+                  backgroundColor: '#1a237e', // Replace with your sidebar's HEX code
+                  '&:hover': {
+                    backgroundColor: '#0d47a1', // A slightly darker shade for the hover effect
+                  },
+                }} F
               >
                 {loading ? "Logging in..." : "Login"}
               </Button>
