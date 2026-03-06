@@ -57,7 +57,7 @@ export default function Vehicle() {
         }}
       >
         <Box>
-          <Typography variant="h4" fontWeight={400} color="#000">
+          <Typography variant="h4" fontWeight={400} color="#000000">
             My Vehicle
           </Typography>
           <Typography color="text.secondary">
