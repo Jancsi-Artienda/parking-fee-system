@@ -104,10 +104,7 @@ export default function Report() {
       return {
         date: parsedDate.isValid() ? parsedDate.format("M/D/YYYY") : "",
         carModel: row.vehicleModel || "",
-        amount: `PHP ${Number(row.amount || 0).toLocaleString("en-US", {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
-        })}`,
+        amount: `PHP ${Number(row.amount || 0).toLocaleString("en-US")}`,
       };
     });
 
@@ -123,10 +120,7 @@ export default function Report() {
     const preparedBy = user?.name || user?.username || user?.email || "N/A";
     const printableFilteredRows = filteredRows.slice(0, maxRows);
     const totalAmountValue = printableFilteredRows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
-    const totalAmount = `PHP ${totalAmountValue.toLocaleString("en-US", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    })}`;
+    const totalAmount = `PHP ${totalAmountValue.toLocaleString("en-US")}`;
 
     generatePDF({
       preparedBy,
