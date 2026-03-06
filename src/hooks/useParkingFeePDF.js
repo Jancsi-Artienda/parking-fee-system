@@ -132,10 +132,9 @@ export const useParkingFeePDF = () => {
       });
     }
 
+    //amount line
     y = tableStartY + rowHeight *(MAX_TABLE_ROWS + 0.2) + 10;
-    //doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
-    //want the total amount of the report
     if (totalAmount) {
       doc.text(truncateText(totalAmount, 15), leftMargin + 150, y - 1, {
         align: "center",
@@ -151,8 +150,11 @@ export const useParkingFeePDF = () => {
     doc.setLineWidth(0.3);
     doc.line(leftMargin + 75, y, leftMargin + 155, y);
 
-    const filenameDate = new Date().toISOString().slice(0, 10);
-    doc.save(`parking-fee-report-${filenameDate}.pdf`);
+    const safeUserName = String(preparedBy || "")
+      .trim()
+      .replace(/[<>:"/\\|?*]/g, "")
+      .replace(/\s+/g, " ");
+    doc.save(`${safeUserName || "user"}.pdf`);
   };
 
   return { generatePDF, maxRows: MAX_TABLE_ROWS };
