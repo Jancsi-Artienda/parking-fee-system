@@ -9,6 +9,8 @@ import {
   Paper,
   InputAdornment,
   IconButton,
+  Checkbox,
+  FormControlLabel
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import background from "../../assets/background.png";
@@ -17,6 +19,7 @@ import { toast } from "sonner";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 const Login = () => {
+  const [rememberMe, setRememberMe] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -37,7 +40,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await login(email, password);
+      await login(email, password, rememberMe);
       toast.success("Logged in successfully");
       navigate("/dashboard");
     } catch (err) {
@@ -138,8 +141,33 @@ const Login = () => {
                   ),
                 }}
               />
-
-              <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center", // Vertically aligns the checkbox with the link text
+                  mt: 1,
+                  width: "100%",
+                }}
+              >
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      color="primary"
+                    />
+                  }
+                  label={
+                    <Typography variant="body2" sx={{ fontSize: "14px" }}>
+                      Remember me
+                    </Typography>
+                  }
+                  sx={{ margin: 0 }}
+                />
+              </Box>
+              <Box sx={{ display: "flex", justifyContent: "flex-end", mt: -4}}>
                 <Link to="/forgotpassword" style={{ fontSize: 14 }}>
                   Forgot Password
                 </Link>
