@@ -123,8 +123,8 @@ export default function Account() {
             flexDirection: "column",
             alignItems: "center",
             gap: 2,
-            bgcolor: "#F2F2F2",
-          }}
+            bgcolor: "#FFFFFF",
+          }} elevation={6}
         >
           <AccountCircleIcon sx={{ fontSize: 80 }} />
 
@@ -144,15 +144,15 @@ export default function Account() {
           sx={{
             p: 4,
             borderRadius: 3,
-            bgcolor: "#F2F2F2",
-          }}
+            bgcolor: "#FFFFFF",
+          }} elevation={6}
         >
           <Typography variant="h5" fontWeight="bold" mb={3}>
             Change Account Details
           </Typography>
 
           <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
+            <Grid item size={6} md={6}>
               <Typography variant="body2" fontWeight="bold" mb={0.5}>
                 Username
               </Typography>
@@ -167,7 +167,7 @@ export default function Account() {
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            <Grid item size={6} md={6}>
               <Typography variant="body2" fontWeight="bold" mb={0.5}>
                 Full Name
               </Typography>
@@ -181,22 +181,7 @@ export default function Account() {
                 helperText={touchedFields.name ? fieldErrors.name : ""}
               />
             </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Typography variant="body2" fontWeight="bold" mb={0.5}>
-                Password
-              </Typography>
-              <TextField
-                fullWidth
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                onBlur={handleBlur}
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
+            <Grid item size={6} md={6}>
               <Typography variant="body2" fontWeight="bold" mb={0.5}>
                 Email address
               </Typography>
@@ -210,8 +195,7 @@ export default function Account() {
                 helperText={touchedFields.email ? fieldErrors.email : ""}
               />
             </Grid>
-
-            <Grid item xs={12} md={6}>
+            <Grid item size={6} md={6}>
               <Typography variant="body2" fontWeight="bold" mb={0.5}>
                 Contact number
               </Typography>
@@ -227,25 +211,76 @@ export default function Account() {
               />
             </Grid>
 
+            <Grid item size={4} md={6}>
+              <Typography variant="body2" fontWeight="bold" mb={0.5}>
+                Current Password:
+              </Typography>
+              <TextField
+                fullWidth
+                type="password"
+                name="currentPassword"
+                value={formData.currentPassword}
+                onChange={handleChange}
+                onBlur={handleBlur}
+              />
+            </Grid>
+            <Grid item size={4} md={6}>
+              <Typography variant="body2" fontWeight="bold" mb={0.5}>
+                New Password:
+              </Typography>
+              <TextField
+                fullWidth
+                type="password"
+                name="newPassword"
+                value={formData.newPassword}
+                onChange={handleChange}
+                onBlur={handleBlur}
+              />
+            </Grid>
+            <Grid item size={4} md={6}>
+              <Typography variant="body2" fontWeight="bold" mb={0.5}>
+                Confirm Password:
+              </Typography>
+              <TextField
+                fullWidth
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                onBlur={handleBlur}
+              />
+            </Grid>
+
+
+
+
             {saveError && (
               <Grid item xs={12}>
                 <Typography color="error">{saveError}</Typography>
               </Grid>
             )}
 
-            <Grid item xs={12}>
+            <Grid item xs={12} sx={{ ml: "auto", mt: 5 }}>
               <Box
                 sx={{
                   display: "flex",
-                  justifyContent: "flex-end",
-                  mt: 2,
+                  justifyContent: "flex-start ",
+
                 }}
               >
                 <Button
+                  type="submit"
+                  fullWidth
                   variant="contained"
-                  onClick={handleSave}
-                  disabled={saving}
-                  sx={{ px: 4, borderRadius: 3, textTransform: "none" }}
+                  sx={{
+
+                    borderRadius: "16px",
+
+                    backgroundColor: '#1a237e',
+                    '&:hover': {
+                      backgroundColor: '#0d47a1',
+                    },
+                  }}
                 >
                   {saving ? "Saving..." : "Save Changes"}
                 </Button>

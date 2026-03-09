@@ -147,7 +147,7 @@ const Register = () => {
 
       <Container maxWidth="sm">
         <Paper sx={{
-          p: 4  ,
+          p: 4,
           borderRadius: 3,
           // Increased from 0.73 to 0.85 for better readability
           backgroundColor: 'rgba(239, 239, 239, 0.85)',
@@ -196,6 +196,7 @@ const Register = () => {
                   <TextField
                     fullWidth
                     name="firstName"
+                    placeholder="John Paul"
                     value={formData.firstName}
                     onChange={handleChange}
                     onBlur={handleBlur}
@@ -211,6 +212,7 @@ const Register = () => {
                   <TextField
                     fullWidth
                     name="lastName"
+                    placeholder="Delacruz"
                     value={formData.lastName}
                     onChange={handleChange}
                     onBlur={handleBlur}
@@ -254,20 +256,7 @@ const Register = () => {
                   />
                 </Grid>
 
-                <Grid size={12}>
-                  <Typography variant="body2" fontWeight="bold">
-                    Username
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    name="username"
-                    value={formData.username}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={Boolean(touchedFields.username && fieldErrors.username)}
-                    helperText={touchedFields.username ? fieldErrors.username : ""}
-                  />
-                </Grid>
+              
 
 
                 <Grid size={6}>
@@ -293,7 +282,6 @@ const Register = () => {
                       ),
                     }}
                   />
-
                 </Grid>
 
                 <Grid size={6}>
@@ -329,8 +317,19 @@ const Register = () => {
                     <Button
                       type="submit"
                       variant="contained"
-                      disabled={loading}
-                      sx={{ mt: 3, py: 1.2, px: 5, borderRadius: 2 }}
+                      
+                      sx={{
+                        mt: 3,
+                        py: 1.2,
+                        width: '200px',
+                       
+                        borderRadius: "16px",
+                        backgroundColor: '#1a237e',
+
+                        '&:hover': {
+                          backgroundColor: '#0d47a1', // A slightly darker shade for the hover effect
+                        },
+                      }}
                     >
                       {loading ? "Registering..." : "Register"}
                     </Button>
