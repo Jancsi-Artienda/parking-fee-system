@@ -13,6 +13,15 @@ export function clearStoredUser() {
   sessionStorage.removeItem(USER_STORAGE_KEY);
 }
 
+function sanitizeUserForStorage(userData) {
+  if (!userData || typeof userData !== "object") {
+    return null;
+  }
+
+  const { token: _ignoredToken, ...safeUser } = userData;
+  return safeUser;
+}
+
 export function readStoredUser() {
   try {
     const localUser = parseStoredUser(localStorage.getItem(USER_STORAGE_KEY));
@@ -31,19 +40,19 @@ export function readStoredUser() {
   return null;
 }
 
-export function getStoredToken() {
-  return readStoredUser()?.token || "";
-}
-
 export function storeUser(userData, rememberMe = false) {
   clearStoredUser();
-
-  if (rememberMe) {
-    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
+  const safeUser = sanitizeUserForStorage(userData);
+  if (!safeUser) {
     return;
   }
 
-  sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
+  if (rememberMe) {
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(safeUser));
+    return;
+  }
+
+  sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(safeUser));
 }
 
 export function getUserStorageType() {
@@ -59,12 +68,18 @@ export function getUserStorageType() {
 }
 
 export function updateStoredUser(userData) {
-  const storageType = getUserStorageType();
-
-  if (storageType === "session") {
-    sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
+  const safeUser = sanitizeUserForStorage(userData);
+  if (!safeUser) {
+    clearStoredUser();
     return;
   }
 
-  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
+  const storageType = getUserStorageType();
+
+  if (storageType === "session") {
+    sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(safeUser));
+    return;
+  }
+
+  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(safeUser));
 }

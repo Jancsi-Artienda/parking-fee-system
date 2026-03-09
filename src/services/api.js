@@ -1,16 +1,5 @@
 import apiClient from "./apiClient";
-import { getStoredToken } from "../utils/authStorage";
 import dayjs from "dayjs";
-
-
-function getAuthHeaders() {
-    const token = getStoredToken();
-    if (!token) {
-        return {};
-    } 
-
-    return {Authorization: `Bearer ${token}`};
-}
 
 const delay = (ms) => new Promise((res) => setTimeout(res,ms));
 
@@ -36,7 +25,7 @@ let vehicles = [
 
 const api = {
   //Authentication
-  async login(email, password) {
+  async login(email, password, rememberMe = false) {
     if (!import.meta.env.VITE_API_URL) {
       return new Promise((resolve) => {
         setTimeout(() => {
@@ -52,7 +41,15 @@ const api = {
       });
     } 
 
-    return apiClient.post("/auth/login", { email, password });
+    return apiClient.post("/auth/login", { email, password, rememberMe });
+  },
+
+  async logout() {
+    if (!import.meta.env.VITE_API_URL) {
+      return { data: { message: "Logged out successfully." } };
+    }
+
+    return apiClient.post("/auth/logout", {});
   },
 
   async register(userData) {
@@ -84,9 +81,7 @@ const api = {
       });
     }
 
-    return apiClient.patch("/auth/profile", profileData, {
-      headers: getAuthHeaders(),
-    });
+    return apiClient.patch("/auth/profile", profileData);
   },
 
   async forgotPassword(email) {
@@ -114,9 +109,7 @@ const api = {
         return[...vehicles];
     } 
 
-    const response = await apiClient.get("/vehicles", {
-        headers: getAuthHeaders()
-    });
+    const response = await apiClient.get("/vehicles");
     return response.data;
   },
 
@@ -141,9 +134,7 @@ const api = {
         return newVehicle;
     }
 
-    const response = await apiClient.post("/vehicles", data, {
-        headers: getAuthHeaders()
-    });
+    const response = await apiClient.post("/vehicles", data);
     return response.data;
   },
 
@@ -155,9 +146,7 @@ const api = {
         return {id};
     }
 
-    await apiClient.delete(`/vehicles/${id}`, {
-        headers: getAuthHeaders()
-    });
+    await apiClient.delete(`/vehicles/${id}`);
     return {id};
   },
 
@@ -169,9 +158,7 @@ const api = {
       return {coverageFrom: "", coverageTo: ""};
     }
 
-    const response = await apiClient.get("/reports/coverage", {
-      headers: getAuthHeaders(),
-    });
+    const response = await apiClient.get("/reports/coverage");
     return response.data;
   },
 
@@ -183,8 +170,7 @@ const api = {
 
     const response = await apiClient.put(
       "/reports/coverage",
-      {coverageFrom, coverageTo},
-      {headers: getAuthHeaders()}
+      {coverageFrom, coverageTo}
     );
     return response.data;
   },
@@ -195,9 +181,7 @@ const api = {
       return [...reports];
     }
 
-    const response = await apiClient.get("/reports", {
-      headers: getAuthHeaders(),
-    });
+    const response = await apiClient.get("/reports");
     if (Array.isArray(response.data)){
       return response.data;
     }
@@ -219,9 +203,7 @@ const api = {
       reports = [row,...reports];
       return row;
     }
-    const response = await apiClient.post("/reports", payload, {
-      headers: getAuthHeaders(),
-    });
+    const response = await apiClient.post("/reports", payload);
     return response.data;
   },
 
@@ -237,9 +219,7 @@ const api = {
       return {message: "Report deleted successfully."};
     } 
 
-    const response = await apiClient.delete(`/reports/${encodeURIComponent(normalizeDate)}`, {
-      headers: getAuthHeaders(),
-    });
+    const response = await apiClient.delete(`/reports/${encodeURIComponent(normalizeDate)}`);
     return response.data;
   }
 
