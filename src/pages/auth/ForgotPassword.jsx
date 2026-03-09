@@ -201,8 +201,16 @@ function ForgotPassword() {
                   type="submit"
                   fullWidth
                   variant="contained"
-                  disabled={loading}
-                  sx={{ mt: 3, py: 1.5, borderRadius: 2 }}
+                  sx={{
+                    mt: 3,
+                    py: 1.2,
+                    borderRadius: "16px",
+                    
+                    backgroundColor: '#1a237e', 
+                    '&:hover': {
+                      backgroundColor: '#0d47a1', 
+                    },
+                  }}
                 >
                   {loading ? "Sending..." : "Send OTP"}
                 </Button>
