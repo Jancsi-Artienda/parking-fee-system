@@ -13,6 +13,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import RefreshIcon from '@mui/icons-material/Refresh';
+import AddIcon from '@mui/icons-material/Add';
 
 
 export default function Report() {
@@ -299,21 +300,20 @@ export default function Report() {
                 <Button
                   variant="outlined"
                   onClick={() => setOpenModal(true)}
+                  startIcon={<AddIcon />}
                   sx={{ borderRadius: "10px", textTransform: "none" }}
                 >
-                  +
+                  add
                 </Button>
               </Box>
-              <RefreshIcon>
-                <Button
-                  variant="outlined"
-                  onClick={() => setOpenModal(true)}
-                  sx={{ borderRadius: "10px", textTransform: "none" }}
-                >
-
-                </Button>
-              </RefreshIcon>
-
+              <Button
+                variant="outlined"
+                onClick={() => setOpenModal(false)}
+                startIcon={<RefreshIcon />} 
+                sx={{ borderRadius: "10px", textTransform: "none" }}
+              >
+                Refresh
+              </Button>
 
             </Box>
           </Box>
