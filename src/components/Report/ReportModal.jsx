@@ -36,6 +36,7 @@ export default function AddReportModal({
     amount: "50",
   });
   const [selectedDates, setSelectedDates] = useState([]);
+  const [calendarValue, setCalendarValue] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [localError, setLocalError] = useState("");
   const submitLockRef = useRef(false);
@@ -85,10 +86,12 @@ export default function AddReportModal({
     const dateStr = newValue.format("YYYY-MM-DD");
     if (selectedDates.includes(dateStr)) {
       handleDateRemove(dateStr);
+      setCalendarValue(null);
       return;
     }
     if (isDateDisabled(newValue)) return;
     setLocalError("");
+    setCalendarValue(newValue);
     setSelectedDates((prev) => [...prev, dateStr].sort());
   };
 
@@ -104,6 +107,7 @@ export default function AddReportModal({
       <PickersDay
         {...other}
         day={day}
+        selected={isSelected}
         sx={{
           ...(isSelected && {
             backgroundColor: (theme) => theme.palette.primary.main,
@@ -120,6 +124,7 @@ export default function AddReportModal({
   const handleClose = () => {
     if (submitting) return;
     setLocalError("");
+    setCalendarValue(null);
     setOpen(false);
   };
 
@@ -152,6 +157,7 @@ export default function AddReportModal({
         amount: "50",
       });
       setSelectedDates([]);
+      setCalendarValue(null);
       setOpen(false);
 
       await Swal.fire({
@@ -183,6 +189,7 @@ export default function AddReportModal({
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
             <DateCalendar
+              value={calendarValue}
               onChange={handleDateAdd}
               shouldDisableDate={isDateDisabled}
               slots={{ day: HighlightedDay }}
