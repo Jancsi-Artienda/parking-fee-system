@@ -8,11 +8,11 @@ export function VehicleProvider({ children }) {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const token = user?.token || null;
+  const authUserId = user?.id || null;
 
   useEffect(() => {
     const fetchVehicles = async () => {
-      if (!token && import.meta.env.VITE_API_URL) {
+      if (!authUserId && import.meta.env.VITE_API_URL) {
         setVehicles([]);
         setError("");
         setLoading(false);
@@ -33,7 +33,7 @@ export function VehicleProvider({ children }) {
     };
 
     fetchVehicles();
-  }, [token]);
+  }, [authUserId]);
 
   const addVehicle = async (vehicleData) => {
     setError("");

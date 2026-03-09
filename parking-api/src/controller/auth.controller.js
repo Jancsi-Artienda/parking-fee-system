@@ -3,8 +3,21 @@ import jwt from "jsonwebtoken";
 import { randomBytes } from "crypto";
 import pool from "../db.js";
 import { getJwtSecret } from "../jwt.js";
+import { AUTH_COOKIE_NAME, getBearerToken } from "../auth.js";
 
 const GMAIL_REGEX = /^[^\s@]+@gmail\.com$/i;
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const REMEMBER_ME_DAYS = 30;
+
+function cookieOptions(maxAgeMs) {
+  return {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    ...(Number.isFinite(maxAgeMs) ? { maxAge: maxAgeMs } : {}),
+  };
+}
 
 function capitalizeFirstLetter(value = "") {
   const trimmed = value.trim();
@@ -185,7 +198,7 @@ export async function register(req, res) {
 }
 
 export async function login(req, res) {
-  const { email = "", password = "" } = req.body || {};
+  const { email = "", password = "", rememberMe = false } = req.body || {};
 
   const normalizedEmail = email.trim().toLowerCase();
   if (!normalizedEmail || !password) {
@@ -227,6 +240,8 @@ export async function login(req, res) {
       getJwtSecret(),
       { expiresIn: "7d" }
     );
+    const maxAgeMs = rememberMe ? REMEMBER_ME_DAYS * ONE_DAY_MS : undefined;
+    res.cookie(AUTH_COOKIE_NAME, token, cookieOptions(maxAgeMs));
 
     return res.json({
       id: user.usertable_id,
@@ -236,11 +251,15 @@ export async function login(req, res) {
       email: user.company_email,
       contactNumber: user.contact_number || "",
       vehicleNumber: canReadVehicleNumber ? Number(user.vehicle_number || 0) : null,
-      token,
     });
   } catch (error) {
     return res.status(500).json({ message: "Login failed.", detail: error.message });
   }
+}
+
+export function logout(_req, res) {
+  res.clearCookie(AUTH_COOKIE_NAME, cookieOptions());
+  return res.json({ message: "Logged out successfully." });
 }
 
 export async function forgotPassword(req, res) {
@@ -278,8 +297,7 @@ export async function forgotPassword(req, res) {
 }
 
 export async function updateProfile(req, res) {
-  const authHeader = req.headers.authorization || "";
-  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+  const token = getBearerToken(req);
 
   if (!token) {
     return res.status(401).json({ message: "Unauthorized." });
