@@ -2,7 +2,7 @@ import apiClient from "./apiClient";
 import { getStoredToken } from "../utils/authStorage";
 import dayjs from "dayjs";
 
-//Authentication
+
 function getAuthHeaders() {
     const token = getStoredToken();
     if (!token) {
@@ -35,6 +35,7 @@ let vehicles = [
 
 
 const api = {
+  //Authentication
   async login(email, password) {
     if (!import.meta.env.VITE_API_URL) {
       return new Promise((resolve) => {
