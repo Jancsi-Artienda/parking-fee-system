@@ -12,6 +12,8 @@ import useParkingFeePDF from "../../hooks/useParkingFeePDF";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import RefreshIcon from '@mui/icons-material/Refresh';
+
 
 export default function Report() {
   const { vehicles } = useVehicles();
@@ -265,7 +267,7 @@ export default function Report() {
             mb: 3,
           }}
         >
-          <Box sx={{ display: "flex", flexDirection: "column", p: 1,gap: 1 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", p: 1, gap: 1 }}>
             <Typography variant="h5" sx={{ fontWeight: 500 }}>
               Parking Fee Report
             </Typography>
@@ -274,7 +276,7 @@ export default function Report() {
             <Box sx={{ display: "flex", gap: 2, alignItems: "center", p: 1 }}>
               <Typography variant="body1" sx={{ p: 1 }}>
                 Coverage:
-              </Typography> 
+              </Typography>
               <DatePicker
                 label="From"
                 value={startDate}
@@ -293,26 +295,31 @@ export default function Report() {
                 }}
                 slotProps={{ textField: { size: 'small' } }}
               />
+              <Box>
+                <Button
+                  variant="outlined"
+                  onClick={() => setOpenModal(true)}
+                  sx={{ borderRadius: "10px", textTransform: "none" }}
+                >
+                  +
+                </Button>
+              </Box>
+              <RefreshIcon>
+                <Button
+                  variant="outlined"
+                  onClick={() => setOpenModal(true)}
+                  sx={{ borderRadius: "10px", textTransform: "none" }}
+                >
+
+                </Button>
+              </RefreshIcon>
+          
+              
             </Box>
           </Box>
-          <Box sx={{ display: "flex", gap: 1.5 }}>
-            <Button
-              variant="outlined"
-              onClick={handleExportPDF}
-              disabled={loading}
-              sx={{ borderRadius: "10px", textTransform: "none" }}
-            >
-              Export PDF
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={() => setOpenModal(true)}
-              sx={{ borderRadius: "10px", textTransform: "none" }}
-            >
-              Add Report
-            </Button>
-          </Box>
         </Box>
+
+
 
         {error ? <Typography color="error">{error}</Typography> : null}
 
@@ -337,7 +344,25 @@ export default function Report() {
           coverageFrom={startDate}
           coverageTo={endDate}
         />
+
+        <Box sx={{
+          display: "flex",
+          // Forces items to the left
+          width: "100%",                // Ensures the container takes up the full line
+          gap: 1.5
+        }}>
+          <Button
+            variant="outlined"
+            onClick={handleExportPDF}
+            disabled={loading}
+            sx={{ borderRadius: "10px", textTransform: "none", background: "green", color: "white" ,ml:140}}
+
+          >
+            Export PDF
+          </Button>
+        </Box>
       </Paper>
+
     </LocalizationProvider>
   );
 }
