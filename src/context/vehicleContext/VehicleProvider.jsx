@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { VehicleContext } from "./VehicleContext";
-import { vehicleService } from "../../services/VehicleService";
+import  api  from "../../services/api";
 import useAuth from "../auth/useAuth";
 
 export function VehicleProvider({ children }) {
@@ -23,7 +23,7 @@ export function VehicleProvider({ children }) {
       setError("");
 
       try {
-        const data = await vehicleService.getVehicles();
+        const data = await api.getVehicles();
         setVehicles(Array.isArray(data) ? [...data] : []);
       } catch (err) {
         setError(err?.data?.message || "Failed to load vehicles.");
@@ -39,7 +39,7 @@ export function VehicleProvider({ children }) {
     setError("");
 
     try {
-      const newVehicle = await vehicleService.addVehicle(vehicleData);
+      const newVehicle = await api.addVehicle(vehicleData);
       setVehicles(prev => [...prev, newVehicle]);
       return newVehicle;
     } catch (err) {
@@ -53,7 +53,7 @@ export function VehicleProvider({ children }) {
     setError("");
 
     try {
-      await vehicleService.deleteVehicle(id);
+      await api.deleteVehicle(id);
       setVehicles((prev) => prev.filter((vehicle) => vehicle.id !== id));
     } catch (err) {
       const message = err?.data?.message || "Failed to delete vehicle.";

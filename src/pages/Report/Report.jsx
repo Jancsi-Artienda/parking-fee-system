@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import Swal from "sweetalert2";
 import AddReportModal from "../../components/Report/ReportModal";
 import ParkingReportTable from "../../components/dashboard/ParkingReportTable";
-import parkingReportService from "../../services/ParkingReportService";
+import api from "../../services/api";
 import { useVehicles } from "../../context/vehicleContext/useVehicles";
 import useAuth from "../../context/auth/useAuth";
 import useParkingFeePDF from "../../hooks/useParkingFeePDF";
@@ -35,7 +35,7 @@ export default function Report() {
     const loadCoveragePreference = async () => {
       setCoverageLoaded(false);
       try {
-        const data = await parkingReportService.getCoverage();
+        const data = await api.getCoverage();
         if (!isActive) {
           return;
         }
@@ -79,7 +79,7 @@ export default function Report() {
 
     const saveCoveragePreference = async () => {
       try {
-        await parkingReportService.saveCoverage({
+        await api.saveCoverage({
           coverageFrom: normalizedStart.format("YYYY-MM-DD"),
           coverageTo: normalizedEnd.format("YYYY-MM-DD"),
         });
@@ -144,7 +144,7 @@ export default function Report() {
       setLoading(true);
       setError("");
       try {
-        const data = await parkingReportService.getReports();
+        const data = await api.getReports();
         const normalizedRows = Array.isArray(data)
           ? data
           : Array.isArray(data?.reports)
@@ -187,7 +187,7 @@ export default function Report() {
         continue; // Skip dates outside coverage (already validated in modal but safe to keep)
       }
 
-      const created = await parkingReportService.addReport({
+      const created = await api.addReport({
         transDate: dateStr,
         vehicleId,
         amount,
@@ -236,7 +236,7 @@ export default function Report() {
 
     setDeleting(true);
     try {
-      await parkingReportService.deleteReport(reportRow.transDate);
+      await api.deleteReport(reportRow.transDate);
       const targetDate = dayjs(reportRow.transDate).isValid()
         ? dayjs(reportRow.transDate).format("YYYY-MM-DD")
         : String(reportRow.transDate || "");
