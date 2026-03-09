@@ -313,8 +313,8 @@ export default function Report() {
 
                 </Button>
               </RefreshIcon>
-          
-              
+
+
             </Box>
           </Box>
         </Box>
@@ -355,7 +355,13 @@ export default function Report() {
             variant="outlined"
             onClick={handleExportPDF}
             disabled={loading}
-            sx={{ borderRadius: "10px", textTransform: "none", background: "green", color: "white" ,ml:140}}
+            sx={{
+              borderRadius: "10px",
+              textTransform: "none",
+              background: "green",
+              color: "white",
+              marginLeft: "auto"
+            }}
 
           >
             Export PDF
