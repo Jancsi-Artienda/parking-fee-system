@@ -48,6 +48,27 @@ function isValidDateInput(value) {
   return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
+const MIN_COVERAGE_DAYS = 14;
+
+function parseYmdUtc(ymd) {
+  if (!isValidDateInput(ymd)) return null;
+  const [y,m,d] = ymd.split("-").map(Number);
+  const dt = new Date(Date.UTC(y,m - 1, d));
+
+  if(dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) {
+    return null;
+  }
+  return dt;
+}
+
+function diffDayUtc(fromYmd, toYmd) { 
+  const from = parseYmdUtc(fromYmd);
+  const to = parseYmdUtc(toYmd);
+  if (!from || !to) return null;
+  const ms = to.getTime() - from.getTime();
+  return Math.floor(ms / 86400000);
+}
+
 export async function getReportCoverage(req, res) {
   const employeeId = Number(req.user?.employeeId);
   if (!Number.isInteger(employeeId) || employeeId <= 0) {
@@ -98,9 +119,21 @@ export async function updateReportCoverage(req, res) {
     return res.status(400).json({ message: "Coverage dates must use YYYY-MM-DD format." });
   }
 
-  if (normalizedCoverageFrom > normalizedCoverageTo) {
-    return res.status(400).json({ message: "Coverage start date cannot be after coverage end date." });
+   if (normalizedCoverageFrom > normalizedCoverageTo) {
+    return res.status(400).json({ message: "Coverage end date cannot be before coverage start date.", });
   }
+
+  const coverageDays = diffDayUtc(normalizedCoverageFrom, normalizedCoverageTo);
+  if(coverageDays === null) {
+    return res.status(400).json({
+      message: "Coverage dates must be valid calendar dates.",
+    });
+  }
+
+  if (coverageDays < MIN_COVERAGE_DAYS){
+    return res.status(400).json({message: "Coverage To must be at least 15 days after the Coverage from",});
+  }
+
 
   try {
     await pool.query(
@@ -245,6 +278,30 @@ export async function addReport(req, res) {
     if (vehicleRows.length === 0) {
       return res.status(404).json({ message: "Selected vehicle was not found." });
     }
+    
+      const from = String(coverageFrom || "").trim();
+      const to = String(coverageTo || "").trim();
+
+      if (!from || !to) {
+        return res.status(400).json({message: "Coverage is required",})
+      }
+
+      if(!isValidDateInput(from) || !isValidDateInput(to)) {
+        return res.status(400).json({message: "Coverage date must use YYYY-MM-DD format",});
+      }
+
+      const coverageDays = diffDayUtc(from, to);
+      if(coverageDays === null){
+        return res.status(400).json({
+          message: "Coverage dates must be valid calendar dates.",
+        });
+      }
+
+      if (coverageDays < MIN_COVERAGE_DAYS) {
+        return res.status(400).json({message: "Coverage To must be at least 15 days after Coverage From.",});
+      }
+
+    
 
     const vehicleType = (vehicleRows[0].vehicle || "").trim();
     const vehicleName = (vehicleRows[0].vehicle_model || "").trim();

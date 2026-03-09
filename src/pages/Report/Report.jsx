@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { Box, Paper, Typography, Button } from "@mui/material";
 import dayjs from "dayjs";
 import { toast } from "sonner";
@@ -30,6 +30,20 @@ export default function Report() {
   const [coverageTouched, setCoverageTouched] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  const MIN_COVERAGE_DAYS = 14;
+
+  const getMinCoverageTo = useCallback ((from)=> {
+    const d = dayjs(from);
+    return d.isValid() ? d.startOf("day").add(MIN_COVERAGE_DAYS, "day") : null;
+  }, []);
+
+  const isCoverageValid = useCallback ((from, to) => {
+    const start = dayjs(from);
+    const end = dayjs(to);
+    if (!start.isValid() || !end.isValid()) return false;
+    return !end.isBefore(getMinCoverageTo(start), "day");
+  }, [getMinCoverageTo]);
+
   useEffect(() => {
     let isActive = true;
 
@@ -37,18 +51,18 @@ export default function Report() {
       setCoverageLoaded(false);
       try {
         const data = await api.getCoverage();
-        if (!isActive) {
-          return;
-        }
+        if(!isActive) return;
+
         const savedStart = dayjs(data?.coverageFrom);
         const savedEnd = dayjs(data?.coverageTo);
-        if (savedStart.isValid() && savedEnd.isValid() && !savedStart.isAfter(savedEnd, "day")) {
+
+        if(savedStart.isValid() && savedEnd.isValid() && !savedStart.isAfter(savedEnd, "day") && isCoverageValid(savedStart, savedEnd)) {
           setStartDate(savedStart);
           setEndDate(savedEnd);
         }
-      } catch {
-        // Keep default coverage when preference load fails.
-      } finally {
+      } catch (err) {
+        setError(err?.data?.message || "Invalid Coverage.");
+      } finally{
         if (isActive) {
           setCoverageLoaded(true);
         }
@@ -60,7 +74,7 @@ export default function Report() {
     return () => {
       isActive = false;
     };
-  }, [user?.id, user?.employeeId, user?.email]);
+  }, [user?.id, user?.employeeId, user?.email, isCoverageValid]);
 
   useEffect(() => {
     if (!coverageLoaded || !coverageTouched) {
@@ -78,19 +92,23 @@ export default function Report() {
       return;
     }
 
+    if (!isCoverageValid(normalizedStart, normalizedEnd)){
+      return;
+    }
+
     const saveCoveragePreference = async () => {
       try {
         await api.saveCoverage({
           coverageFrom: normalizedStart.format("YYYY-MM-DD"),
           coverageTo: normalizedEnd.format("YYYY-MM-DD"),
         });
-      } catch {
-        // Keep report flow usable even when preference save fails.
+      } catch (err) {
+        setError(err?.data?.message || "Failed to load coverage.");
       }
     };
 
     saveCoveragePreference();
-  }, [coverageLoaded, coverageTouched, startDate, endDate]);
+  }, [coverageLoaded, coverageTouched, startDate, endDate, isCoverageValid]);
 
   const handleExportPDF = () => {
     if (loading) {
@@ -140,6 +158,8 @@ export default function Report() {
     }
   };
 
+
+
   useEffect(() => {
     const loadReports = async () => {
       setLoading(true);
@@ -177,6 +197,10 @@ export default function Report() {
 
     if (!Array.isArray(transDates) || transDates.length === 0) {
       throw new Error("At least one transaction date is required.");
+    }
+
+    if(!isCoverageValid(coverageStart, coverageEnd)){
+      throw new Error("Coverage must be at least 15 days ahead");
     }
 
     const createdReports = [];
@@ -273,7 +297,7 @@ export default function Report() {
               Parking Fee Report
             </Typography>
 
-
+            
             <Box sx={{ display: "flex", gap: 2, alignItems: "center", p: 1 }}>
               <Typography variant="body1" sx={{ p: 1 }}>
                 Coverage:
@@ -284,15 +308,33 @@ export default function Report() {
                 onChange={(newValue) => {
                   setCoverageTouched(true);
                   setStartDate(newValue);
+                  if(newValue && dayjs(newValue).isValid()) {
+                    const minTo = getMinCoverageTo(newValue);
+                    if (!endDate || !dayjs(endDate).isValid() || dayjs(endDate).isBefore(minTo, "day")){
+                      setEndDate(minTo);
+                    }
+                  }
                 }}
                 slotProps={{ textField: { size: 'small' } }}
               />
+
+              
               <DatePicker
                 label="To"
+                minDate={getMinCoverageTo(startDate)}
                 value={endDate}
-                onChange={(newValue) => {
+                onChange={(newValue) =>  {
                   setCoverageTouched(true);
-                  setEndDate(newValue);
+                  if (!startDate || !dayjs(startDate).isValid()){
+                    setEndDate(newValue);
+                    return;
+                  }
+                  const minTo = getMinCoverageTo(startDate);
+                  if(newValue && dayjs(newValue).isValid() && dayjs(newValue).isBefore(minTo, "day")){
+                    toast.error("Coverage must be at least 15 days after");
+                    return;
+                  }
+                  setEndDate(newValue)
                 }}
                 slotProps={{ textField: { size: 'small' } }}
               />
