@@ -105,7 +105,7 @@ const Login = () => {
             </Typography>
 
             <Typography color="text.secondary" mb={3}>
-              Welcome back! Please sign in to continue
+              Please sign in to continue
             </Typography>
 
             {error && (
@@ -186,7 +186,7 @@ const Login = () => {
                   '&:hover': {
                     backgroundColor: '#0d47a1', // A slightly darker shade for the hover effect
                   },
-                }} F
+                }}  
               >
                 {loading ? "Logging in..." : "Login"}
               </Button>
