@@ -191,7 +191,7 @@ const Register = () => {
               <Grid container spacing={3}>
                 <Grid size={6}>
                   <Typography variant="body2" fontWeight="bold">
-                    First Name: 
+                    First Name:  
                   </Typography>
                   <TextField
                     fullWidth
@@ -211,7 +211,7 @@ const Register = () => {
                   </Typography>
                   <TextField
                     fullWidth
-                    name="lastName"
+                    name="lastName" 
                     placeholder="Delacruz"
                     value={formData.lastName}
                     onChange={handleChange}
@@ -256,7 +256,21 @@ const Register = () => {
                   />
                 </Grid>
 
-              
+                <Grid size={12}>
+                  <Typography variant="body2" fontWeight="bold">
+                    Username:
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    name="username"
+                    placeholder="John Paul"
+                    value={formData.username}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={Boolean(touchedFields.username && fieldErrors.username)}
+                    helperText={touchedFields.username ? fieldErrors.username : ""}
+                  />
+                </Grid>
 
 
                 <Grid size={6}>
@@ -282,6 +296,7 @@ const Register = () => {
                       ),
                     }}
                   />
+
                 </Grid>
 
                 <Grid size={6}>
@@ -317,7 +332,6 @@ const Register = () => {
                     <Button
                       type="submit"
                       variant="contained"
-                      
                       sx={{
                         mt: 3,
                         py: 1.2,
