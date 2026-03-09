@@ -6,6 +6,9 @@ import { getJwtSecret } from "../jwt.js";
 import { AUTH_COOKIE_NAME, getBearerToken } from "../auth.js";
 
 const GMAIL_REGEX = /^[^\s@]+@gmail\.com$/i;
+const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
+const DEFAULT_SELF_REGISTER_VEHICLE_NUMBER = 1;
+const MAX_SELF_REGISTER_VEHICLE_NUMBER = 1;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const REMEMBER_ME_DAYS = 30;
 
@@ -88,7 +91,8 @@ export async function register(req, res) {
     username: username.trim(),
     password,
     confirmPassword,
-    vehicleNumber: String(vehicleNumber).trim(),
+    vehicleNumber:
+      String(vehicleNumber).trim() || String(DEFAULT_SELF_REGISTER_VEHICLE_NUMBER),
   };
 
   if (
@@ -116,9 +120,21 @@ export async function register(req, res) {
     return res.status(400).json({ message: "Contact number must be exactly 11 digits." });
   }
 
+  if (!USERNAME_REGEX.test(normalized.username)) {
+    return res.status(400).json({
+      message: "Username must be 3-20 characters using letters, numbers, or underscore.",
+    });
+  }
+
   const parsedVehicleNumber = Number(normalized.vehicleNumber);
   if (!Number.isInteger(parsedVehicleNumber) || parsedVehicleNumber < 1) {
     return res.status(400).json({ message: "Number of vehicles must be at least 1." });
+  }
+  if (parsedVehicleNumber > MAX_SELF_REGISTER_VEHICLE_NUMBER) {
+    return res.status(400).json({
+      message:
+        "Self-registration currently allows 1 vehicle. Additional vehicles will require admin approval.",
+    });
   }
 
   try {
@@ -321,7 +337,7 @@ export async function updateProfile(req, res) {
     return res.status(400).json({ message: "Username, name, email, and contact number are required." });
   }
 
-  if (!/^[a-zA-Z0-9_]{3,20}$/.test(normalizedUsername)) {
+  if (!USERNAME_REGEX.test(normalizedUsername)) {
     return res.status(400).json({ message: "Username must be 3-20 characters using letters, numbers, or underscore." });
   }
 

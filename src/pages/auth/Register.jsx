@@ -22,6 +22,8 @@ import {
 } from "../../utils/validators";
 import background from "../../assets/background.png";
 
+const DEFAULT_REGISTER_VEHICLE_NUMBER = 1;
+
 const Register = () => {
   const [formData, setFormData] = useState({
     firstName: "",
@@ -29,7 +31,7 @@ const Register = () => {
     email: "",
     contactNumber: "",
     username: "",
-    vehicleNumber: "",
+    vehicleNumber: String(DEFAULT_REGISTER_VEHICLE_NUMBER),
     password: "",
     confirmPassword: "",
   });
@@ -103,7 +105,7 @@ const Register = () => {
         email: formData.email.trim().toLowerCase(),
         contactNumber: formData.contactNumber.trim(),
         username: formData.username.trim(),
-        vehicleNumber: Number(formData.vehicleNumber),
+        vehicleNumber: DEFAULT_REGISTER_VEHICLE_NUMBER,
         password: formData.password,
         confirmPassword: formData.confirmPassword,
       };
