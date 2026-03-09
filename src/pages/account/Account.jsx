@@ -154,7 +154,7 @@ export default function Account() {
           <Grid container spacing={3}>
             <Grid item size={6} md={6}>
               <Typography variant="body2" fontWeight="bold" mb={0.5}>
-                Username
+                Username:
               </Typography>
               <TextField
                 fullWidth
@@ -169,7 +169,7 @@ export default function Account() {
 
             <Grid item size={6} md={6}>
               <Typography variant="body2" fontWeight="bold" mb={0.5}>
-                Full Name
+                Full Name:
               </Typography>
               <TextField
                 fullWidth
@@ -183,7 +183,7 @@ export default function Account() {
             </Grid>
             <Grid item size={6} md={6}>
               <Typography variant="body2" fontWeight="bold" mb={0.5}>
-                Email address
+                Email address:
               </Typography>
               <TextField
                 fullWidth
@@ -197,7 +197,7 @@ export default function Account() {
             </Grid>
             <Grid item size={6} md={6}>
               <Typography variant="body2" fontWeight="bold" mb={0.5}>
-                Contact number
+                Contact number:
               </Typography>
               <TextField
                 fullWidth

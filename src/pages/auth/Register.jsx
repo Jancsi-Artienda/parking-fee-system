@@ -191,7 +191,7 @@ const Register = () => {
               <Grid container spacing={3}>
                 <Grid size={6}>
                   <Typography variant="body2" fontWeight="bold">
-                    First Name
+                    First Name: 
                   </Typography>
                   <TextField
                     fullWidth
@@ -207,7 +207,7 @@ const Register = () => {
 
                 <Grid size={6}>
                   <Typography variant="body2" fontWeight="bold">
-                    Last Name
+                    Last Name:
                   </Typography>
                   <TextField
                     fullWidth
@@ -223,7 +223,7 @@ const Register = () => {
 
                 <Grid size={12}>
                   <Typography variant="body2" fontWeight="bold">
-                    Email Address
+                    Email Address:
                   </Typography>
                   <TextField
                     fullWidth
@@ -240,7 +240,7 @@ const Register = () => {
 
                 <Grid size={12}>
                   <Typography variant="body2" fontWeight="bold">
-                    Contact Number
+                    Contact Number:
                   </Typography>
                   <TextField
                     fullWidth
@@ -261,7 +261,7 @@ const Register = () => {
 
                 <Grid size={6}>
                   <Typography variant="body2" fontWeight="bold">
-                    Password
+                    Password:
                   </Typography>
                   <TextField
                     fullWidth
@@ -286,7 +286,7 @@ const Register = () => {
 
                 <Grid size={6}>
                   <Typography variant="body2" fontWeight="bold">
-                    Confirm Password
+                    Confirm Password:
                   </Typography>
                   <TextField
                     fullWidth
