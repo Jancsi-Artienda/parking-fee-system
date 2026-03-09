@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import ParkingReportTable from "../../components/dashboard/ParkingReportTable";
 import VehicleStatCard from "../../components/dashboard/VehicleStatCard";
 import { useVehicles } from "../../context/vehicleContext/useVehicles";
-import parkingReportService from "../../services/ParkingReportService";
+import api from "../../services/api";
 
 export default function Dashboard() {
   const { vehicles, error } = useVehicles();
@@ -18,7 +18,7 @@ export default function Dashboard() {
       setReportError("");
 
       try {
-        const data = await parkingReportService.getReports();
+        const data = await api.getReports();
         setReportRows(data.slice(0, 5));
       } catch (err) {
         setReportError(err?.data?.message || "Failed to load dashboard reports.");

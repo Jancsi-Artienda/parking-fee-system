@@ -1,5 +1,5 @@
 import { createContext, useState } from "react";
-import AuthService from "../../services/AuthService";
+import api from "../../services/api";
 import {
   clearStoredUser,
   readStoredUser,
@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
   // LOGIN
   const login = async (email, password, rememberMe = false) => {
     setAuthError("");
-    const response = await AuthService.login(email, password);
+    const response = await api.login(email, password);
 
     // when backend is ready this will come from API
     const userData = response.data;
@@ -29,14 +29,14 @@ export const AuthProvider = ({ children }) => {
   // REGISTER
   const register = async (userData) => {
     setAuthError("");
-    const response = await AuthService.register(userData);
+    const response = await api.register(userData);
     return response.data;
   };
 
   // UPDATE PROFILE
   const updateProfile = async (profileData) => {
     setAuthError("");
-    const response = await AuthService.updateProfile(profileData);
+    const response = await api.updateProfile(profileData);
     const updatedUser = { ...(user || {}), ...response.data };
     setUser(updatedUser);
     updateStoredUser(updatedUser);

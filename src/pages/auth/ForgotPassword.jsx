@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import AuthService from "../../services/AuthService";
+import api from "../../services/api";
 import logo from "../../assets/logo.png";
 import OTPcomp from "../../components/OTPcomp/OTPcomp";
 import Newpass from "../../components/OTPcomp/Newpass";
@@ -44,7 +44,7 @@ function ForgotPassword() {
     setLoading(true);
     //Forgotpassword
     try {
-      await AuthService.forgotPassword(normalizedEmail);
+      await api.forgotPassword(normalizedEmail);
 
       await Swal.fire({
         title: "OTP Sent",
@@ -67,7 +67,7 @@ function ForgotPassword() {
     setOtpError("");
     setSubmittingOtp(true);
     try {
-      await AuthService.verifyOtp(email, enteredOtp);
+      await api.verifyOtp(email, enteredOtp);
       await Swal.fire({
         title: "Verified",
         text: "OTP verified successfully.",
@@ -87,7 +87,7 @@ function ForgotPassword() {
     setError("");
     try {
       // Replace with your actual AuthService method
-      await AuthService.resetPassword(email, newPassword);
+      await api.resetPassword(email, newPassword);
 
       await Swal.fire({
         title: "Success!",
@@ -106,7 +106,7 @@ function ForgotPassword() {
   const handleResendOtp = async () => {
     setOtpError("");
     try {
-      await AuthService.forgotPassword(email.trim().toLowerCase());
+      await api.forgotPassword(email.trim().toLowerCase());
       await Swal.fire({
         title: "OTP Resent",
         text: "Check your email for the new code.",
