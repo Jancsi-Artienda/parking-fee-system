@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { randomBytes } from "crypto";
+import { randomInt } from "crypto";
+import { Resend } from "resend";
 import pool from "../db.js";
 import { getJwtSecret } from "../jwt.js";
 import { AUTH_COOKIE_NAME, getBearerToken } from "../auth.js";
@@ -11,6 +12,20 @@ const DEFAULT_SELF_REGISTER_VEHICLE_NUMBER = 1;
 const MAX_SELF_REGISTER_VEHICLE_NUMBER = 1;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const REMEMBER_ME_DAYS = 30;
+const OTP_LENGTH = 6;
+
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+  return new Resend(apiKey);
+}
+
+function generateOtp() {
+  const value = randomInt(0, 10 ** OTP_LENGTH);
+  return String(value).padStart(OTP_LENGTH, "0");
+}
 
 function cookieOptions(maxAgeMs) {
   return {
@@ -291,21 +306,36 @@ export async function forgotPassword(req, res) {
   }
 
   try {
+    const resendFrom = process.env.RESEND_FROM;
+    const resendClient = getResendClient();
+    if (!resendClient || !resendFrom) {
+      return res.status(500).json({
+        message: "Email service not configured.",
+      });
+    }
+
     const [rows] = await pool.query(
       "SELECT usertable_id FROM users WHERE company_email = ? LIMIT 1",
       [normalizedEmail]
     );
 
     if (rows.length > 0) {
-      const resetToken = randomBytes(24).toString("hex");
+      const resetToken = generateOtp();
       await pool.query(
         "UPDATE users SET reset_token = ? WHERE company_email = ? LIMIT 1",
         [resetToken, normalizedEmail]
       );
+
+      await resendClient.emails.send({
+        from: resendFrom,
+        to: normalizedEmail,
+        subject: "Your password reset code",
+        text: `Your password reset code is ${resetToken}. It expires soon. If you did not request this, ignore this email.`,
+      });
     }
 
     return res.json({
-      message: "If an account exists for this email, a reset link has been sent.",
+      message: "If an account exists for this email, a reset code has been sent.",
     });
   } catch (error) {
     return res.status(500).json({ message: "Failed to process forgot password.", detail: error.message });
