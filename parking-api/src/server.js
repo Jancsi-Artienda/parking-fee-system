@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.routes.js";
 import vehicleRoutes from "./routes/vehicles.routes.js";
 import reportRoutes from "./routes/reports.routes.js";
@@ -8,7 +10,10 @@ import pool from "./db.js";
 import { getJwtSecret } from "./jwt.js";
 
 
-dotenv.config();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const envPath = path.resolve(__dirname, "../.env");
+dotenv.config({ path: envPath });
+console.log(`Loaded environment from ${envPath}`);
 getJwtSecret();
 
 const app = express();
