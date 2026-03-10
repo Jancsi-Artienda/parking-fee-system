@@ -1,27 +1,20 @@
-import { Box } from "@mui/material";
 import Sidebar from "./Sidebar";
 import { Outlet } from "react-router-dom";
 
 export default function DashboardLayout() {
   return (
-    <Box sx={{ display: "flex", height: "100vh", width: "100%", backgroundColor: "#ffffff", overflow: "hidden" }}>
-      <Box sx={{ height: "100%" }}>
-        <Sidebar />
-      </Box>
+    <div className="flex h-screen w-full bg-white overflow-hidden">
 
+      {/* Sidebar */}
+      <div className="h-full">
+        <Sidebar />
+      </div>
 
       {/* Main Content */}
-      <Box sx={{
-        flexGrow: 1,
-        p: { xs: 2, md: 4 },
-        backgroundColor: '#F8FAFC', // Glass effect
-        backdropFilter: 'blur(30px)',
-        width: "100%",
-        height: "100%",
-        overflowY: "auto"
-      }}>
+      <div className="flex-1 p-4 md:p-8 bg-[#F8FAFC] backdrop-blur-xl w-full h-full overflow-y-auto">
         <Outlet />
-      </Box>
-    </Box>
+      </div>
+
+    </div>
   );
 }

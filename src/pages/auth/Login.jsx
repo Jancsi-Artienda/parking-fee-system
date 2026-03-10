@@ -1,22 +1,10 @@
 import { useState } from "react";
 import useAuth from "../../context/auth/useAuth";
-import {
-  Box,
-  Container,
-  TextField,
-  Button,
-  Typography,
-  Paper,
-  InputAdornment,
-  IconButton,
-  Checkbox,
-  FormControlLabel
-} from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import background from "../../assets/background.png";
 import logo from "../../assets/logo.png";
-import { toastError, toastSuccess } from "../../utils/swalToast";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { toast } from "sonner";
+import { Eye, EyeOff } from "lucide-react";
 
 const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
@@ -58,150 +46,133 @@ const Login = () => {
   };
 
   return (
-    <Box
-      sx={{
-        width: "100%",
-        minHeight: "100vh",
-        // Replace the gradient with your image path
-        backgroundImage: `url(${background})`,
-        backgroundSize: "cover",      // Ensures the image covers the whole area
-        backgroundPosition: "center", // Keeps the image centered
-        backgroundRepeat: "no-repeat",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
+    <div className="  relative w-full min-h-screen flex justify-center items-center ">
 
-      <Container maxWidth="sm">
-        <Paper elevation={6} sx={{
-          p: 4,
-          borderRadius: 3,
-          // Increased from 0.73 to 0.85 for better readability
-          backgroundColor: 'rgba(239, 239, 239, 0.85)',
-          backdropFilter: 'blur(30px)',
-          WebkitBackdropFilter: 'blur(30px)', // Matched blur for Safari
-          border: '1px solid rgba(255, 255, 255, 0.3)',
-        }}>
-          < Box sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            mb: 3
-          }}>
-            <Box
-              component="img"
+      {/* Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <img
+          src={background}
+          alt="background"
+          className="absolute inset-0 -z-10 h-full w-full object-cover"
+        />
+      </div>
+
+      <div className="w-full max-w-lg mx-auto px-4">
+        <div className="p-8 rounded-3xl border border-white/30 bg-white/80 shadow-lg backdrop-blur-xl">
+          <div className="flex flex-col items-center mb-6">
+
+            {/* Logo */}
+            <img
               src={logo}
               alt="Parking Fee Logo"
-              sx={{
-                width: "100%",        // Adjusted for internal container fit
-                maxWidth: "220px",
-                height: "auto",
-                filter: "drop-shadow(0px 4px 10px rgba(0,0,0,0.1))",
-                // position: "absolute" REMOVED to keep it inside the flow
-              }}
+              className="w-full max-w-[220px] h-auto mb-4 drop-shadow-md"
             />
-            <Typography variant="h4" fontWeight="bold" gutterBottom>
-              Parking Fee Login
-            </Typography>
 
-            <Typography color="text.secondary" mb={3}>
-              Please sign in to continue
-            </Typography>
-
+            {/* Error */}
             {error && (
-              <Typography color="error" mb={2}>
-                {error}
-              </Typography>
-            )}
-
-            <Box component="form" onSubmit={handleSubmit}>
-              <TextField
-                fullWidth
-                label="Email"
-                type="email"
-                margin="normal"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-
-              <TextField
-                fullWidth
-                label="Password"
-                type={showPassword ? "text" : "password"}
-                margin="normal"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center", // Vertically aligns the checkbox with the link text
-                  mt: 1,
-                  width: "100%",
-                }}
-              >
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      size="small"
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      color="primary"
-                    />
-                  }
-                  label={
-                    <Typography variant="body2" sx={{ fontSize: "14px" }}>
-                      Remember me
-                    </Typography>
-                  }
-                  sx={{ margin: 0 }}
+              <p className="text-red-500 text-sm mb-3 text-center">{error}</p>
+            )} 
+            <>
+              <h1 className="text-3xl font-bold mb-1 text-black-900">
+                 Login
+              </h1>
+              <p className="text-gray-500 mb-4 text-center">
+                Please sign in to continue.
+              </p>
+            </>
+            {/* ONE single form */}
+            <form onSubmit={handleSubmit} className="w-full">
+              {/* Username */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Username
+                </label>
+                <input
+                  type="email"
+                  placeholder="Enter your username"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400"
                 />
-              </Box>
-              <Box sx={{ display: "flex", justifyContent: "flex-end", mt: -4 }}>
-                <Link to="/forgotpassword" style={{ fontSize: 14 }}>
-                  Forgot Password
-                </Link>
-              </Box>
+              </div>
 
-              <Button
+              {/* Password */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+              </div>
+
+
+
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="rememberMe"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 accent-blue-900 cursor-pointer"
+                  />
+                  <label htmlFor="rememberMe" className="ml-2 text-sm text-gray-600 cursor-pointer">
+                    Remember me
+                  </label>
+                </div>
+
+                <Link
+                  to="/forgotpassword"
+                  className="text-sm text-blue-800 hover:underline"
+                >
+                  Forgot Password?
+                </Link>
+              </div>
+
+              {/* Submit */}
+              <button
                 type="submit"
-                fullWidth
-                variant="contained"
-                sx={{
-                  mt: 3,
-                  py: 1.2,
-                  borderRadius: "16px",
-                  // Add these lines below:
-                  backgroundColor: '#1a237e', // Replace with your sidebar's HEX code
-                  '&:hover': {
-                    backgroundColor: '#0d47a1', // A slightly darker shade for the hover effect
-                  },
-                }}  
+                className="w-full py-3 rounded-2xl text-white font-semibold text-sm transition-colors duration-200 bg-[#1a237e] hover:bg-[#0d47a1]"
               >
                 {loading ? "Logging in..." : "Login"}
-              </Button>
-            </Box>
+              </button>
 
-            <Typography align="center" sx={{ mt: 2 }}>
-              Don't have an account? <Link to="/register">Register</Link>
-            </Typography>
-          </Box>
-        </Paper>
-      </Container>
-    </Box>
+              <div className="mb-4 text-center mt-4">
+
+                <Link
+
+                  to="/register"
+
+                  className="text-sm text-blue-800 hover:underline"
+
+                >
+
+                  Don't have an account? Register
+
+                </Link>
+
+              </div>
 
 
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

@@ -1,18 +1,5 @@
-import {
-  Box,
-  Typography,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Button,
-  Divider,
-  
-} from "@mui/material";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
-import SummarizeIcon from '@mui/icons-material/Summarize';
+import { LayoutDashboard, Car, FileText, User, LogOut } from "lucide-react";
 import logo from "../assets/logo.png";
 import useAuth from "../context/auth/useAuth";
 import Swal from "sweetalert2";
@@ -23,9 +10,9 @@ export default function Sidebar() {
   const { logout } = useAuth();
 
   const menuItems = [
-    { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
-    { text: "Vehicle", icon: <DirectionsCarIcon />, path: "/vehicle" },
-    { text: "Report", icon: <SummarizeIcon />, path: "/report" },
+    { text: "Dashboard", icon: <LayoutDashboard size={20} />, path: "/dashboard" },
+    { text: "Vehicle", icon: <Car size={20} />, path: "/vehicle" },
+    { text: "Report", icon: <FileText size={20} />, path: "/report" },
   ];
 
   const isAccountActive = location.pathname === "/account";
@@ -41,135 +28,74 @@ export default function Sidebar() {
       confirmButtonColor: "#E60000",
     });
 
-    if (!result.isConfirmed) {
-      return;
-    }
+    if (!result.isConfirmed) return;
 
     logout();
     navigate("/");
   };
 
   return (
-    <Box
-      sx={{
-        width: 280,
-        minHeight: "100vh",
-        backgroundColor: '#FFFFFF', // Glass effect
-        backdropFilter: 'blur(30px)',
-        borderRight: '1px solid rgba(0, 0, 0, 0.43)',
-        display: 'flex',
-        flexDirection: 'column',
-        p: 2
-      }}
-    >
+    <div className="w-[280px] min-h-screen bg-white border-r border-black/10 flex flex-col p-4">
+
       {/* Logo */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          px: 3,
-        }}
-      >
-        <Box
-          component="img"
+      <div className="flex justify-center items-center px-3 py-2">
+        <img
           src={logo}
           alt="Parking Fee Logo"
-          sx={{ width: "100%", maxWidth: 500 }}
+          className="w-full max-w-[180px] h-auto"
         />
-      </Box>
-      <Divider sx={{ mt: 2, mb: 1, mx: 2, borderColor: 'rgba(0, 0, 0, 0.1)' }} />
+      </div>
+
+      {/* Divider */}
+      <hr className="my-3 border-black/10" />
+
       {/* Navigation */}
-      <Box sx={{ flexGrow: 0.8 }}>
-        <List sx={{ px: 2, mt: 3 }}>
-          {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
-
-            return (
-              <ListItemButton
-                key={item.text}
-                component={NavLink}
-                style={{ textDecoration: "none", color: "#000" }}
-                to={item.path}
-                disableRipple
-                sx={{
-                  borderRadius: "16px",
-                  mb: 2,
-                  py: 1.5,
-                  px: 2.5,
-                  
-                  backgroundColor: isActive ? "#D6D6D6" : "#F2F2F2",
-                  color: "#333",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
-                  transition: "all 0.2s ease",
-
-                  "&:hover": {
-                    backgroundColor: "#E0E0E0",
-                  },
-
-                  "& .MuiListItemIcon-root": {
-                    minWidth: 36,
-                    color: "#333",
-                  },
-
-                  "& .MuiListItemText-primary": {
-                    fontWeight: isActive ? 600 : 500,
-                  },
-                }}
-              >
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.text} />
-              </ListItemButton>
-            );
-          })}
-        </List>
-      </Box>
+      <nav className="flex-1 px-2 mt-3 ">
+        {menuItems.map((item) => {
+          const isActive = location.pathname === item.path;
+          return (
+            <NavLink
+              key={item.text}
+              to={item.path}
+              className={`flex pl-10 items-center gap-3 px-4 py-3 rounded-2xl mb-2 text-sm font-medium transition-all duration-200 no-underline
+                ${isActive
+                  ? "bg-[#D6D6D6] font-semibold text-gray-800 shadow-sm"
+                  : "bg-[#F2F2F2] text-gray-700 hover:bg-[#E0E0E0] shadow-sm"
+                }`}
+            >
+              <span className="text-gray-700">{item.icon}</span>
+              {item.text}
+            </NavLink>
+          );
+        })}
+      </nav>
 
       {/* Footer */}
-      <Box sx={{ px: 2 }}>
-        <Button
-          component={NavLink}
-          to="/account"
-          fullWidth
-          variant={isAccountActive ? "contained" : "outlined"}
-          sx={{
-            mb: 2,
-            borderRadius: "16px",
-            textTransform: "none",
-            borderColor:"#efefef" ,
-            boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
-            backgroundColor: isAccountActive ? "#e2e2e2" : "#ededed",
-            color: "#000",
-            "&:hover": {
-              backgroundColor: "#E0E0E0",
-              borderColor: "transparent",
-            },
-          }}
-        >
-          Account
-        </Button>
+      <div className="px-2 mt-4">
 
-        <Button
-          onClick={handleSignOut}
-          fullWidth
-          variant="contained"
-          sx={{
-            backgroundColor: "#E60000",
-            color: "#fff",
-            borderRadius: "16px",
-            py: 0.8,
-            textTransform: "none",
-            fontWeight: 500,
-            boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-            "&:hover": {
-              backgroundColor: "#cc0000",
-             
-            },
-          }}
+        {/* Account Button */}
+        <NavLink
+          to="/account"
+          className={` pl-10 flex items-center gap-3 w-full px-4 py-3   rounded-2xl mb-2 text-sm font-medium transition-all duration-200 no-underline shadow-sm
+            ${isAccountActive
+              ? "bg-[#e2e2e2] text-gray-800"
+              : "bg-[#ededed] text-gray-800 hover:bg-[#E0E0E0]"
+            }`}
         >
+          <User size={20} className="text-gray-700 " />
+          Account
+        </NavLink>
+
+        {/* Sign Out Button */}
+        <button
+          onClick={handleSignOut}
+          className=" flex pl-10 gap-3 w-full px-4 py-3 rounded-2xl text-sm font-medium text-white bg-[#E60000] hover:bg-[#cc0000] transition-colors duration-200 shadow-sm"
+        >
+          <LogOut size={20} />
           Sign out
-        </Button>
-      </Box>
-    </Box>
+        </button>
+
+      </div>
+    </div>
   );
 }

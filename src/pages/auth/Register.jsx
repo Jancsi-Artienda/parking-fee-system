@@ -1,15 +1,4 @@
-import {
-  Container,
-  TextField,
-  Button,
-  Typography,
-  Box,
-  Paper,
-  InputAdornment,
-  IconButton,
-  Grid,
-} from "@mui/material";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
@@ -21,6 +10,7 @@ import {
   validateRegistrationForm,
 } from "../../utils/validators";
 import background from "../../assets/background.png";
+import { Eye, EyeOff } from "lucide-react";
 
 const DEFAULT_REGISTER_VEHICLE_NUMBER = 1;
 
@@ -130,242 +120,222 @@ const Register = () => {
   };
 
   return (
-    <Box
-      sx={{
-        width: "100%",
-        minHeight: "100vh",
-        // Replace the gradient with your image path
-        backgroundImage: `url(${background})`,
-        backgroundSize: "cover",      // Ensures the image covers the whole area
-        backgroundPosition: "center", // Keeps the image centered
-        backgroundRepeat: "no-repeat",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
+    <div className=" relative w-full min-h-screen flex justify-center items-center">
 
+      {/* Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <img
+          src={background}
+          alt="background"
+          className="absolute inset-0 -z-10 h-full w-full object-cover"
+        />
+      </div>
 
+      <div className="w-full max-w-lg mx-auto px-4">
+        <div className="p-8 rounded-3xl border border-white/30 bg-white/80 shadow-lg backdrop-blur-xl">
+          <div className="flex flex-col items-center mb-6">
 
-      <Container maxWidth="sm">
-        <Paper sx={{
-          p: 4,
-          borderRadius: 3,
-          // Increased from 0.73 to 0.85 for better readability
-          backgroundColor: 'rgba(239, 239, 239, 0.85)',
-          backdropFilter: 'blur(30px)',
-          WebkitBackdropFilter: 'blur(30px)', // Matched blur for Safari
-          border: '1px solid rgba(255, 255, 255, 0.3)',
-        }}>
-          < Box sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            mb: 3
-          }}>
-            <Box
-              component="img"
+            {/* Logo */}
+            <img
               src={logo}
               alt="Parking Fee Logo"
-              sx={{
-                width: "100%",        // Adjusted for internal container fit
-                maxWidth: "220px",
-                height: "auto",
-                filter: "drop-shadow(0px 4px 10px rgba(0,0,0,0.1))",
-                // position: "absolute" REMOVED to keep it inside the flow
-              }}
+              className="w-full max-w-[220px] h-auto mb-4 drop-shadow-md"
             />
-            <Typography variant="h4" fontWeight="bold" gutterBottom>
-              Create your account
-            </Typography>
 
-            <Typography color="text.secondary" mb={3}>
-              Please fill in your information to create an account
-            </Typography>
-
+            {/* Error */}
             {error && (
-              <Typography color="error" mb={2}>
-                {error}
-              </Typography>
+              <p className="text-red-500 text-sm mb-3 text-center">{error}</p>
             )}
+            <>
+              <h1 className="text-3xl font-bold mb-1 text-black-900">
 
-            <Box component="form" onSubmit={handleSubmit}>
-              <Grid container spacing={3}>
-                <Grid size={6}>
-                  <Typography variant="body2" fontWeight="bold">
-                    First Name:  
-                  </Typography>
-                  <TextField
-                    fullWidth
+              </h1>
+              <p className="text-gray-500 mb-4 text-center">
+                Please sign in to continue.
+              </p>
+            </>
+            {/* ONE single form */}
+            <form onSubmit={handleSubmit} className="w-full">
+
+              {/* FirstName and LastName*/}
+              <div className="flex gap-4 mb-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    First Name
+                  </label>
+                  <input
                     name="firstName"
-                    placeholder="John Paul"
+                    placeholder="John"
                     value={formData.firstName}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    error={Boolean(touchedFields.firstName && fieldErrors.firstName)}
-                    helperText={touchedFields.firstName ? fieldErrors.firstName : ""}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400"
                   />
-                </Grid>
-
-                <Grid size={6}>
-                  <Typography variant="body2" fontWeight="bold">
-                    Last Name:
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    name="lastName" 
-                    placeholder="Delacruz"
+                  {touchedFields.firstName && fieldErrors.firstName && (
+                    <p className="text-red-500 text-xs mt-1">{fieldErrors.firstName}</p>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Last Name
+                  </label>
+                  <input
+                    name="lastName"
+                    placeholder="Paul"
                     value={formData.lastName}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    error={Boolean(touchedFields.lastName && fieldErrors.lastName)}
-                    helperText={touchedFields.lastName ? fieldErrors.lastName : ""}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400"
                   />
-                </Grid>
-
-                <Grid size={12}>
-                  <Typography variant="body2" fontWeight="bold">
-                    Email Address:
-                  </Typography>
-                  <TextField
-                    fullWidth
+                  {touchedFields.lastName && fieldErrors.lastName && (
+                    <p className="text-red-500 text-xs mt-1">{fieldErrors.lastName}</p>
+                  )}
+                </div>
+              </div>
+              
+              {/* Email */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email Address:
+                </label>
+                <div className="relative">
+                  <input
                     type="email"
                     name="email"
                     placeholder="...@gmail.com"
                     value={formData.email}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    error={Boolean(touchedFields.email && fieldErrors.email)}
-                    helperText={touchedFields.email ? fieldErrors.email : ""}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400"
                   />
-                </Grid>
+                  {touchedFields.lastName && fieldErrors.lastName && (
+                    <p className="text-red-500 text-xs mt-1">{fieldErrors.lastName}</p>
+                  )}
+                </div>
+              </div>
 
-                <Grid size={12}>
-                  <Typography variant="body2" fontWeight="bold">
-                    Contact Number:
-                  </Typography>
-                  <TextField
-                    fullWidth
+              {/* Contact Number: */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Contact Number:
+                </label>
+                <div className="relative">
+                  <input
                     type="tel"
                     name="contactNumber"
                     placeholder="09XXXXXXXXX"
                     value={formData.contactNumber}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    error={Boolean(touchedFields.contactNumber && fieldErrors.contactNumber)}
-                    helperText={touchedFields.contactNumber ? fieldErrors.contactNumber : ""}
-                    inputProps={{ maxLength: 11, inputMode: "numeric" }}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400"
                   />
-                </Grid>
+                  {touchedFields.contactNumber && fieldErrors.contactNumber && (
+                    <p className="text-red-500 text-xs mt-1">{fieldErrors.contactNumber}</p>
+                  )}
+                </div>
+              </div>
 
-                <Grid size={12}>
-                  <Typography variant="body2" fontWeight="bold">
-                    Username:
-                  </Typography>
-                  <TextField
-                    fullWidth
+              {/* Contact Number: */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Username:
+                </label>
+                <div className="relative">
+                  <input
                     name="username"
-                    placeholder="John Paul"
+                    placeholder="Enter your username"
                     value={formData.username}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    error={Boolean(touchedFields.username && fieldErrors.username)}
-                    helperText={touchedFields.username ? fieldErrors.username : ""}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400"
                   />
-                </Grid>
+                  {touchedFields.username && fieldErrors.username && (
+                    <p className="text-red-500 text-xs mt-1">{fieldErrors.username}</p>
+                  )}
+                </div>
+              </div>
 
+              <div className="flex gap-4 mb-4">
 
-                <Grid size={6}>
-                  <Typography variant="body2" fontWeight="bold">
-                    Password:
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={Boolean(touchedFields.password && fieldErrors.password)}
-                    helperText={touchedFields.password ? fieldErrors.password : ""}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-
-                </Grid>
-
-                <Grid size={6}>
-                  <Typography variant="body2" fontWeight="bold">
-                    Confirm Password:
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    type={showConfirmPassword ? "text" : "password"}
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={Boolean(touchedFields.confirmPassword && fieldErrors.confirmPassword)}
-                    helperText={touchedFields.confirmPassword ? fieldErrors.confirmPassword : ""}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            edge="end"
-                          >
-                            {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-
-                <Grid size={12}>
-                  <Box display="flex" justifyContent="center">
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      sx={{
-                        mt: 3,
-                        py: 1.2,
-                        width: '200px',
-                       
-                        borderRadius: "16px",
-                        backgroundColor: '#1a237e',
-
-                        '&:hover': {
-                          backgroundColor: '#0d47a1', // A slightly darker shade for the hover effect
-                        },
-                      }}
+                {/* Password */}
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      placeholder="Enter password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
                     >
-                      {loading ? "Registering..." : "Register"}
-                    </Button>
-                    <Box sx={{ mt: 3, py: 1.2, px: 5, borderRadius: 2 }}>
-                      <Button
-                        variant="text"
-                        onClick={() => navigate("/")}
-                        sx={{ textTransform: "none" }}
-                      >
-                        Back to Login
-                      </Button>
-                    </Box>
-                  </Box>
-                </Grid>
-              </Grid>
-            </Box>
-          </Box>
-        </Paper>
-      </Container>
-    </Box>
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                  {touchedFields.password && fieldErrors.password && (
+                    <p className="text-red-500 text-xs mt-1">{fieldErrors.password}</p>
+                  )}
+                </div>
+
+                {/* Confirm Password */}
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      name="confirmPassword"
+                      placeholder="Confirm password"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                    >
+                      {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                  {touchedFields.confirmPassword && fieldErrors.confirmPassword && (
+                    <p className="text-red-500 text-xs mt-1">{fieldErrors.confirmPassword}</p>
+                  )}
+                </div>
+
+              </div>
+
+              {/* Submit */}
+              <button
+                type="submit"
+                className="w-full py-3 rounded-2xl text-white font-semibold text-sm transition-colors duration-200 bg-[#1a237e] hover:bg-[#0d47a1] mt-6"
+              >
+                {loading ? "Registering..." : "Register"}
+              </button>
+
+              <div className="mt-3 text-center">
+                <button
+                  type="button"
+                  onClick={() => navigate("/")}
+                  className="text-sm text-blue-800 hover:underline"
+                >
+                  Back to Login
+                </button>
+              </div>
+
+
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
 
   );
 };

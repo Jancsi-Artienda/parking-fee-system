@@ -1,40 +1,18 @@
-import { Card, CardContent, Typography, Box } from "@mui/material";
-import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
+import { Car } from "lucide-react";
 
 export default function VehicleStatCard({ totalVehicles }) {
   return (
-    <Card
-      elevation={4}
-      sx={{
-        borderRadius: 3,
-        minWidth: 250,
-        transition: "0.2s",
-        "&:hover": {
-          transform: "translateY(-4px)",
-        },
-      }}
-    >
-      <CardContent>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <Box>
-            <Typography variant="subtitle2" color="text.secondary">
-              Registered Vehicles
-            </Typography>
+    <div className="pl-10  bg-white rounded-2xl shadow-md min-w-[250px] p-5 transition-transform duration-200 hover:-translate-y-1">
+      <div className="flex items-center justify-between">
 
-            <Typography variant="h4" fontWeight="bold" align="center">
-              {totalVehicles}
-            </Typography>
-          </Box>
+        <div>
+          <p className="text-sm text-gray-500 ">Registered Vehicles</p>
+          <p className="text-4xl font-bold text-center mt-1">{totalVehicles}</p>
+        </div>
 
-          <DirectionsCarIcon sx={{ fontSize: 40 }} color="primary" />
-        </Box>
-      </CardContent>
-    </Card>
+        <Car size={50} className="text-black-600" />
+
+      </div>
+    </div>
   );
 }
