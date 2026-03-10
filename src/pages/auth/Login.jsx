@@ -3,7 +3,7 @@ import useAuth from "../../context/auth/useAuth";
 import { Link, useNavigate } from "react-router-dom";
 import background from "../../assets/background.png";
 import logo from "../../assets/logo.png";
-import { toast } from "sonner";
+import {toastSuccess, toastError} from "../../utils/swalToast";
 import { Eye, EyeOff } from "lucide-react";
 
 const Login = () => {
