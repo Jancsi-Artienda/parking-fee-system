@@ -14,9 +14,22 @@ getJwtSecret();
 const app = express();
 const port = Number(process.env.PORT || 3000);
 
+const allowedOrigins = (process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: (origin, callback) => {
+      if (!origin) {
+        return callback(null, true);
+      }
+      if (allowedOrigins.length === 0) {
+        return callback(null, origin === "http://localhost:5173");
+      }
+      return callback(null, allowedOrigins.includes(origin));
+    },
     credentials: true,
   })
 );

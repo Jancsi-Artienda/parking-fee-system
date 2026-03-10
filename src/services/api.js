@@ -41,7 +41,17 @@ async function request(path, options = {}) {
     body: options.body ? JSON.stringify(options.body) : undefined,
   };
 
-  const response = await fetch(url, config);
+  let response;
+  try {
+    response = await fetch(url, config);
+  } catch (error) {
+    const networkError = new Error(
+      "Network error. Check API URL, server status, and CORS settings."
+    );
+    networkError.status = 0;
+    networkError.cause = error;
+    throw networkError;
+  }
 
   let data;
   try {

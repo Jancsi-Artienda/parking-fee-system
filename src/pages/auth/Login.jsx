@@ -15,7 +15,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import background from "../../assets/background.png";
 import logo from "../../assets/logo.png";
-import { toast } from "sonner";
+import { toastError, toastSuccess } from "../../utils/swalToast";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 const Login = () => {
@@ -41,15 +41,16 @@ const Login = () => {
 
     try {
       await login(email, password, rememberMe);
-      toast.success("Logged in successfully");
+      toastSuccess("Logged in successfully");
       navigate("/dashboard");
     } catch (err) {
       if (err?.data?.message) {
         setError(err.data.message);
-        toast.error(err.data.message);
+        toastError(err.data.message);
       } else {
-        setError("Login failed. Please try again.");
-        toast.error("Login failed. Please try again.");
+        const fallbackMessage = err?.message || "Login failed. Please try again.";
+        setError(fallbackMessage);
+        toastError(fallbackMessage);
       }
     } finally {
       setLoading(false);

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { Box, Paper, Typography, Button } from "@mui/material";
 import dayjs from "dayjs";
-import { toast } from "sonner";
 import Swal from "sweetalert2";
+import { toastError, toastSuccess, toastWarning } from "../../utils/swalToast";
 import AddReportModal from "../../components/Report/ReportModal";
 import ParkingReportTable from "../../components/dashboard/ParkingReportTable";
 import api from "../../services/api";
@@ -116,7 +116,7 @@ export default function Report() {
     }
 
     if (!filteredRows.length) {
-      toast.error("No reports to export.");
+      toastError("No reports to export.");
       return;
     }
 
@@ -152,9 +152,9 @@ export default function Report() {
     });
 
     if (filteredRows.length > maxRows) {
-      toast.warning(`Exported first ${maxRows} rows only.`);
+      toastWarning(`Exported first ${maxRows} rows only.`);
     } else {
-      toast.success("Report PDF exported successfully.");
+      toastSuccess("Report PDF exported successfully.");
     }
   };
 
@@ -273,9 +273,9 @@ export default function Report() {
           return rowDate !== targetDate;
         })
       );
-      toast.success("Report deleted successfully.");
+      toastSuccess("Report deleted successfully.");
     } catch (err) {
-      toast.error(err?.data?.message || "Failed to delete report.");
+      toastError(err?.data?.message || "Failed to delete report.");
     } finally {
       setDeleting(false);
     }
@@ -331,7 +331,7 @@ export default function Report() {
                   }
                   const minTo = getMinCoverageTo(startDate);
                   if(newValue && dayjs(newValue).isValid() && dayjs(newValue).isBefore(minTo, "day")){
-                    toast.error("Coverage must be at least 15 days after");
+                    toastError("Coverage must be at least 15 days after");
                     return;
                   }
                   setEndDate(newValue)
