@@ -82,14 +82,14 @@ const Login = () => {
             </>
             {/* ONE single form */}
             <form onSubmit={handleSubmit} className="w-full">
-              {/* Username */}
+              {/* email*/}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Username
+                  Email
                 </label>
                 <input
                   type="email"
-                  placeholder="Enter your username"
+                  placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400"

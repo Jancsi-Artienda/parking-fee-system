@@ -148,7 +148,7 @@ const Register = () => {
             )}
             <>
               <h1 className="text-3xl font-bold mb-1 text-black-900">
-
+                  Register your account
               </h1>
               <p className="text-gray-500 mb-4 text-center">
                 Please sign in to continue.
@@ -192,7 +192,7 @@ const Register = () => {
                   )}
                 </div>
               </div>
-              
+                  
               {/* Email */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
