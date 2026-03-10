@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Box, Paper, Typography, Button } from "@mui/material";
 import dayjs from "dayjs";
 import Swal from "sweetalert2";
 import { toastError, toastSuccess, toastWarning } from "../../utils/swalToast";
@@ -12,9 +11,7 @@ import useParkingFeePDF from "../../hooks/useParkingFeePDF";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import RefreshIcon from '@mui/icons-material/Refresh';
-import AddIcon from '@mui/icons-material/Add';
-
+import { RefreshCw, Plus } from "lucide-react";
 
 export default function Report() {
   const { vehicles } = useVehicles();
@@ -24,7 +21,7 @@ export default function Report() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [openModal, setOpenModal] = useState(false);
-  const [startDate, setStartDate] = useState(dayjs().startOf('month'));
+  const [startDate, setStartDate] = useState(dayjs().startOf("month"));
   const [endDate, setEndDate] = useState(dayjs());
   const [coverageLoaded, setCoverageLoaded] = useState(false);
   const [coverageTouched, setCoverageTouched] = useState(false);
@@ -32,70 +29,50 @@ export default function Report() {
 
   const MIN_COVERAGE_DAYS = 14;
 
-  const getMinCoverageTo = useCallback ((from)=> {
+  const getMinCoverageTo = useCallback((from) => {
     const d = dayjs(from);
     return d.isValid() ? d.startOf("day").add(MIN_COVERAGE_DAYS, "day") : null;
   }, []);
 
-  const isCoverageValid = useCallback ((from, to) => {
-    const start = dayjs(from);
-    const end = dayjs(to);
-    if (!start.isValid() || !end.isValid()) return false;
-    return !end.isBefore(getMinCoverageTo(start), "day");
-  }, [getMinCoverageTo]);
+  const isCoverageValid = useCallback(
+    (from, to) => {
+      const start = dayjs(from);
+      const end = dayjs(to);
+      if (!start.isValid() || !end.isValid()) return false;
+      return !end.isBefore(getMinCoverageTo(start), "day");
+    },
+    [getMinCoverageTo]
+  );
 
   useEffect(() => {
     let isActive = true;
-
     const loadCoveragePreference = async () => {
       setCoverageLoaded(false);
       try {
         const data = await api.getCoverage();
-        if(!isActive) return;
-
+        if (!isActive) return;
         const savedStart = dayjs(data?.coverageFrom);
         const savedEnd = dayjs(data?.coverageTo);
-
-        if(savedStart.isValid() && savedEnd.isValid() && !savedStart.isAfter(savedEnd, "day") && isCoverageValid(savedStart, savedEnd)) {
+        if (savedStart.isValid() && savedEnd.isValid() && !savedStart.isAfter(savedEnd, "day") && isCoverageValid(savedStart, savedEnd)) {
           setStartDate(savedStart);
           setEndDate(savedEnd);
         }
       } catch (err) {
         setError(err?.data?.message || "Invalid Coverage.");
-      } finally{
-        if (isActive) {
-          setCoverageLoaded(true);
-        }
+      } finally {
+        if (isActive) setCoverageLoaded(true);
       }
     };
-
     loadCoveragePreference();
-
-    return () => {
-      isActive = false;
-    };
+    return () => { isActive = false; };
   }, [user?.id, user?.employeeId, user?.email, isCoverageValid]);
 
   useEffect(() => {
-    if (!coverageLoaded || !coverageTouched) {
-      return;
-    }
-
+    if (!coverageLoaded || !coverageTouched) return;
     const normalizedStart = dayjs(startDate);
     const normalizedEnd = dayjs(endDate);
-
-    if (
-      !normalizedStart.isValid() ||
-      !normalizedEnd.isValid() ||
-      normalizedStart.isAfter(normalizedEnd, "day")
-    ) {
-      return;
-    }
-
-    if (!isCoverageValid(normalizedStart, normalizedEnd)){
-      return;
-    }
-
+    if (!normalizedStart.isValid() || !normalizedEnd.isValid() || normalizedStart.isAfter(normalizedEnd, "day")) return;
+    if (!isCoverageValid(normalizedStart, normalizedEnd)) return;
     const saveCoveragePreference = async () => {
       try {
         await api.saveCoverage({
@@ -106,20 +83,29 @@ export default function Report() {
         setError(err?.data?.message || "Failed to load coverage.");
       }
     };
-
     saveCoveragePreference();
   }, [coverageLoaded, coverageTouched, startDate, endDate, isCoverageValid]);
 
+  useEffect(() => {
+    const loadReports = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const data = await api.getReports();
+        const normalizedRows = Array.isArray(data) ? data : Array.isArray(data?.reports) ? data.reports : [];
+        setRows(normalizedRows);
+      } catch (err) {
+        setError(err?.data?.message || "Failed to load reports.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadReports();
+  }, []);
+
   const handleExportPDF = () => {
-    if (loading) {
-      return;
-    }
-
-    if (!filteredRows.length) {
-      toastError("No reports to export.");
-      return;
-    }
-
+    if (loading) return;
+    if (!filteredRows.length) { toast.error("No reports to export."); return; }
     const normalizedRows = filteredRows.map((row) => {
       const parsedDate = dayjs(row.transDate);
       return {
@@ -128,7 +114,6 @@ export default function Report() {
         amount: `PHP ${Number(row.amount || 0).toLocaleString("en-US")}`,
       };
     });
-
     const coverageStart = dayjs(startDate);
     const coverageEnd = dayjs(endDate);
     let coverage = "N/A";
@@ -137,20 +122,11 @@ export default function Report() {
         ? coverageStart.format("MMMM D, YYYY")
         : `${coverageStart.format("MMMM D, YYYY")} - ${coverageEnd.format("MMMM D, YYYY")}`;
     }
-
     const preparedBy = user?.name || user?.username || user?.email || "N/A";
     const printableFilteredRows = filteredRows.slice(0, maxRows);
     const totalAmountValue = printableFilteredRows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
     const totalAmount = `PHP ${totalAmountValue.toLocaleString("en-US")}`;
-
-    generatePDF({
-      preparedBy,
-      coverage,
-      dateSubmitted: dayjs().format("MMMM D, YYYY"),
-      rows: normalizedRows,
-      totalAmount,
-    });
-
+    generatePDF({ preparedBy, coverage, dateSubmitted: dayjs().format("MMMM D, YYYY"), rows: normalizedRows, totalAmount });
     if (filteredRows.length > maxRows) {
       toastWarning(`Exported first ${maxRows} rows only.`);
     } else {
@@ -158,60 +134,19 @@ export default function Report() {
     }
   };
 
-
-
-  useEffect(() => {
-    const loadReports = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const data = await api.getReports();
-        const normalizedRows = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.reports)
-            ? data.reports
-            : [];
-        setRows(normalizedRows);
-      } catch (err) {
-        setError(err?.data?.message || "Failed to load reports.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadReports();
-  }, []);
-
   const handleAddReport = async (payload) => {
     const { transDates, vehicleId, amount } = payload;
     const coverageStart = startDate && dayjs(startDate).isValid() ? dayjs(startDate) : null;
     const coverageEnd = endDate && dayjs(endDate).isValid() ? dayjs(endDate) : null;
-
-    if (!coverageStart || !coverageEnd) {
-      throw new Error("Select a valid coverage range before adding a report.");
-    }
-
-    if (coverageStart.isAfter(coverageEnd, "day")) {
-      throw new Error("Coverage start date cannot be after coverage end date.");
-    }
-
-    if (!Array.isArray(transDates) || transDates.length === 0) {
-      throw new Error("At least one transaction date is required.");
-    }
-
-    if(!isCoverageValid(coverageStart, coverageEnd)){
-      throw new Error("Coverage must be at least 15 days ahead");
-    }
-
+    if (!coverageStart || !coverageEnd) throw new Error("Select a valid coverage range before adding a report.");
+    if (coverageStart.isAfter(coverageEnd, "day")) throw new Error("Coverage start date cannot be after coverage end date.");
+    if (!Array.isArray(transDates) || transDates.length === 0) throw new Error("At least one transaction date is required.");
+    if (!isCoverageValid(coverageStart, coverageEnd)) throw new Error("Coverage must be at least 15 days ahead");
     const createdReports = [];
     for (const dateStr of transDates) {
       const reportDate = dayjs(dateStr);
       if (!reportDate.isValid()) continue;
-
-      if (reportDate.isBefore(coverageStart, "day") || reportDate.isAfter(coverageEnd, "day")) {
-        continue; // Skip dates outside coverage (already validated in modal but safe to keep)
-      }
-
+      if (reportDate.isBefore(coverageStart, "day") || reportDate.isAfter(coverageEnd, "day")) continue;
       const created = await api.addReport({
         transDate: dateStr,
         vehicleId,
@@ -221,12 +156,12 @@ export default function Report() {
       });
       createdReports.push(created);
     }
-
     setRows((prev) => [
-      ...createdReports.map(r => ({ id: Date.now() + Math.random(), ...r })),
+      ...createdReports.map((r) => ({ id: Date.now() + Math.random(), ...r })),
       ...prev,
     ]);
   };
+
   const filteredRows = useMemo(
     () =>
       (Array.isArray(rows) ? rows : []).filter((row) => {
@@ -241,10 +176,7 @@ export default function Report() {
   );
 
   const handleDeleteReport = async (reportRow) => {
-    if (!reportRow || deleting) {
-      return;
-    }
-
+    if (!reportRow || deleting) return;
     const confirmResult = await Swal.fire({
       title: "Delete selected report?",
       text: "This action cannot be undone.",
@@ -254,11 +186,7 @@ export default function Report() {
       cancelButtonText: "Cancel",
       confirmButtonColor: "#d32f2f",
     });
-
-    if (!confirmResult.isConfirmed) {
-      return;
-    }
-
+    if (!confirmResult.isConfirmed) return;
     setDeleting(true);
     try {
       await api.deleteReport(reportRow.transDate);
@@ -283,89 +211,80 @@ export default function Report() {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Paper sx={{ width: "95%", p: 3, borderRadius: "15px" }} elevation={6}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 3,
-          }}
-        >
-          <Box sx={{ display: "flex", flexDirection: "column", p: 1, gap: 1 }}>
-            <Typography variant="h5" sx={{ fontWeight: 500 }}>
-              Parking Fee Report
-            </Typography>
+      <div className="w-[95%] p-6 rounded-2xl shadow-lg bg-white">
 
-            
-            <Box sx={{ display: "flex", gap: 2, alignItems: "center", p: 1 }}>
-              <Typography variant="body1" sx={{ p: 1 }}>
-                Coverage:
-              </Typography>
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col gap-2 p-1">
+
+            <h2 className="text-xl font-medium text-gray-900">Parking Fee Report</h2>
+
+            {/* Coverage + Actions */}
+            <div className="flex flex-wrap gap-3 items-center p-1">
+
+              <span className="text-sm text-gray-700 font-medium">Coverage:</span>
+
+              {/* DatePickers — must stay as MUI */}
               <DatePicker
                 label="From"
                 value={startDate}
                 onChange={(newValue) => {
                   setCoverageTouched(true);
                   setStartDate(newValue);
-                  if(newValue && dayjs(newValue).isValid()) {
+                  if (newValue && dayjs(newValue).isValid()) {
                     const minTo = getMinCoverageTo(newValue);
-                    if (!endDate || !dayjs(endDate).isValid() || dayjs(endDate).isBefore(minTo, "day")){
+                    if (!endDate || !dayjs(endDate).isValid() || dayjs(endDate).isBefore(minTo, "day")) {
                       setEndDate(minTo);
                     }
                   }
                 }}
-                slotProps={{ textField: { size: 'small' } }}
+                slotProps={{ textField: { size: "small" } }}
               />
 
-              
               <DatePicker
                 label="To"
                 minDate={getMinCoverageTo(startDate)}
                 value={endDate}
-                onChange={(newValue) =>  {
+                onChange={(newValue) => {
                   setCoverageTouched(true);
-                  if (!startDate || !dayjs(startDate).isValid()){
-                    setEndDate(newValue);
-                    return;
-                  }
+                  if (!startDate || !dayjs(startDate).isValid()) { setEndDate(newValue); return; }
                   const minTo = getMinCoverageTo(startDate);
-                  if(newValue && dayjs(newValue).isValid() && dayjs(newValue).isBefore(minTo, "day")){
-                    toastError("Coverage must be at least 15 days after");
+                  if (newValue && dayjs(newValue).isValid() && dayjs(newValue).isBefore(minTo, "day")) {
+                    toast.error("Coverage must be at least 15 days after");
                     return;
                   }
-                  setEndDate(newValue)
+                  setEndDate(newValue);
                 }}
-                slotProps={{ textField: { size: 'small' } }}
+                slotProps={{ textField: { size: "small" } }}
               />
-              <Box>
-                <Button
-                  variant="outlined"
-                  onClick={() => setOpenModal(true)}
-                  startIcon={<AddIcon />}
-                  sx={{ borderRadius: "10px", textTransform: "none" }}
-                >
-                  add
-                </Button>
-              </Box>
-              <Button
-                variant="outlined"
-                onClick={() => setOpenModal(false)}
-                startIcon={<RefreshIcon />} 
-                sx={{ borderRadius: "10px", textTransform: "none" }}
+
+              {/* Add Button */}
+              <button
+                onClick={() => setOpenModal(true)}
+                className="flex items-center gap-1 px-3 py-2 text-sm border border-blue-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors duration-150"
               >
+                <Plus size={16} />
+                Add
+              </button>
+
+              {/* Refresh Button */}
+              <button
+                onClick={() => setOpenModal(false)}
+                className="flex items-center gap-1 px-3 py-2 text-sm border border-blue-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+              >
+                <RefreshCw size={16} />
                 Refresh
-              </Button>
+              </button>
 
-            </Box>
-          </Box>
-        </Box>
+            </div>
+          </div>
+        </div>
 
+        {/* Error */}
+        {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
 
-
-        {error ? <Typography color="error">{error}</Typography> : null}
-
-        <Box sx={{ width: "100%" }}>
+        {/* Table */}
+        <div className="w-full">
           <ParkingReportTable
             rows={filteredRows}
             loading={loading}
@@ -375,8 +294,9 @@ export default function Report() {
             maxRows={15}
             onDeleteRow={handleDeleteReport}
           />
-        </Box>
+        </div>
 
+        {/* Modal */}
         <AddReportModal
           open={openModal}
           setOpen={setOpenModal}
@@ -387,30 +307,18 @@ export default function Report() {
           coverageTo={endDate}
         />
 
-        <Box sx={{
-          display: "flex",
-          // Forces items to the left
-          width: "100%",                // Ensures the container takes up the full line
-          gap: 1.5
-        }}>
-          <Button
-            variant="outlined"
+        {/* Export PDF */}
+        <div className="flex w-full mt-4">
+          <button
             onClick={handleExportPDF}
             disabled={loading}
-            sx={{
-              borderRadius: "10px",
-              textTransform: "none",
-              background: "green",
-              color: "white",
-              marginLeft: "auto"
-            }}
-
+            className="ml-auto px-5 py-2 text-sm text-white font-medium rounded-xl bg-green-600 hover:bg-green-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Export PDF
-          </Button>
-        </Box>
-      </Paper>
+          </button>
+        </div>
 
+      </div>
     </LocalizationProvider>
   );
 }

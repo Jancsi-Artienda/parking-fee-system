@@ -1,16 +1,13 @@
 import { useMemo } from "react";
-import { Box, Button, Paper, Typography } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import dayjs from "dayjs";
 
 function formatReportDate(value) {
   if (!value) return "";
-
   if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
     const parsed = dayjs(value, "YYYY-MM-DD", true);
     return parsed.isValid() ? parsed.format("M/D/YYYY") : value;
   }
-
   const parsed = dayjs(value);
   return parsed.isValid() ? parsed.format("M/D/YYYY") : "";
 }
@@ -39,10 +36,9 @@ export default function ParkingReportTable({
         })),
     [rows]
   );
+
   const displayRows = useMemo(() => {
-    if (!Number.isInteger(maxRows) || maxRows <= 0) {
-      return normalizedRows;
-    }
+    if (!Number.isInteger(maxRows) || maxRows <= 0) return normalizedRows;
     return normalizedRows.slice(0, maxRows);
   }, [normalizedRows, maxRows]);
 
@@ -76,9 +72,7 @@ export default function ParkingReportTable({
       },
     ];
 
-    if (typeof onDeleteRow !== "function") {
-      return baseColumns;
-    }
+    if (typeof onDeleteRow !== "function") return baseColumns;
 
     return [
       ...baseColumns,
@@ -92,19 +86,15 @@ export default function ParkingReportTable({
         disableColumnMenu: true,
         align: "right",
         renderCell: (params) => (
-          <Button
-            size="small"
-            color="error"
-            variant="outlined"
-            className="row-delete-btn"
+          <button
+            className="row-delete-btn px-4 py-1 text-sm text-red-500 border border-red-500 rounded-lg hover:bg-red-50 transition-colors duration-150"
             onClick={(event) => {
               event.stopPropagation();
               onDeleteRow(params.row);
             }}
-            sx={{ textTransform: "none", minWidth: 96 }}
           >
             Delete
-          </Button>
+          </button>
         ),
       },
     ];
@@ -112,13 +102,11 @@ export default function ParkingReportTable({
 
   const gridContent = (
     <>
-      {title ? (
-        <Typography variant="h5" sx={{ fontWeight: 500, mb: 3 }}>
-          {title}
-        </Typography>
-      ) : null}
+      {title && (
+        <h2 className="text-xl font-medium mb-6">{title}</h2>
+      )}
 
-      <Box sx={{ height: 500, width: "100%" }}>
+      <div className="h-[500px] w-full">
         <DataGrid
           rows={displayRows}
           columns={columns}
@@ -131,9 +119,7 @@ export default function ParkingReportTable({
           hideFooterPagination
           localeText={{ noRowsLabel: emptyMessage }}
           {...(hasControlledSelection
-            ? {
-                onRowSelectionModelChange: onRowSelectionChange,
-              }
+            ? { onRowSelectionModelChange: onRowSelectionChange }
             : {})}
           sx={{
             border: "none",
@@ -160,18 +146,15 @@ export default function ParkingReportTable({
             },
           }}
         />
-      </Box>
+      </div>
     </>
   );
 
-  if (!withPaper) {
-    return gridContent;
-  }
+  if (!withPaper) return gridContent;
 
   return (
-    <Paper sx={{ width: "95%", p: 3, borderRadius: "15px" }} elevation={6}>
+    <div className="w-[95%] p-6 rounded-2xl shadow-lg bg-white">
       {gridContent}
-    </Paper>
+    </div>
   );
 }
-

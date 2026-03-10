@@ -1,8 +1,7 @@
-import { Box, Typography, Button, Grid } from "@mui/material";
 import { useState } from "react";
 import VehicleCard from "../../components/vehicleComp/VehicleCard";
-import AddVehicleModal from "../../components/vehicleComp/AddVehicleModal"
-import { useVehicles } from "../../context/vehicleContext/useVehicles"
+import AddVehicleModal from "../../components/vehicleComp/AddVehicleModal";
+import { useVehicles } from "../../context/vehicleContext/useVehicles";
 import Swal from "sweetalert2";
 
 export default function Vehicle() {
@@ -21,9 +20,7 @@ export default function Vehicle() {
       confirmButtonColor: "#d32f2f",
     });
 
-    if (!result.isConfirmed) {
-      return;
-    }
+    if (!result.isConfirmed) return;
 
     setDeletingId(id);
     try {
@@ -47,58 +44,50 @@ export default function Vehicle() {
   };
 
   return (
-    <Box>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 4,
-        }}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight={400} color="#000000">
-            My Vehicle
-          </Typography>
-          <Typography color="text.secondary">
-            Manage your Registered Vehicle
-          </Typography>
-        </Box>
+    <div>
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-normal text-black">My Vehicle</h1>
+          <p className="text-gray-500 mt-1">Manage your Registered Vehicle</p>
+        </div>
 
-        <Button
-          variant="outlined"
+        <button
           onClick={() => setOpen(true)}
-          sx={{
-            borderRadius: "20px",
-            textTransform: "none",
-            px: 3,
-          }}
+          className="border border-gray-400 text-gray-700 rounded-full px-6 py-2 hover:bg-gray-50 hover:border-gray-600 transition-colors"
         >
           Add Vehicle
-        </Button>
-      </Box>
+        </button>
+      </div>
 
-      {loading ? <Typography>Loading vehicles...</Typography> : null}
-      {!loading && error ? <Typography color="error">{error}</Typography> : null}
-      {!loading ? (
+      {/* States */}
+      {loading && (
+        <p className="text-gray-600">Loading vehicles...</p>
+      )}
+
+      {!loading && error && (
+        <p className="text-red-600">{error}</p>
+      )}
+
+      {/* Vehicle Grid */}
+      {!loading && (
         vehicles.length > 0 ? (
-          <Grid container spacing={3}>
+          <div className="grid gap-6" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
             {vehicles.map((vehicle) => (
-              <Grid item xs={12} sm={6} md={4} key={vehicle.id}>
-                <VehicleCard
-                  vehicle={vehicle}
-                  onDelete={handleDeleteVehicle}
-                  deleting={deletingId === vehicle.id}
-                />
-              </Grid>
+              <VehicleCard
+                key={vehicle.id}
+                vehicle={vehicle}
+                onDelete={handleDeleteVehicle}
+                deleting={deletingId === vehicle.id}
+              />
             ))}
-          </Grid>
+          </div>
         ) : (
-          <Typography color="text.secondary">No vehicles added yet.</Typography>
+          <p className="text-gray-500">No vehicles added yet.</p>
         )
-      ) : null}
+      )}
 
       <AddVehicleModal open={open} setOpen={setOpen} />
-    </Box>
+    </div>
   );
 }

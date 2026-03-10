@@ -1,4 +1,3 @@
-import { Typography, Box, Container } from "@mui/material";
 import { useEffect, useState } from "react";
 import ParkingReportTable from "../../components/dashboard/ParkingReportTable";
 import VehicleStatCard from "../../components/dashboard/VehicleStatCard";
@@ -31,39 +30,24 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ mt: 4, mb: 6,borderRadius: "16px" }}>
-        <Typography
-          variant="h4"
-          fontWeight="bold"
-          gutterBottom
-          color=" #1a237e"
-        >
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mt-8 mb-12 rounded-2xl">
+
+        <h1 className="text-3xl font-bold mb-6 text-indigo-900">
           Dashboard
-        </Typography>
+        </h1>
 
-        <Box
-          sx={{
-            display: "flex",
-            gap: 3,
-            mb: 4,
-            flexWrap: "wrap"
-          }}
-        >
+        <div className="flex flex-wrap gap-6 mb-8">
           <VehicleStatCard totalVehicles={totalVehicles} />
-        </Box>
+        </div>
 
-        {error ? (
-          <Typography color="error" mb={2}>
-            {error}
-          </Typography>
-        ) : null}
+        {error && (
+          <p className="text-red-600 mb-4">{error}</p>
+        )}
 
-        {reportError ? (
-          <Typography color="error" mb={2}>
-            {reportError}
-          </Typography>
-        ) : null}
+        {reportError && (
+          <p className="text-red-600 mb-4">{reportError}</p>
+        )}
 
         <ParkingReportTable
           rows={reportRows}
@@ -71,7 +55,7 @@ export default function Dashboard() {
           title="Recent Parking Reports"
           emptyMessage="No reports yet."
         />
-      </Box>
-    </Container>
+      </div>
+    </div>
   );
 }
