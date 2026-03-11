@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf";
+import dayjs from "dayjs";
 
 const MAX_TABLE_ROWS = 15;
 
@@ -8,6 +9,30 @@ function truncateText(value, maxLength = 38) {
     return text;
   }
   return `${text.slice(0, maxLength - 3)}...`;
+}
+
+function formatCoverageForFilename(coverageValue) {
+  const text = String(coverageValue || "").trim();
+  if (!text || text.toLowerCase() === "n/a") {
+    return "";
+  }
+
+  const formatPart = (value) => {
+    const parsed = dayjs(value.trim(), "MMMM D, YYYY", true);
+    if (!parsed.isValid()) {
+      return value.trim();
+    }
+    return parsed.format("MM/DD/YYYY");
+  };
+
+  if (text.includes(" - ")) {
+    const parts = text.split(" - ");
+    if (parts.length === 2) {
+      return `${formatPart(parts[0])} - ${formatPart(parts[1])}`;
+    }
+  }
+
+  return formatPart(text);
 }
 
 export const useParkingFeePDF = () => {
@@ -154,7 +179,13 @@ export const useParkingFeePDF = () => {
       .trim()
       .replace(/[<>:"/\\|?*]/g, "")
       .replace(/\s+/g, " ");
-    doc.save(`${safeUserName || "user"}.pdf`);
+    const coverageForFilename = formatCoverageForFilename(coverage);
+    const safeCoverage = String(coverageForFilename || "")
+      .trim()
+      .replace(/[<>:"\\|?*]/g, "")
+      .replace(/\//g, "-")
+      .replace(/\s+/g, " ");
+    doc.save(`${safeUserName || "user"}-${safeCoverage || "coverage"}.pdf`);
   };
 
   return { generatePDF, maxRows: MAX_TABLE_ROWS };

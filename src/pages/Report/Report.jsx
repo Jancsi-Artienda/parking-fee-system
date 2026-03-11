@@ -162,18 +162,29 @@ export default function Report() {
     ]);
   };
 
-  const filteredRows = useMemo(
-    () =>
-      (Array.isArray(rows) ? rows : []).filter((row) => {
-        if (!row) return false;
-        const rowDate = dayjs(row.transDate);
-        return (
-          (!startDate || rowDate.isAfter(startDate, "day") || rowDate.isSame(startDate, "day")) &&
-          (!endDate || rowDate.isBefore(endDate, "day") || rowDate.isSame(endDate, "day"))
-        );
-      }),
-    [rows, startDate, endDate]
-  );
+  const filteredRows = useMemo(() => {
+    const baseRows = Array.isArray(rows) ? rows : [];
+    const filtered = baseRows.filter((row) => {
+      if (!row) return false;
+      const rowDate = dayjs(row.transDate);
+      return (
+        (!startDate || rowDate.isAfter(startDate, "day") || rowDate.isSame(startDate, "day")) &&
+        (!endDate || rowDate.isBefore(endDate, "day") || rowDate.isSame(endDate, "day"))
+      );
+    });
+
+    return filtered
+      .map((row, index) => ({
+        row,
+        index,
+        time: dayjs(row?.transDate).isValid() ? dayjs(row.transDate).valueOf() : Number.NEGATIVE_INFINITY,
+      }))
+      .sort((a, b) => {
+        if (a.time !== b.time) return a.time - b.time; // oldest first
+        return a.index - b.index; // stable for same date
+      })
+      .map((item) => item.row);
+  }, [rows, startDate, endDate]);
 
   const handleDeleteReport = async (reportRow) => {
     if (!reportRow || deleting) return;
