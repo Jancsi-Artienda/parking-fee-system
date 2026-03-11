@@ -13,6 +13,9 @@ const MAX_SELF_REGISTER_VEHICLE_NUMBER = 1;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const REMEMBER_ME_DAYS = 30;
 const OTP_LENGTH = 6;
+const OTP_EXPIRES_MINUTES = 10;
+const OTP_MAX_ATTEMPTS = 5;
+const RESET_VERIFIED_TOKEN = "VERIFIED";
 const PASSWORD_RULES = {
   uppercase: /[A-Z]/,
   lowercase: /[a-z]/,
@@ -83,6 +86,20 @@ async function hasContactNumberColumn() {
        AND TABLE_NAME = 'users'
        AND COLUMN_NAME = 'contact_number'
      LIMIT 1`
+  );
+
+  return rows.length > 0;
+}
+
+async function hasUsersColumn(columnName) {
+  const [rows] = await pool.query(
+    `SELECT 1
+     FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = 'users'
+       AND COLUMN_NAME = ?
+     LIMIT 1`,
+    [columnName]
   );
 
   return rows.length > 0;
@@ -321,7 +338,8 @@ export async function forgotPassword(req, res) {
   }
 
   try {
-    const resendFrom = process.env.RESEND_FROM;
+    const resendFrom =
+      process.env.RESEND_FROM || (process.env.NODE_ENV !== "production" ? "onboarding@resend.dev" : "");
     const resendClient = getResendClient();
     if (!resendClient || !resendFrom) {
       return res.status(500).json({
@@ -335,10 +353,29 @@ export async function forgotPassword(req, res) {
     );
 
     if (rows.length > 0) {
+      const canStoreResetExpires = await hasUsersColumn("reset_token_expires_at");
+      const canStoreResetVerifiedAt = await hasUsersColumn("reset_token_verified_at");
+      const canStoreResetAttempts = await hasUsersColumn("reset_attempts");
       const resetToken = generateOtp();
+      const expiresAt = new Date(Date.now() + OTP_EXPIRES_MINUTES * 60 * 1000);
+      const updateFields = ["reset_token = ?"];
+      const updateParams = [resetToken];
+
+      if (canStoreResetExpires) {
+        updateFields.push("reset_token_expires_at = ?");
+        updateParams.push(expiresAt);
+      }
+      if (canStoreResetVerifiedAt) {
+        updateFields.push("reset_token_verified_at = NULL");
+      }
+      if (canStoreResetAttempts) {
+        updateFields.push("reset_attempts = 0");
+      }
+
+      updateParams.push(normalizedEmail);
       await pool.query(
-        "UPDATE users SET reset_token = ? WHERE company_email = ? LIMIT 1",
-        [resetToken, normalizedEmail]
+        `UPDATE users SET ${updateFields.join(", ")} WHERE company_email = ? LIMIT 1`,
+        updateParams
       );
 
       await resendClient.emails.send({
@@ -354,6 +391,162 @@ export async function forgotPassword(req, res) {
     });
   } catch (error) {
     return res.status(500).json({ message: "Failed to process forgot password.", detail: error.message });
+  }
+}
+
+export async function verifyOtp(req, res) {
+  const { email = "", otp = "" } = req.body || {};
+  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedOtp = String(otp).trim();
+
+  if (!normalizedEmail || !normalizedOtp) {
+    return res.status(400).json({ message: "Email and OTP are required." });
+  }
+  if (!GMAIL_REGEX.test(normalizedEmail)) {
+    return res.status(400).json({ message: "Email must be a valid @gmail.com address." });
+  }
+  if (!/^\d+$/.test(normalizedOtp) || normalizedOtp.length !== OTP_LENGTH) {
+    return res.status(400).json({ message: "OTP must be a 6-digit code." });
+  }
+
+  try {
+    const canStoreResetExpires = await hasUsersColumn("reset_token_expires_at");
+    const canStoreResetVerifiedAt = await hasUsersColumn("reset_token_verified_at");
+    const canStoreResetAttempts = await hasUsersColumn("reset_attempts");
+
+    const selectFields = ["reset_token"];
+    if (canStoreResetExpires) selectFields.push("reset_token_expires_at");
+    if (canStoreResetVerifiedAt) selectFields.push("reset_token_verified_at");
+    if (canStoreResetAttempts) selectFields.push("reset_attempts");
+
+    const [rows] = await pool.query(
+      `SELECT ${selectFields.join(", ")}
+       FROM users
+       WHERE company_email = ?
+       LIMIT 1`,
+      [normalizedEmail]
+    );
+
+    if (rows.length === 0) {
+      return res.status(400).json({ message: "Invalid OTP." });
+    }
+
+    const user = rows[0];
+    if (canStoreResetAttempts && Number(user.reset_attempts || 0) >= OTP_MAX_ATTEMPTS) {
+      return res.status(429).json({ message: "Too many attempts. Please request a new OTP." });
+    }
+
+    if (canStoreResetExpires && user.reset_token_expires_at) {
+      const expiresAt = new Date(user.reset_token_expires_at);
+      if (Date.now() > expiresAt.getTime()) {
+        return res.status(400).json({ message: "OTP expired. Please request a new one." });
+      }
+    }
+
+    if (user.reset_token !== normalizedOtp) {
+      if (canStoreResetAttempts) {
+        await pool.query(
+          "UPDATE users SET reset_attempts = reset_attempts + 1 WHERE company_email = ? LIMIT 1",
+          [normalizedEmail]
+        );
+      }
+      return res.status(400).json({ message: "Invalid OTP." });
+    }
+
+    const updateFields = [];
+    const updateParams = [];
+    if (canStoreResetVerifiedAt) {
+      updateFields.push("reset_token_verified_at = NOW()");
+    } else {
+      updateFields.push("reset_token = ?");
+      updateParams.push(RESET_VERIFIED_TOKEN);
+    }
+    if (canStoreResetAttempts) {
+      updateFields.push("reset_attempts = 0");
+    }
+
+    updateParams.push(normalizedEmail);
+    await pool.query(
+      `UPDATE users SET ${updateFields.join(", ")} WHERE company_email = ? LIMIT 1`,
+      updateParams
+    );
+
+    return res.json({ message: "OTP verified successfully." });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to verify OTP.", detail: error.message });
+  }
+}
+
+export async function resetPassword(req, res) {
+  const { email = "", newPassword = "" } = req.body || {};
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (!normalizedEmail || !newPassword) {
+    return res.status(400).json({ message: "Email and new password are required." });
+  }
+  if (!GMAIL_REGEX.test(normalizedEmail)) {
+    return res.status(400).json({ message: "Email must be a valid @gmail.com address." });
+  }
+  if (!isStrongPassword(newPassword)) {
+    return res.status(400).json({
+      message: "Password must include uppercase, lowercase, number, and at least 8 characters.",
+    });
+  }
+
+  try {
+    const canStoreResetExpires = await hasUsersColumn("reset_token_expires_at");
+    const canStoreResetVerifiedAt = await hasUsersColumn("reset_token_verified_at");
+    const canStoreResetAttempts = await hasUsersColumn("reset_attempts");
+
+    const selectFields = ["usertable_id", "reset_token"];
+    if (canStoreResetExpires) selectFields.push("reset_token_expires_at");
+    if (canStoreResetVerifiedAt) selectFields.push("reset_token_verified_at");
+
+    const [rows] = await pool.query(
+      `SELECT ${selectFields.join(", ")}
+       FROM users
+       WHERE company_email = ?
+       LIMIT 1`,
+      [normalizedEmail]
+    );
+
+    if (rows.length === 0) {
+      return res.status(400).json({ message: "OTP verification required." });
+    }
+
+    const user = rows[0];
+    const verified = canStoreResetVerifiedAt
+      ? Boolean(user.reset_token_verified_at)
+      : user.reset_token === RESET_VERIFIED_TOKEN;
+
+    if (!verified) {
+      return res.status(400).json({ message: "OTP verification required." });
+    }
+
+    if (canStoreResetExpires && user.reset_token_expires_at) {
+      const expiresAt = new Date(user.reset_token_expires_at);
+      if (Date.now() > expiresAt.getTime()) {
+        return res.status(400).json({ message: "OTP expired. Please request a new one." });
+      }
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    const updateFields = ["password = ?", "reset_token = NULL"];
+    const updateParams = [passwordHash];
+    if (canStoreResetExpires) updateFields.push("reset_token_expires_at = NULL");
+    if (canStoreResetVerifiedAt) updateFields.push("reset_token_verified_at = NULL");
+    if (canStoreResetAttempts) updateFields.push("reset_attempts = 0");
+
+    updateParams.push(normalizedEmail);
+    await pool.query(
+      `UPDATE users SET ${updateFields.join(", ")} WHERE company_email = ? LIMIT 1`,
+      updateParams
+    );
+
+    return res.json({ message: "Password updated successfully." });
+  } catch (error) {
+    return res.status(500).json({ message: "Password update failed.", detail: error.message });
   }
 }
 
