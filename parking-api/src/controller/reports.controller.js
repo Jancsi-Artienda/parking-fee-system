@@ -119,7 +119,7 @@ export async function updateReportCoverage(req, res) {
     return res.status(400).json({ message: "Coverage dates must use YYYY-MM-DD format." });
   }
 
-   if (normalizedCoverageFrom > normalizedCoverageTo) {
+  if (normalizedCoverageFrom > normalizedCoverageTo) {
     return res.status(400).json({ message: "Coverage end date cannot be before coverage start date.", });
   }
 
@@ -278,7 +278,7 @@ export async function addReport(req, res) {
     if (vehicleRows.length === 0) {
       return res.status(404).json({ message: "Selected vehicle was not found." });
     }
-    
+
       const from = String(coverageFrom || "").trim();
       const to = String(coverageTo || "").trim();
 
