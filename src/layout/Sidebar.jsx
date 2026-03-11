@@ -7,7 +7,7 @@ import Swal from "sweetalert2";
 export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth(); // 👈 also destructure `user`
 
   const menuItems = [
     { text: "Dashboard", icon: <LayoutDashboard size={20} />, path: "/dashboard" },
@@ -45,12 +45,24 @@ export default function Sidebar() {
           className="w-full max-w-[180px] h-auto"
         />
       </div>
+      <hr className="my-3 border-black/10" />
+
+      {/* Profile Card */}
+      <div className="flex items-center  mx-2  px-4 py-3 rounded-2xl bg-[#F2F2F2] shadow-sm">
+        <div className="w-10 h-10 rounded-full bg-gray-300 flex-shrink-0 flex items-center justify-center">
+          <User size={30} className="text-gray-600 " />
+        </div>
+        <div className="flex flex-col items-center flex-1">  
+          <span className="text-xs text-gray-500 font-medium">User</span>
+          <span className="text-sm font-bold text-gray-800">{user?.name?? "Guest"}</span>
+        </div>
+      </div>
 
       {/* Divider */}
       <hr className="my-3 border-black/10" />
 
       {/* Navigation */}
-      <nav className="flex-1 px-2 mt-3 ">
+      <nav className="flex-1 px-2 mt-3">
         {menuItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
@@ -76,20 +88,20 @@ export default function Sidebar() {
         {/* Account Button */}
         <NavLink
           to="/account"
-          className={` pl-10 flex items-center gap-3 w-full px-4 py-3   rounded-2xl mb-2 text-sm font-medium transition-all duration-200 no-underline shadow-sm
+          className={`pl-10 flex items-center gap-3 w-full px-4 py-3 rounded-2xl mb-2 text-sm font-medium transition-all duration-200 no-underline shadow-sm
             ${isAccountActive
               ? "bg-[#e2e2e2] text-gray-800"
               : "bg-[#ededed] text-gray-800 hover:bg-[#E0E0E0]"
             }`}
         >
-          <User size={20} className="text-gray-700 " />
+          <User size={20} className="text-gray-700" />
           Account
         </NavLink>
 
         {/* Sign Out Button */}
         <button
           onClick={handleSignOut}
-          className=" flex pl-10 gap-3 w-full px-4 py-3 rounded-2xl text-sm font-medium text-white bg-[#E60000] hover:bg-[#cc0000] transition-colors duration-200 shadow-sm"
+          className="flex pl-10 gap-3 w-full px-4 py-3 rounded-2xl text-sm font-medium text-white bg-[#E60000] hover:bg-[#cc0000] transition-colors duration-200 shadow-sm"
         >
           <LogOut size={20} />
           Sign out
