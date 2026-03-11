@@ -51,4 +51,4 @@ function requireAuth(req, res, next) {
   }
 }
 
-export { AUTH_COOKIE_NAME, getBearerToken, requireAuth };
+export { AUTH_COOKIE_NAME, getBearerToken, requireAuth, parseCookies };

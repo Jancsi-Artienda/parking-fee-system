@@ -5,11 +5,12 @@ import {
   getVehicles,
 } from "../controller/vehicles.controller.js";
 import { requireAuth } from "../auth.js";
+import { requireCsrf } from "../csrf.js";
 
 const router = express.Router();
 
 router.get("/", requireAuth, getVehicles);
-router.post("/", requireAuth, addVehicle);
-router.delete("/:id", requireAuth, deleteVehicle);
+router.post("/", requireAuth, requireCsrf, addVehicle);
+router.delete("/:id", requireAuth, requireCsrf, deleteVehicle);
 
 export default router;

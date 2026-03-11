@@ -11,7 +11,7 @@ import useParkingFeePDF from "../../hooks/useParkingFeePDF";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import {  Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 
 export default function Report() {
   const { vehicles } = useVehicles();
@@ -86,26 +86,27 @@ export default function Report() {
     saveCoveragePreference();
   }, [coverageLoaded, coverageTouched, startDate, endDate, isCoverageValid]);
 
-  useEffect(() => {
-    const loadReports = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const data = await api.getReports();
-        const normalizedRows = Array.isArray(data) ? data : Array.isArray(data?.reports) ? data.reports : [];
-        setRows(normalizedRows);
-      } catch (err) {
-        setError(err?.data?.message || "Failed to load reports.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadReports();
+  const loadReports = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await api.getReports();
+      const normalizedRows = Array.isArray(data) ? data : Array.isArray(data?.reports) ? data.reports : [];
+      setRows(normalizedRows);
+    } catch (err) {
+      setError(err?.data?.message || "Failed to load reports.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadReports();
+  }, [loadReports]);
 
   const handleExportPDF = () => {
     if (loading) return;
-    if (!filteredRows.length) { toast.error("No reports to export."); return; }
+    if (!filteredRows.length) { toastError("No reports to export."); return; }
     const normalizedRows = filteredRows.map((row) => {
       const parsedDate = dayjs(row.transDate);
       return {
@@ -261,7 +262,7 @@ export default function Report() {
                   if (!startDate || !dayjs(startDate).isValid()) { setEndDate(newValue); return; }
                   const minTo = getMinCoverageTo(startDate);
                   if (newValue && dayjs(newValue).isValid() && dayjs(newValue).isBefore(minTo, "day")) {
-                    toast.error("Coverage must be at least 15 days after");
+                    toastError("Coverage must be at least 15 days after");
                     return;
                   }
                   setEndDate(newValue);
@@ -277,9 +278,6 @@ export default function Report() {
                 <Plus size={16} />
                 Add
               </button>
-
-              {/* Refresh Button */}
-            
 
             </div>
           </div>

@@ -5,6 +5,7 @@ import { Resend } from "resend";
 import pool from "../db.js";
 import { getJwtSecret } from "../jwt.js";
 import { AUTH_COOKIE_NAME, getBearerToken } from "../auth.js";
+import { createCsrfToken, setCsrfCookie, clearCsrfCookie } from "../csrf.js";
 
 const GMAIL_REGEX = /^[^\s@]+@gmail\.com$/i;
 const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
@@ -306,6 +307,9 @@ export async function login(req, res) {
     const maxAgeMs = rememberMe ? REMEMBER_ME_DAYS * ONE_DAY_MS : undefined;
     res.cookie(AUTH_COOKIE_NAME, token, cookieOptions(maxAgeMs));
 
+    const csrfToken = createCsrfToken();
+    setCsrfCookie(res, csrfToken);
+
     return res.json({
       id: user.usertable_id,
       employeeId: user.employee_id,
@@ -314,6 +318,7 @@ export async function login(req, res) {
       email: user.company_email,
       contactNumber: user.contact_number || "",
       vehicleNumber: canReadVehicleNumber ? Number(user.vehicle_number || 0) : null,
+      csrfToken,
     });
   } catch (error) {
     return res.status(500).json({ message: "Login failed.", detail: error.message });
@@ -322,6 +327,7 @@ export async function login(req, res) {
 
 export function logout(_req, res) {
   res.clearCookie(AUTH_COOKIE_NAME, cookieOptions());
+  clearCsrfCookie(res);
   return res.json({ message: "Logged out successfully." });
 }
 

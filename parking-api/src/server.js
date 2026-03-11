@@ -36,6 +36,7 @@ app.use(
       return callback(null, allowedOrigins.includes(origin));
     },
     credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
   })
 );
 app.use(express.json());

@@ -208,8 +208,8 @@ const Register = () => {
                     onBlur={handleBlur}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400"
                   />
-                  {touchedFields.lastName && fieldErrors.lastName && (
-                    <p className="text-red-500 text-xs mt-1">{fieldErrors.lastName}</p>
+                  {touchedFields.email && fieldErrors.email && (
+                    <p className="text-red-500 text-xs mt-1">{fieldErrors.email}</p>
                   )}
                 </div>
               </div>

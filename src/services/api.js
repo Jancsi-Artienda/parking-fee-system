@@ -1,6 +1,30 @@
 import dayjs from "dayjs";
 
-const delay = (ms) => new Promise((res) => setTimeout(res,ms));
+const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+
+const CSRF_STORAGE_KEY = "csrf_token";
+const CSRF_COOKIE_NAME = "csrf_token";
+
+function readCookie(name) {
+  if (typeof document === "undefined") return "";
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : "";
+}
+
+function getStoredCsrfToken() {
+  if (typeof sessionStorage === "undefined") return readCookie(CSRF_COOKIE_NAME);
+  return sessionStorage.getItem(CSRF_STORAGE_KEY) || readCookie(CSRF_COOKIE_NAME);
+}
+
+function setStoredCsrfToken(token) {
+  if (!token || typeof sessionStorage === "undefined") return;
+  sessionStorage.setItem(CSRF_STORAGE_KEY, token);
+}
+
+function clearStoredCsrfToken() {
+  if (typeof sessionStorage === "undefined") return;
+  sessionStorage.removeItem(CSRF_STORAGE_KEY);
+}
 
 const toApiDate = (value) => {
   const parsed = dayjs(value);
@@ -26,16 +50,20 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 async function request(path, options = {}) {
   const url = `${API_BASE_URL}${path}`;
+  const method = (options.method || "GET").toUpperCase();
 
   const defaultHeaders = {
     "Content-Type": "application/json",
   };
+  const needsCsrf = !["GET", "HEAD", "OPTIONS"].includes(method);
+  const csrfToken = needsCsrf ? getStoredCsrfToken() : "";
 
   const config = {
-    method: options.method || "GET",
+    method,
     credentials: "include",
     headers: {
       ...defaultHeaders,
+      ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
       ...(options.headers || {}),
     },
     body: options.body ? JSON.stringify(options.body) : undefined,
@@ -110,7 +138,9 @@ const api = {
       });
     } 
 
-    return apiClient.post("/auth/login", { email, password, rememberMe });
+    const response = await apiClient.post("/auth/login", { email, password, rememberMe });
+    setStoredCsrfToken(response.data?.csrfToken);
+    return response;
   },
 
   async logout() {
@@ -118,7 +148,11 @@ const api = {
       return { data: { message: "Logged out successfully." } };
     }
 
-    return apiClient.post("/auth/logout", {});
+    try {
+      return await apiClient.post("/auth/logout", {});
+    } finally {
+      clearStoredCsrfToken();
+    }
   },
 
   async register(userData) {
@@ -167,6 +201,38 @@ const api = {
     }
 
     return apiClient.post("/auth/forgot-password", { email });
+  },
+
+  async verifyOtp(email, otp) {
+    if (!import.meta.env.VITE_API_URL) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({
+            data: {
+              message: "OTP verified successfully.",
+            },
+          });
+        }, 500);
+      });
+    }
+
+    return apiClient.post("/auth/verify-otp", { email, otp });
+  },
+
+  async resetPassword(email, newPassword) {
+    if (!import.meta.env.VITE_API_URL) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({
+            data: {
+              message: "Password updated successfully.",
+            },
+          });
+        }, 500);
+      });
+    }
+
+    return apiClient.post("/auth/reset-password", { email, newPassword });
   },
 
   async changePassword(payload) {

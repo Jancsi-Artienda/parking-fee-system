@@ -5,8 +5,7 @@ import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import { PickersDay } from "@mui/x-date-pickers/PickersDay";
 import dayjs from "dayjs";
 import Swal from "sweetalert2";
-import { X } from "lucide-react";
-import { RefreshCw, Plus } from "lucide-react";
+import { X, RefreshCw } from "lucide-react";
 
 export default function AddReportModal({
   open,
@@ -76,6 +75,13 @@ export default function AddReportModal({
 
   const handleDateRemove = (dateStr) => {
     setSelectedDates((prev) => prev.filter((d) => d !== dateStr));
+  };
+
+  const handleRefresh = () => {
+    if (submitting) return;
+    setSelectedDates([]);
+    setCalendarValue(null);
+    setLocalError("");
   };
 
   const HighlightedDay = (props) => {
@@ -275,11 +281,12 @@ export default function AddReportModal({
             </button>
 
             <button
-              onClick={() => setOpenModal(false)}
+              onClick={handleRefresh}
+              disabled={submitting}
               className="flex items-center gap-1 px-3 py-2 text-sm border text-gray-600 bg-gray-100 rounded-xl  hover:bg-gray-200 transition-colors duration-150"
             >
               <RefreshCw size={16} />
-              Refresh 
+              Refresh
             </button>
 
             <button

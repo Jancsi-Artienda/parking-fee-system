@@ -58,7 +58,7 @@ export default function Sidebar() {
         </div>
         <div className="flex flex-col items-center flex-1">
           <span className="text-xs text-gray-500 font-medium">User account</span>
-          <span className="text-sm font-bold text-gray-800">{user?.fullName ?? user?.username ?? "Guest"}</span>
+          <span className="text-sm font-bold text-gray-800">{user?.name ?? user?.username ?? "Guest"}</span>
         </div>
       </div>
 
