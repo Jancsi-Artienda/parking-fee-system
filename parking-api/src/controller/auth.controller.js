@@ -13,6 +13,12 @@ const MAX_SELF_REGISTER_VEHICLE_NUMBER = 1;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const REMEMBER_ME_DAYS = 30;
 const OTP_LENGTH = 6;
+const PASSWORD_RULES = {
+  uppercase: /[A-Z]/,
+  lowercase: /[a-z]/,
+  number: /[0-9]/,
+  minLength: 8,
+};
 
 function getResendClient() {
   const apiKey = process.env.RESEND_API_KEY;
@@ -58,6 +64,15 @@ function splitFullName(name = "") {
     firstName: capitalizeFirstLetter(parts[0]),
     lastName: parts.slice(1).map((part) => capitalizeFirstLetter(part)).join(" "),
   };
+}
+
+function isStrongPassword(password = "") {
+  return (
+    password.length >= PASSWORD_RULES.minLength &&
+    PASSWORD_RULES.uppercase.test(password) &&
+    PASSWORD_RULES.lowercase.test(password) &&
+    PASSWORD_RULES.number.test(password)
+  );
 }
 
 async function hasContactNumberColumn() {
@@ -428,5 +443,67 @@ export async function updateProfile(req, res) {
     });
   } catch (error) {
     return res.status(500).json({ message: "Profile update failed.", detail: error.message });
+  }
+}
+
+export async function changePassword(req, res) {
+  const token = getBearerToken(req);
+
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized." });
+  }
+
+  let payload;
+  try {
+    payload = jwt.verify(token, getJwtSecret());
+  } catch {
+    return res.status(401).json({ message: "Invalid token." });
+  }
+
+  const { currentPassword = "", newPassword = "", confirmPassword = "" } = req.body || {};
+
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    return res.status(400).json({ message: "Current password, new password, and confirmation are required." });
+  }
+
+  if (newPassword !== confirmPassword) {
+    return res.status(400).json({ message: "Passwords do not match." });
+  }
+
+  if (!isStrongPassword(newPassword)) {
+    return res.status(400).json({
+      message: "Password must include uppercase, lowercase, number, and at least 8 characters.",
+    });
+  }
+
+  if (newPassword === currentPassword) {
+    return res.status(400).json({ message: "New password must be different from current password." });
+  }
+
+  try {
+    const userId = Number(payload.sub);
+    const [rows] = await pool.query(
+      "SELECT password FROM users WHERE usertable_id = ? LIMIT 1",
+      [userId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, rows[0].password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Current password is incorrect." });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await pool.query(
+      "UPDATE users SET password = ? WHERE usertable_id = ? LIMIT 1",
+      [passwordHash, userId]
+    );
+
+    return res.json({ message: "Password updated successfully." });
+  } catch (error) {
+    return res.status(500).json({ message: "Password update failed.", detail: error.message });
   }
 }

@@ -51,6 +51,12 @@ export const AuthProvider = ({ children }) => {
     return updatedUser;
   };
 
+  const changePassword = async (payload) => {
+    setAuthError("");
+    const response = await api.changePassword(payload);
+    return response.data;
+  };
+
   // LOGOUT
   const logout = async () => {
     try {
@@ -69,6 +75,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     updateProfile,
+    changePassword,
     logout,
     isAuthenticated: !!user,
   };

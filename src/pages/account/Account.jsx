@@ -15,10 +15,11 @@ import {
   sanitizeAccountField,
   validateAccountField,
   validateAccountForm,
+  validateAccountPasswordFields,
 } from "../../utils/validators";
 
 export default function Account() {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, changePassword } = useAuth();
 
   const displayUsername = user?.username || "";
   const displayName = user?.name || "";
@@ -30,7 +31,9 @@ export default function Account() {
     name: displayName,
     email: displayEmail,
     contactNumber: displayContact,
-    password: "",
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -47,14 +50,32 @@ export default function Account() {
     }));
   }, [user]);
 
+  const isPasswordField = (name) =>
+    name === "currentPassword" || name === "newPassword" || name === "confirmPassword";
+
+  const getFieldError = (name, nextFormData) => {
+    if (isPasswordField(name)) {
+      const passwordErrors = validateAccountPasswordFields(nextFormData);
+      return passwordErrors[name] || "";
+    }
+
+    return validateAccountField(name, nextFormData[name]);
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     const nextValue = sanitizeAccountField(name, value);
-    setFormData((prev) => ({ ...prev, [name]: nextValue }));
+    const nextFormData = { ...formData, [name]: nextValue };
+    setFormData(nextFormData);
 
     if (touchedFields[name]) {
-      const nextError = validateAccountField(name, nextValue);
+      const nextError = getFieldError(name, nextFormData);
       setFieldErrors((prev) => ({ ...prev, [name]: nextError }));
+
+      if (isPasswordField(name)) {
+        const passwordErrors = validateAccountPasswordFields(nextFormData);
+        setFieldErrors((prev) => ({ ...prev, ...passwordErrors }));
+      }
     }
   };
 
@@ -63,20 +84,37 @@ export default function Account() {
 
     setTouchedFields((prev) => ({ ...prev, [name]: true }));
 
-    const nextError = validateAccountField(name, value);
+    const nextError = getFieldError(name, { ...formData, [name]: value });
     setFieldErrors((prev) => ({ ...prev, [name]: nextError }));
+
+    if (isPasswordField(name)) {
+      const passwordErrors = validateAccountPasswordFields({ ...formData, [name]: value });
+      setFieldErrors((prev) => ({ ...prev, ...passwordErrors }));
+    }
   };
 
   const handleSave = async () => {
     setSaveError("");
 
-    const validationErrors = validateAccountForm(formData);
+    const passwordErrors = validateAccountPasswordFields(formData);
+    const validationErrors = {
+      ...validateAccountForm(formData),
+      ...passwordErrors,
+    };
+
+    const wantsPasswordChange = Boolean(
+      formData.currentPassword || formData.newPassword || formData.confirmPassword
+    );
+
     setFieldErrors(validationErrors);
     setTouchedFields({
       username: true,
       name: true,
       email: true,
       contactNumber: true,
+      currentPassword: wantsPasswordChange,
+      newPassword: wantsPasswordChange,
+      confirmPassword: wantsPasswordChange,
     });
 
     if (Object.keys(validationErrors).length > 0) {
@@ -92,13 +130,27 @@ export default function Account() {
         email: formData.email.trim().toLowerCase(),
         contactNumber: formData.contactNumber.trim(),
       });
+      if (wantsPasswordChange) {
+        await changePassword({
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword,
+          confirmPassword: formData.confirmPassword,
+        });
+      }
       await Swal.fire({
         title: "Saved",
-        text: "Account details updated successfully.",
+        text: wantsPasswordChange
+          ? "Account details and password updated successfully."
+          : "Account details updated successfully.",
         icon: "success",
         confirmButtonText: "OK",
       });
-      setFormData((prev) => ({ ...prev, password: "" }));
+      setFormData((prev) => ({
+        ...prev,
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      }));
     } catch (err) {
       setSaveError(err?.data?.message || err?.message || "Failed to update account details.");
     } finally {
@@ -222,6 +274,8 @@ export default function Account() {
                 value={formData.currentPassword}
                 onChange={handleChange}
                 onBlur={handleBlur}
+                error={Boolean(touchedFields.currentPassword && fieldErrors.currentPassword)}
+                helperText={touchedFields.currentPassword ? fieldErrors.currentPassword : ""}
               />
             </Grid>
             <Grid item size={4} md={6}>
@@ -235,6 +289,8 @@ export default function Account() {
                 value={formData.newPassword}
                 onChange={handleChange}
                 onBlur={handleBlur}
+                error={Boolean(touchedFields.newPassword && fieldErrors.newPassword)}
+                helperText={touchedFields.newPassword ? fieldErrors.newPassword : ""}
               />
             </Grid>
             <Grid item size={4} md={6}>
@@ -248,6 +304,8 @@ export default function Account() {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 onBlur={handleBlur}
+                error={Boolean(touchedFields.confirmPassword && fieldErrors.confirmPassword)}
+                helperText={touchedFields.confirmPassword ? fieldErrors.confirmPassword : ""}
               />
             </Grid>
 
@@ -272,6 +330,7 @@ export default function Account() {
                   type="submit"
                   fullWidth
                   variant="contained"
+                  onClick={handleSave}
                   sx={{
 
                     borderRadius: "16px",

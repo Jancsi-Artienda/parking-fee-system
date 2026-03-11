@@ -176,6 +176,45 @@ export function validateAccountForm(formData) {
 
 }
 
+export function validateAccountPasswordFields(formData) {
+  const currentPassword = formData?.currentPassword || "";
+  const newPassword = formData?.newPassword || "";
+  const confirmPassword = formData?.confirmPassword || "";
+  const hasAnyPassword = Boolean(currentPassword || newPassword || confirmPassword);
+  const errors = {};
+
+  if (!hasAnyPassword) {
+    return errors;
+  }
+
+  if (!currentPassword.trim()) {
+    errors.currentPassword = "Current password is required";
+  }
+
+  if (!newPassword.trim()) {
+    errors.newPassword = "New password is required";
+  } else {
+    const strength = getPasswordStrength(newPassword);
+    if (!strength.hasUppercase || !strength.hasLowercase || !strength.hasNumber || !strength.hasMinLength) {
+      errors.newPassword = "Password must include uppercase, lowercase, number, and at least 8 characters";
+    }
+  }
+
+  if (!confirmPassword.trim()) {
+    errors.confirmPassword = "Confirm password is required";
+  }
+
+  if (!errors.newPassword && !errors.confirmPassword && newPassword !== confirmPassword) {
+    errors.confirmPassword = "Passwords do not match";
+  }
+
+  if (currentPassword && newPassword && currentPassword === newPassword) {
+    errors.newPassword = "New password must be different from current password";
+  }
+
+  return errors;
+}
+
 export function validateAddvehicleForm(formData) {
   const fieldsToCheck = ["type", "name", "plate", "color"];
 

@@ -169,6 +169,22 @@ const api = {
     return apiClient.post("/auth/forgot-password", { email });
   },
 
+  async changePassword(payload) {
+    if (!import.meta.env.VITE_API_URL) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({
+            data: {
+              message: "Password updated successfully.",
+            },
+          });
+        }, 500);
+      });
+    }
+
+    return apiClient.post("/auth/change-password", payload);
+  },
+
 
   //vehicle
 
