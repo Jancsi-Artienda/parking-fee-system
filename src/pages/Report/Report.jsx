@@ -11,7 +11,7 @@ import useParkingFeePDF from "../../hooks/useParkingFeePDF";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { RefreshCw, Plus } from "lucide-react";
+import {  Plus } from "lucide-react";
 
 export default function Report() {
   const { vehicles } = useVehicles();
@@ -279,13 +279,7 @@ export default function Report() {
               </button>
 
               {/* Refresh Button */}
-              <button
-                onClick={() => setOpenModal(false)}
-                className="flex items-center gap-1 px-3 py-2 text-sm border border-blue-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors duration-150"
-              >
-                <RefreshCw size={16} />
-                Refresh
-              </button>
+            
 
             </div>
           </div>

@@ -6,6 +6,7 @@ import { PickersDay } from "@mui/x-date-pickers/PickersDay";
 import dayjs from "dayjs";
 import Swal from "sweetalert2";
 import { X } from "lucide-react";
+import { RefreshCw, Plus } from "lucide-react";
 
 export default function AddReportModal({
   open,
@@ -264,20 +265,31 @@ export default function AddReportModal({
 
           {/* Footer */}
           <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100 shrink-0">
-            <button
-              onClick={handleClose}
-              disabled={submitting}
-              className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50"
-            >
-              Cancel
-            </button>
+
             <button
               onClick={handleAddReport}
               disabled={submitting}
-              className="px-6 py-2 text-sm text-white font-semibold rounded-xl bg-[#1a237e] hover:bg-[#0d47a1] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2 text-sm text-white font-semibold rounded-xl bg-[#1a3a5c] hover:bg-[#142d47] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? "Adding..." : "Add Record"}
             </button>
+
+            <button
+              onClick={() => setOpenModal(false)}
+              className="flex items-center gap-1 px-3 py-2 text-sm border text-gray-600 bg-gray-100 rounded-xl  hover:bg-gray-200 transition-colors duration-150"
+            >
+              <RefreshCw size={16} />
+              Refresh 
+            </button>
+
+            <button
+              onClick={handleClose}
+              disabled={submitting}
+              className="flex items-center gap-1 px-3 py-2 text-sm border  text-white  bg-[#E60000] rounded-xl hover:bg-[#cc0000] transition-colors duration-150"
+            >
+              Cancel
+            </button>
+
           </div>
 
         </div>
