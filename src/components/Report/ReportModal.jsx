@@ -5,7 +5,8 @@ import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import { PickersDay } from "@mui/x-date-pickers/PickersDay";
 import dayjs from "dayjs";
 import Swal from "sweetalert2";
-import { X, RefreshCw } from "lucide-react";
+import { X } from "lucide-react";
+import { RefreshCw, Plus } from "lucide-react";
 
 export default function AddReportModal({
   open,
@@ -33,6 +34,45 @@ export default function AddReportModal({
       setFormData((prev) => ({ ...prev, vehicleId: String(singleVehicle.id) }));
     }
   }, [open, hasSingleVehicle, singleVehicle]);
+
+  useEffect(() => {
+  if (!open) return;
+
+  window.history.pushState({ modalOpen: true }, "");
+
+
+   {/* to prevent lose data in the back browser */}
+  const handlePopState = () => {
+    Swal.fire({
+      title: "",
+      text: "Are you sure you want to close? Your changes will be lost.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes",
+      cancelButtonText: "No",
+      confirmButtonColor: "#E60000",
+      cancelButtonColor: "#1a3a5c",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setLocalError("");
+        setCalendarValue(null);
+        setSelectedDates([]);
+        setFormData({ vehicleId: "", amount: "50" });
+        setOpen(false);
+      } else {
+        window.history.pushState({ modalOpen: true }, "");
+      }
+    });
+  };
+
+  window.addEventListener("popstate", handlePopState);
+
+  return () => {
+    window.removeEventListener("popstate", handlePopState);
+  };
+}, [open]);
+
+
 
   const usedDateKeys = useMemo(
     () =>
@@ -77,13 +117,6 @@ export default function AddReportModal({
     setSelectedDates((prev) => prev.filter((d) => d !== dateStr));
   };
 
-  const handleRefresh = () => {
-    if (submitting) return;
-    setSelectedDates([]);
-    setCalendarValue(null);
-    setLocalError("");
-  };
-
   const HighlightedDay = (props) => {
     const { day, ...other } = props;
     const isSelected = selectedDates.includes(day.format("YYYY-MM-DD"));
@@ -103,12 +136,51 @@ export default function AddReportModal({
     );
   };
 
-  const handleClose = () => {
+ const handleClose = () => {
     if (submitting) return;
-    setLocalError("");
-    setCalendarValue(null);
-    setOpen(false);
+
+    Swal.fire({
+      title: "",
+      text: "Are you sure you want to close? Your changes will be lost.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes",
+      cancelButtonText: "No",
+      confirmButtonColor: "#E60000",
+      cancelButtonColor: "#1a3a5c",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setLocalError("");
+        setCalendarValue(null);
+        setSelectedDates([]);
+        setFormData({ vehicleId: "", amount: "50" });
+        setOpen(false);
+      }
+    });
   };
+
+
+
+const handleRefresh = async () => {
+    const result = await Swal.fire({
+      title: "Refresh Form?",
+      text: "This will clear all your selected dates and inputs.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Refresh",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#6b7280",
+      cancelButtonColor: "#1a3a5c",
+    });
+
+    if (result.isConfirmed) {
+      setFormData({ vehicleId: hasSingleVehicle ? String(singleVehicle.id) : "", amount: "50" });
+      setSelectedDates([]);
+      setCalendarValue(null);
+      setLocalError("");
+    }
+  };
+
 
   const handleAddReport = async () => {
     if (submitLockRef.current || submitting) return;
@@ -282,11 +354,10 @@ export default function AddReportModal({
 
             <button
               onClick={handleRefresh}
-              disabled={submitting}
               className="flex items-center gap-1 px-3 py-2 text-sm border text-gray-600 bg-gray-100 rounded-xl  hover:bg-gray-200 transition-colors duration-150"
             >
               <RefreshCw size={16} />
-              Refresh
+              Refresh 
             </button>
 
             <button
