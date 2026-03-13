@@ -9,7 +9,7 @@ const VEHICLE_LIMIT_ERROR_REGEX =
   /(vehicle\s*limit|limit\s*reached|max(?:imum)?\s*vehicles?|cannot\s*add\s*more\s*vehicles?|no\s*more\s*vehicles?)/i;
 
 export default function AddVehicleModal({ open, setOpen }) {
-  const { addVehicle, vehicles } = useVehicles();
+  const { addVehicle } = useVehicles();
 
   const [formData, setFormData] = useState({
     type: "",
@@ -20,8 +20,6 @@ export default function AddVehicleModal({ open, setOpen }) {
   const [submitting, setSubmitting] = useState(false);
   const [localError, setLocalError] = useState("");
   const submitLockRef = useRef(false);
-
-  const isLimitReached = Array.isArray(vehicles) && vehicles.length >= 1;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -180,13 +178,6 @@ export default function AddVehicleModal({ open, setOpen }) {
             />
           </div>
 
-          {/* Limit Warning */}
-          {isLimitReached && (
-            <p className="text-yellow-600 text-sm font-medium">
-              Vehicle limit reached. You can only register 1 vehicle. Delete your existing vehicle to register a new one.
-            </p>
-          )}
-
           {/* Error */}
           {localError && (
             <p className="text-red-500 text-sm">{localError}</p>
@@ -205,7 +196,7 @@ export default function AddVehicleModal({ open, setOpen }) {
           </button>
           <button
             onClick={handleAddVehicle}
-            disabled={submitting || isLimitReached}
+            disabled={submitting}
             className="px-6 py-2 text-sm text-white font-semibold rounded-xl bg-[#1a237e] hover:bg-[#0d47a1] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? "Adding..." : "Add Vehicle"}
