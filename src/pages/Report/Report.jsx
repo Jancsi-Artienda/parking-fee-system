@@ -173,7 +173,6 @@ export default function Report() {
         (!endDate || rowDate.isBefore(endDate, "day") || rowDate.isSame(endDate, "day"))
       );
     });
-
     return filtered
       .map((row, index) => ({
         row,
@@ -181,8 +180,8 @@ export default function Report() {
         time: dayjs(row?.transDate).isValid() ? dayjs(row.transDate).valueOf() : Number.NEGATIVE_INFINITY,
       }))
       .sort((a, b) => {
-        if (a.time !== b.time) return a.time - b.time; // oldest first
-        return a.index - b.index; // stable for same date
+        if (a.time !== b.time) return a.time - b.time;
+        return a.index - b.index;
       })
       .map((item) => item.row);
   }, [rows, startDate, endDate]);
@@ -197,6 +196,7 @@ export default function Report() {
       confirmButtonText: "Delete",
       cancelButtonText: "Cancel",
       confirmButtonColor: "#d32f2f",
+      reverseButtons: true,
     });
     if (!confirmResult.isConfirmed) return;
     setDeleting(true);
@@ -223,57 +223,64 @@ export default function Report() {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <div className="w-[95%] p-6 rounded-2xl shadow-lg bg-white">
-
+      <div className="w-full p-4 md:p-6 pt-16 md:pt-6 rounded-2xl shadow-lg bg-white">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
           <div className="flex flex-col gap-2 p-1">
-
-            <h2 className="text-xl font-medium text-gray-900">Parking Fee Report</h2>
-
-            {/* Coverage + Actions */}
-            <div className="flex flex-wrap gap-3 items-center p-1">
-
+            <h2 className="text-lg md:text-xl font-medium text-gray-900">Parking Fee Report</h2>
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-start sm:items-center p-1">
               <span className="text-sm text-gray-700 font-medium">Coverage:</span>
-
-              {/* DatePickers — must stay as MUI */}
-              <DatePicker
-                label="From"
-                value={startDate}
-                onChange={(newValue) => {
-                  setCoverageTouched(true);
-                  setStartDate(newValue);
-                  if (newValue && dayjs(newValue).isValid()) {
-                    const minTo = getMinCoverageTo(newValue);
-                    if (!endDate || !dayjs(endDate).isValid() || dayjs(endDate).isBefore(minTo, "day")) {
-                      setEndDate(minTo);
+              <div className="w-full sm:w-auto">
+                <DatePicker
+                  label="From"
+                  value={startDate}
+                  onChange={(newValue) => {
+                    setCoverageTouched(true);
+                    setStartDate(newValue);
+                    if (newValue && dayjs(newValue).isValid()) {
+                      const minTo = getMinCoverageTo(newValue);
+                      if (!endDate || !dayjs(endDate).isValid() || dayjs(endDate).isBefore(minTo, "day")) {
+                        setEndDate(minTo);
+                      }
                     }
-                  }
-                }}
-                slotProps={{ textField: { size: "small" } }}
-              />
+                  }}
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      fullWidth: true, 
+                    }
+                  }}
+                />
+              </div>
 
-              <DatePicker
-                label="To"
-                minDate={getMinCoverageTo(startDate)}
-                value={endDate}
-                onChange={(newValue) => {
-                  setCoverageTouched(true);
-                  if (!startDate || !dayjs(startDate).isValid()) { setEndDate(newValue); return; }
-                  const minTo = getMinCoverageTo(startDate);
-                  if (newValue && dayjs(newValue).isValid() && dayjs(newValue).isBefore(minTo, "day")) {
-                    toastError("Coverage must be at least 15 days after");
-                    return;
-                  }
-                  setEndDate(newValue);
-                }}
-                slotProps={{ textField: { size: "small" } }}
-              />
+              <div className="w-full sm:w-auto">
+                <DatePicker
+                  label="To"
+                  minDate={getMinCoverageTo(startDate)}
+                  value={endDate}
+                  onChange={(newValue) => {
+                    setCoverageTouched(true);
+                    if (!startDate || !dayjs(startDate).isValid()) { setEndDate(newValue); return; }
+                    const minTo = getMinCoverageTo(startDate);
+                    if (newValue && dayjs(newValue).isValid() && dayjs(newValue).isBefore(minTo, "day")) {
+                      toastError("Coverage must be at least 15 days after");
+                      return;
+                    }
+                    setEndDate(newValue);
+                  }}
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      fullWidth: true, 
+                    }
+                  }}
+                />
+              </div>
 
               {/* Add Button */}
               <button
                 onClick={() => setOpenModal(true)}
-                className="flex items-center gap-1 px-3 py-2 text-sm border border-blue-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                className="flex items-center justify-center gap-1 w-full sm:w-auto px-3 py-2 text-sm border border-blue-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors duration-150"
               >
                 <Plus size={16} />
                 Add
@@ -286,8 +293,8 @@ export default function Report() {
         {/* Error */}
         {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
 
-        {/* Table */}
-        <div className="w-full">
+        {/* Table  */}
+        <div className="w-full overflow-x-auto">
           <ParkingReportTable
             rows={filteredRows}
             loading={loading}
@@ -299,7 +306,7 @@ export default function Report() {
           />
         </div>
 
-        {/* Modal */}
+        {/* Modal  */}
         <AddReportModal
           open={openModal}
           setOpen={setOpenModal}
@@ -315,7 +322,7 @@ export default function Report() {
           <button
             onClick={handleExportPDF}
             disabled={loading}
-            className="ml-auto px-5 py-2 text-sm text-white font-medium rounded-xl bg-green-600 hover:bg-green-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto sm:ml-auto px-5 py-2 text-sm text-white font-medium rounded-xl bg-green-600 hover:bg-green-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Export PDF
           </button>

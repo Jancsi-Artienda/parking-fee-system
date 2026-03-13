@@ -18,6 +18,7 @@ export default function Vehicle() {
       confirmButtonText: "Delete",
       cancelButtonText: "Cancel",
       confirmButtonColor: "#d32f2f",
+      reverseButtons: true,
     });
 
     if (!result.isConfirmed) return;

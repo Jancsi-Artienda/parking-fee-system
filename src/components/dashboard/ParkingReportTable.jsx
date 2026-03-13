@@ -48,6 +48,7 @@ export default function ParkingReportTable({
         field: "transDate",
         headerName: "Date",
         flex: 1,
+        minWidth: 90,          
         resizable: false,
         headerAlign: "center",
         align: "center",
@@ -57,6 +58,7 @@ export default function ParkingReportTable({
         field: "vehicleModel",
         headerName: "Vehicle Model",
         flex: 1.2,
+        minWidth: 110,       
         resizable: false,
         headerAlign: "center",
         align: "center",
@@ -65,6 +67,7 @@ export default function ParkingReportTable({
         field: "amount",
         headerName: "Amount",
         flex: 1,
+        minWidth: 90,          
         resizable: false,
         headerAlign: "center",
         align: "center",
@@ -103,49 +106,53 @@ export default function ParkingReportTable({
   const gridContent = (
     <>
       {title && (
-        <h2 className="text-xl font-medium mb-6">{title}</h2>
+        <h2 className="text-lg md:text-xl font-medium mb-4 md:mb-6">{title}</h2>
+       
       )}
 
-      <div className="h-[500px] w-full">
-        <DataGrid
-          rows={displayRows}
-          columns={columns}
-          loading={loading}
-          rowHeight={70}
-          getRowId={(row) => row._rowId}
-          disableColumnResize
-          disableColumnSorting
-          disableColumnMenu
-          hideFooterPagination
-          localeText={{ noRowsLabel: emptyMessage }}
-          {...(hasControlledSelection
-            ? { onRowSelectionModelChange: onRowSelectionChange }
-            : {})}
-          sx={{
-            border: "none",
-            "& .MuiDataGrid-columnHeaders": {
-              backgroundColor: "#f5f5f5",
-              fontWeight: "bold",
-            },
-            "& .MuiDataGrid-columnSeparator": {
-              pointerEvents: "none",
-              opacity: 0,
-            },
-            "& .row-delete-btn": {
-              opacity: 0,
-              pointerEvents: "none",
-              transition: "opacity 0.18s ease",
-            },
-            "& .MuiDataGrid-row:hover .row-delete-btn": {
-              opacity: 1,
-              pointerEvents: "auto",
-            },
-            "& .MuiDataGrid-row.Mui-selected .row-delete-btn": {
-              opacity: 1,
-              pointerEvents: "auto",
-            },
-          }}
-        />
+      <div className="overflow-x-auto">
+        <div className="min-w-[320px] h-[500px]">
+          
+          <DataGrid
+            rows={displayRows}
+            columns={columns}
+            loading={loading}
+            rowHeight={70}
+            getRowId={(row) => row._rowId}
+            disableColumnResize
+            disableColumnSorting
+            disableColumnMenu
+            hideFooterPagination
+            localeText={{ noRowsLabel: emptyMessage }}
+            {...(hasControlledSelection
+              ? { onRowSelectionModelChange: onRowSelectionChange }
+              : {})}
+            sx={{
+              border: "none",
+              "& .MuiDataGrid-columnHeaders": {
+                backgroundColor: "#f5f5f5",
+                fontWeight: "bold",
+              },
+              "& .MuiDataGrid-columnSeparator": {
+                pointerEvents: "none",
+                opacity: 0,
+              },
+              "& .row-delete-btn": {
+                opacity: 0,
+                pointerEvents: "none",
+                transition: "opacity 0.18s ease",
+              },
+              "& .MuiDataGrid-row:hover .row-delete-btn": {
+                opacity: 1,
+                pointerEvents: "auto",
+              },
+              "& .MuiDataGrid-row.Mui-selected .row-delete-btn": {
+                opacity: 1,
+                pointerEvents: "auto",
+              },
+            }}
+          />
+        </div>
       </div>
     </>
   );
@@ -153,7 +160,8 @@ export default function ParkingReportTable({
   if (!withPaper) return gridContent;
 
   return (
-    <div className="w-[95%] p-6 rounded-2xl shadow-lg bg-white">
+   
+    <div className="w-full p-4 md:p-6 rounded-2xl shadow-lg bg-white">
       {gridContent}
     </div>
   );

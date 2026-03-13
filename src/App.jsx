@@ -9,7 +9,7 @@ import PublicRoute from "./routes/PublicRoute"
 import Account from "./pages/account/Account"
 import Report from "./pages/Report/Report"
 import ForgotPassword from "./pages/auth/ForgotPassword"
-
+import Scanner from "./pages/Report/Scanner"
 function App() {
   return (
     <BrowserRouter>
@@ -23,6 +23,7 @@ function App() {
           <Route path="/vehicle" element={<Vehicle />} />
           <Route path="/account" element={<Account />} />
           <Route path="/report" element={<Report />} />
+          <Route path="/scanner" element={<Scanner />} />
           
         </Route>
 

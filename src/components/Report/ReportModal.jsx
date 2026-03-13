@@ -52,6 +52,7 @@ export default function AddReportModal({
       cancelButtonText: "No",
       confirmButtonColor: "#E60000",
       cancelButtonColor: "#1a3a5c",
+      reverseButtons: true,
     }).then((result) => {
       if (result.isConfirmed) {
         setLocalError("");
@@ -148,6 +149,7 @@ export default function AddReportModal({
       cancelButtonText: "No",
       confirmButtonColor: "#E60000",
       cancelButtonColor: "#1a3a5c",
+      reverseButtons: true,
     }).then((result) => {
       if (result.isConfirmed) {
         setLocalError("");
@@ -171,6 +173,7 @@ const handleRefresh = async () => {
       cancelButtonText: "Cancel",
       confirmButtonColor: "#6b7280",
       cancelButtonColor: "#1a3a5c",
+      reverseButtons: true,
     });
 
     if (result.isConfirmed) {

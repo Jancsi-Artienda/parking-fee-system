@@ -30,14 +30,14 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 md:pt-0">
       <div className="mt-8 mb-12 rounded-2xl">
 
-        <h1 className="text-3xl font-bold mb-6 text-indigo-900">
+        <h1 className="text-2xl md:text-3xl font-bold mb-6 text-indigo-900">
           Dashboard
         </h1>
 
-        <div className="flex flex-wrap gap-6 mb-8">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-6 mb-8">
           <VehicleStatCard totalVehicles={totalVehicles} />
         </div>
 
@@ -49,12 +49,15 @@ export default function Dashboard() {
           <p className="text-red-600 mb-4">{reportError}</p>
         )}
 
-        <ParkingReportTable
-          rows={reportRows}
-          loading={reportLoading}
-          title="Recent Parking Reports"
-          emptyMessage="No reports yet."
-        />
+
+        <div className="overflow-x-auto">
+          <ParkingReportTable
+            rows={reportRows}
+            loading={reportLoading}
+            title="Recent Parking Reports"
+            emptyMessage="No reports yet."
+          />
+        </div>
       </div>
     </div>
   );
