@@ -358,7 +358,7 @@ export default function ReceiptScannerModal({
                     autoPlay
                     playsInline
                     muted
-                    className="w-full max-h-80 object-cover"
+                    className="w-full max-h-full object-cover"
 
                   />
                   {/* Scan overlay */}
