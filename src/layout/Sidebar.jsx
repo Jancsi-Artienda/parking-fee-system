@@ -19,7 +19,7 @@ export default function Sidebar() {
       text: "Report", icon: <FileText size={20} />,
       children: [
         { text: "By Batch", path: "/report" },
-        { text: "To be continued...", path: "/scanner", badge: "NEW" },
+        { text: "Scanner", path: "/scanner" },
       ],
     },
   ];

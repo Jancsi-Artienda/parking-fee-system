@@ -13,6 +13,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Plus } from "lucide-react";
 import ScannerModal from "../../components/Report/ScannerModal";
+import { ScanLine } from "lucide-react";
 
 export default function Report() {
   const { vehicles } = useVehicles();
@@ -281,9 +282,9 @@ export default function Report() {
               {/* Add Button */}
               <button
                 onClick={() => setOpenModal(true)}
-                className="flex items-center justify-center gap-1 w-full sm:w-auto px-3 py-2 text-sm border border-blue-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                className="flex items-center justify-center gap-1 w-full sm:w-auto px-3 py-2 text-sm border border-red-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors duration-150"
               >
-                <Plus size={16} />
+                <ScanLine size={16} />
                 Scan
               </button>
 
