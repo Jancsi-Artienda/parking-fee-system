@@ -42,7 +42,7 @@ export default function ReceiptScannerModal({
   const maxDate = coverageEnd ? coverageEnd.format("YYYY-MM-DD") : undefined;
 
 
-  
+
   const safeVehicles = vehicles ?? [];
   const hasSingleVehicle = safeVehicles.length === 1;
   const singleVehicle = safeVehicles[0];
@@ -311,13 +311,13 @@ If the date has no year, assume the current year ${dayjs().year()}.`,
                   <div className="absolute bottom-0 inset-x-0 flex gap-2 p-3">
                     <button
                       onClick={stopCamera}
-                      className="flex-1 py-2 text-xs font-medium text-white rounded-lg bg-black/50 hover:bg-black/70 transition-colors"
+                      className="flex-1 py-2 text-xs font-medium text-white rounded-lg bg-[#E60000] rounded-xl hover:bg-[#cc0000] transition-colors"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={captureFromCamera}
-                      className="flex-1 py-2 text-xs font-medium text-white rounded-lg bg-blue-600 hover:bg-blue-700 transition-colors"
+                      className="flex-1 py-2 text-xs font-medium text-white rounded-lg bg-[#1a3a5c] hover:bg-[#142d47]   transition-colors"
                     >
                       Capture
                     </button>
@@ -381,7 +381,7 @@ If the date has no year, assume the current year ${dayjs().year()}.`,
                     )}
                   </div>
 
-                  
+
                   {/* Camera button */}
                   <button
                     onClick={startCamera}
@@ -496,18 +496,28 @@ If the date has no year, assume the current year ${dayjs().year()}.`,
                   <Car size={12} className="inline mr-1 text-gray-400" />
                   Vehicle
                 </label>
-                <select
-                  value={vehicleId}
-                  onChange={(e) => setVehicleId(e.target.value)}
-                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition"
-                >
-                  {vehicles.length === 0 && <option value="">No vehicles available</option>}
-                  {vehicles.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.model || v.vehicleModel || "Unknown"}{v.plateNumber ? ` · ${v.plateNumber}` : ""}
-                    </option>
-                  ))}
-                </select>
+
+                {hasSingleVehicle ? (
+                  <input
+                    type="text"
+                    readOnly
+                    value={`${singleVehicle?.type || ""} - ${singleVehicle?.model || singleVehicle?.vehicleModel || ""} (${singleVehicle?.plateNumber || singleVehicle?.plate || ""})`}
+                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-700 cursor-not-allowed"
+                  />
+                ) : (
+                  <select
+                    value={vehicleId}
+                    onChange={(e) => setVehicleId(e.target.value)}
+                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition"
+                  >
+                    {safeVehicles.length === 0 && <option value="">No vehicles available</option>}
+                    {safeVehicles.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.model || v.vehicleModel || "Unknown"}{v.plateNumber ? ` · ${v.plateNumber}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               {/* Save error */}
@@ -545,14 +555,14 @@ If the date has no year, assume the current year ${dayjs().year()}.`,
             <div className="px-5 pb-5 flex gap-2">
               <button
                 onClick={() => setOpen(false)}
-                className="flex-1 py-2 text-sm font-medium text-gray-600 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+                className="flex-1 py-2 text-sm font-medium text-white rounded-xl border bg-[#E60000] rounded-xl hover:bg-[#cc0000] transition-colors"
               >
                 Cancel
               </button>
               {step === "review" && (
                 <button
                   onClick={handleSave}
-                  className="flex-1 py-2 text-sm font-medium text-white rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2 text-sm font-medium text-white rounded-xl bg-[#1a3a5c] hover:bg-[#142d47] active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
                 >
                   Confirm & Save
                   <ArrowRight size={14} />
