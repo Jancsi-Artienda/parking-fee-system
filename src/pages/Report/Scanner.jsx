@@ -1,147 +1,335 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import dayjs from "dayjs";
+import Swal from "sweetalert2";
+import { toastError, toastSuccess, toastWarning } from "../../utils/swalToast";
 
-export default function Scanner() {
-  const [dots, setDots] = useState(0);
-  const [scanLine, setScanLine] = useState(0);
+import ParkingReportTable from "../../components/dashboard/ParkingReportTable";
+import api from "../../services/api";
+import { useVehicles } from "../../context/vehicleContext/useVehicles";
+import useAuth from "../../context/auth/useAuth";
+import useParkingFeePDF from "../../hooks/useParkingFeePDF";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { Plus } from "lucide-react";
+import ScannerModal from "../../components/Report/ScannerModal";
+
+export default function Report() {
+  const { vehicles } = useVehicles();
+  const { user } = useAuth();
+  const { generatePDF, maxRows } = useParkingFeePDF();
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [openModal, setOpenModal] = useState(false);
+  const [startDate, setStartDate] = useState(dayjs().startOf("month"));
+  const [endDate, setEndDate] = useState(dayjs());
+  const [coverageLoaded, setCoverageLoaded] = useState(false);
+  const [coverageTouched, setCoverageTouched] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const MIN_COVERAGE_DAYS = 14;
+
+  const getMinCoverageTo = useCallback((from) => {
+    const d = dayjs(from);
+    return d.isValid() ? d.startOf("day").add(MIN_COVERAGE_DAYS, "day") : null;
+  }, []);
+
+  const isCoverageValid = useCallback(
+    (from, to) => {
+      const start = dayjs(from);
+      const end = dayjs(to);
+      if (!start.isValid() || !end.isValid()) return false;
+      return !end.isBefore(getMinCoverageTo(start), "day");
+    },
+    [getMinCoverageTo]
+  );
 
   useEffect(() => {
-    const dotsInterval = setInterval(() => {
-      setDots((prev) => (prev + 1) % 4);
-    }, 500);
-    return () => clearInterval(dotsInterval);
+    let isActive = true;
+    const loadCoveragePreference = async () => {
+      setCoverageLoaded(false);
+      try {
+        const data = await api.getCoverage();
+        if (!isActive) return;
+        const savedStart = dayjs(data?.coverageFrom);
+        const savedEnd = dayjs(data?.coverageTo);
+        if (savedStart.isValid() && savedEnd.isValid() && !savedStart.isAfter(savedEnd, "day") && isCoverageValid(savedStart, savedEnd)) {
+          setStartDate(savedStart);
+          setEndDate(savedEnd);
+        }
+      } catch (err) {
+        setError(err?.data?.message || "Invalid Coverage.");
+      } finally {
+        if (isActive) setCoverageLoaded(true);
+      }
+    };
+    loadCoveragePreference();
+    return () => { isActive = false; };
+  }, [user?.id, user?.employeeId, user?.email, isCoverageValid]);
+
+  useEffect(() => {
+    if (!coverageLoaded || !coverageTouched) return;
+    const normalizedStart = dayjs(startDate);
+    const normalizedEnd = dayjs(endDate);
+    if (!normalizedStart.isValid() || !normalizedEnd.isValid() || normalizedStart.isAfter(normalizedEnd, "day")) return;
+    if (!isCoverageValid(normalizedStart, normalizedEnd)) return;
+    const saveCoveragePreference = async () => {
+      try {
+        await api.saveCoverage({
+          coverageFrom: normalizedStart.format("YYYY-MM-DD"),
+          coverageTo: normalizedEnd.format("YYYY-MM-DD"),
+        });
+      } catch (err) {
+        setError(err?.data?.message || "Failed to load coverage.");
+      }
+    };
+    saveCoveragePreference();
+  }, [coverageLoaded, coverageTouched, startDate, endDate, isCoverageValid]);
+
+  const loadReports = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await api.getReports();
+      const normalizedRows = Array.isArray(data) ? data : Array.isArray(data?.reports) ? data.reports : [];
+      setRows(normalizedRows);
+    } catch (err) {
+      setError(err?.data?.message || "Failed to load reports.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    const scanInterval = setInterval(() => {
-      setScanLine((prev) => (prev >= 100 ? 0 : prev + 0.5));
-    }, 16);
-    return () => clearInterval(scanInterval);
-  }, []);
+    loadReports();
+  }, [loadReports]);
 
-  const dotString = ".".repeat(dots);
-  const scanOpacity = scanLine > 95 || scanLine < 5 ? 0 : 0.7;
+  const handleExportPDF = () => {
+    if (loading) return;
+    if (!filteredRows.length) { toastError("No reports to export."); return; }
+    const normalizedRows = filteredRows.map((row) => {
+      const parsedDate = dayjs(row.transDate);
+      return {
+        date: parsedDate.isValid() ? parsedDate.format("M/D/YYYY") : "",
+        carModel: row.vehicleModel || "",
+        amount: `PHP ${Number(row.amount || 0).toLocaleString("en-US")}`,
+      };
+    });
+    const coverageStart = dayjs(startDate);
+    const coverageEnd = dayjs(endDate);
+    let coverage = "N/A";
+    if (coverageStart.isValid() && coverageEnd.isValid()) {
+      coverage = coverageStart.isSame(coverageEnd, "day")
+        ? coverageStart.format("MMMM D, YYYY")
+        : `${coverageStart.format("MMMM D, YYYY")} - ${coverageEnd.format("MMMM D, YYYY")}`;
+    }
+    const preparedBy = user?.name || user?.username || user?.email || "N/A";
+    const printableFilteredRows = filteredRows.slice(0, maxRows);
+    const totalAmountValue = printableFilteredRows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
+    const totalAmount = `PHP ${totalAmountValue.toLocaleString("en-US")}`;
+    generatePDF({ preparedBy, coverage, dateSubmitted: dayjs().format("MMMM D, YYYY"), rows: normalizedRows, totalAmount });
+    if (filteredRows.length > maxRows) {
+      toastWarning(`Exported first ${maxRows} rows only.`);
+    } else {
+      toastSuccess("Report PDF exported successfully.");
+    }
+  };
+
+  const handleAddReport = async (payload) => {
+    const { transDates, vehicleId, amount } = payload;
+    const coverageStart = startDate && dayjs(startDate).isValid() ? dayjs(startDate) : null;
+    const coverageEnd = endDate && dayjs(endDate).isValid() ? dayjs(endDate) : null;
+    if (!coverageStart || !coverageEnd) throw new Error("Select a valid coverage range before adding a report.");
+    if (coverageStart.isAfter(coverageEnd, "day")) throw new Error("Coverage start date cannot be after coverage end date.");
+    if (!Array.isArray(transDates) || transDates.length === 0) throw new Error("At least one transaction date is required.");
+    if (!isCoverageValid(coverageStart, coverageEnd)) throw new Error("Coverage must be at least 15 days ahead");
+    const createdReports = [];
+    for (const dateStr of transDates) {
+      const reportDate = dayjs(dateStr);
+      if (!reportDate.isValid()) continue;
+      if (reportDate.isBefore(coverageStart, "day") || reportDate.isAfter(coverageEnd, "day")) continue;
+      const created = await api.addReport({
+        transDate: dateStr,
+        vehicleId,
+        amount,
+        coverageFrom: coverageStart.format("YYYY-MM-DD"),
+        coverageTo: coverageEnd.format("YYYY-MM-DD"),
+      });
+      createdReports.push(created);
+    }
+    setRows((prev) => [
+      ...createdReports.map((r) => ({ id: Date.now() + Math.random(), ...r })),
+      ...prev,
+    ]);
+  };
+
+  const filteredRows = useMemo(() => {
+    const baseRows = Array.isArray(rows) ? rows : [];
+    const filtered = baseRows.filter((row) => {
+      if (!row) return false;
+      const rowDate = dayjs(row.transDate);
+      return (
+        (!startDate || rowDate.isAfter(startDate, "day") || rowDate.isSame(startDate, "day")) &&
+        (!endDate || rowDate.isBefore(endDate, "day") || rowDate.isSame(endDate, "day"))
+      );
+    });
+    return filtered
+      .map((row, index) => ({
+        row,
+        index,
+        time: dayjs(row?.transDate).isValid() ? dayjs(row.transDate).valueOf() : Number.NEGATIVE_INFINITY,
+      }))
+      .sort((a, b) => {
+        if (a.time !== b.time) return a.time - b.time;
+        return a.index - b.index;
+      })
+      .map((item) => item.row);
+  }, [rows, startDate, endDate]);
+
+  const handleDeleteReport = async (reportRow) => {
+    if (!reportRow || deleting) return;
+    const confirmResult = await Swal.fire({
+      title: "Delete selected report?",
+      text: "This action cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#d32f2f",
+      reverseButtons: true,
+    });
+    if (!confirmResult.isConfirmed) return;
+    setDeleting(true);
+    try {
+      await api.deleteReport(reportRow.transDate);
+      const targetDate = dayjs(reportRow.transDate).isValid()
+        ? dayjs(reportRow.transDate).format("YYYY-MM-DD")
+        : String(reportRow.transDate || "");
+      setRows((prev) =>
+        prev.filter((row) => {
+          const rowDate = dayjs(row?.transDate).isValid()
+            ? dayjs(row.transDate).format("YYYY-MM-DD")
+            : String(row?.transDate || "");
+          return rowDate !== targetDate;
+        })
+      );
+      toastSuccess("Report deleted successfully.");
+    } catch (err) {
+      toastError(err?.data?.message || "Failed to delete report.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center font-mono relative overflow-hidden p-6">
-      {/* Background grid */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: `
-            linear-gradient(rgba(245,158,11,0.06) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(245,158,11,0.06) 1px, transparent 1px)
-          `,
-          backgroundSize: "40px 40px",
-        }}
-      />
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <div className="w-full p-4 md:p-6 pt-16 md:pt-6 rounded-2xl shadow-lg bg-white">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
+          <div className="flex flex-col gap-2 p-1">
+            <h2 className="text-lg md:text-xl font-medium text-gray-900">Parking Fee Report</h2>
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-start sm:items-center p-1">
+              <span className="text-sm text-gray-700 font-medium">Coverage:</span>
+              <div className="w-full sm:w-auto">
+                <DatePicker
+                  label="From"
+                  value={startDate}
+                  onChange={(newValue) => {
+                    setCoverageTouched(true);
+                    setStartDate(newValue);
+                    if (newValue && dayjs(newValue).isValid()) {
+                      const minTo = getMinCoverageTo(newValue);
+                      if (!endDate || !dayjs(endDate).isValid() || dayjs(endDate).isBefore(minTo, "day")) {
+                        setEndDate(minTo);
+                      }
+                    }
+                  }}
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      fullWidth: true,
+                    }
+                  }}
+                />
+              </div>
 
-      {/* Glowing orb */}
-      <div
-        className="absolute w-[500px] h-[500px] rounded-full pointer-events-none top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-        style={{
-          background: "radial-gradient(circle, rgba(245,158,11,0.12) 0%, transparent 70%)",
-          animation: "pulse-orb 4s ease-in-out infinite",
-        }}
-      />
+              <div className="w-full sm:w-auto">
+                <DatePicker
+                  label="To"
+                  minDate={getMinCoverageTo(startDate)}
+                  value={endDate}
+                  onChange={(newValue) => {
+                    setCoverageTouched(true);
+                    if (!startDate || !dayjs(startDate).isValid()) { setEndDate(newValue); return; }
+                    const minTo = getMinCoverageTo(startDate);
+                    if (newValue && dayjs(newValue).isValid() && dayjs(newValue).isBefore(minTo, "day")) {
+                      toastError("Coverage must be at least 15 days after");
+                      return;
+                    }
+                    setEndDate(newValue);
+                  }}
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      fullWidth: true,
+                    }
+                  }}
+                />
+              </div>
 
-      {/* Card */}
-      <div
-        className="relative bg-white border border-amber-200 rounded-2xl px-10 py-12 max-w-[460px] w-full text-center"
-        style={{
-          boxShadow: "0 0 60px rgba(245,158,11,0.06), 0 24px 48px rgba(0,0,0,0.06)",
-          animation: "float-card 6s ease-in-out infinite",
-        }}
-      >
-        {/* Scanner icon with animated scan line */}
-        <div className="relative w-20 h-20 mx-auto mb-6 overflow-hidden">
-          <svg
-            width="80"
-            height="80"
-            viewBox="0 0 80 80"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            style={{ animation: "flicker 5s infinite" }}
-          >
-            {/* QR-like corners */}
-            <rect x="8" y="8" width="18" height="4" fill="#f59e0b" rx="1" />
-            <rect x="8" y="8" width="4" height="18" fill="#f59e0b" rx="1" />
-            <rect x="54" y="8" width="18" height="4" fill="#f59e0b" rx="1" />
-            <rect x="68" y="8" width="4" height="18" fill="#f59e0b" rx="1" />
-            <rect x="8" y="68" width="18" height="4" fill="#f59e0b" rx="1" />
-            <rect x="8" y="54" width="4" height="18" fill="#f59e0b" rx="1" />
-            <rect x="54" y="68" width="18" height="4" fill="#f59e0b" rx="1" />
-            <rect x="68" y="54" width="4" height="18" fill="#f59e0b" rx="1" />
-            {/* Center wrench */}
-            <path
-              d="M35 28c-5.5 0-10 4.5-10 10 0 2.5.9 4.8 2.4 6.5L20 52l8 8 7.5-7.5c1.7 1.5 4 2.5 6.5 2.5 5.5 0 10-4.5 10-10 0-1.3-.3-2.6-.7-3.7l-5.3 5.3-4-4 5.3-5.3C45.8 37.3 44.7 37 43.5 37c-.8 0-1.6.1-2.3.3L35 28z"
-              fill="#f59e0b"
-              opacity="0.9"
-            />
-          </svg>
+              {/* Add Button */}
+              <button
+                onClick={() => setOpenModal(true)}
+                className="flex items-center justify-center gap-1 w-full sm:w-auto px-3 py-2 text-sm border border-blue-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+              >
+                <Plus size={16} />
+                Scan
+              </button>
 
-          {/* Animated scan line */}
-          <div
-            className="absolute left-0 right-0 h-0.5 pointer-events-none"
-            style={{
-              top: `${scanLine}%`,
-              opacity: scanOpacity,
-              background: "linear-gradient(90deg, transparent, #f59e0b, transparent)",
-              transition: "top 0.016s linear",
-            }}
+            </div>
+          </div>
+        </div>
+
+        {/* Error */}
+        {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+
+        {/* Table  */}
+        <div className="w-full overflow-x-auto">
+          <ParkingReportTable
+            rows={filteredRows}
+            loading={loading}
+            title={null}
+            emptyMessage="No reports yet."
+            withPaper={false}
+            maxRows={15}
+            onDeleteRow={handleDeleteReport}
           />
         </div>
 
-        {/* Badge */}
-        <div className="inline-block bg-amber-50 border border-amber-200 text-amber-500 text-[10px] font-semibold tracking-[3px] px-3 py-1 rounded mb-5">
-          OFFLINE
-        </div>
-
-        <h1
-          className="text-[26px] font-extrabold text-gray-900 mb-3 leading-tight"
-          style={{ fontFamily: "'Syne', sans-serif" }}
-        >
-          Scanner Under Development
-        </h1>
-
-        <p className="text-[13px] text-gray-400 leading-relaxed mb-7">
-          The Receipt scanner is currently being serviced.
-          <br />
-          Jairam is working on this feature{dotString}
-        </p>
-
-        {/* Divider */}
-        <div
-          className="h-px mb-7"
-          style={{
-            background: "linear-gradient(90deg, transparent, rgba(245,158,11,0.3), transparent)",
-          }}
+        {/* Modal  */}
+        <ScannerModal
+          open={openModal}
+          setOpen={setOpenModal}
+          vehicles={vehicles}
+          onAddReport={handleAddReport}
+          existingReports={rows}
+          coverageFrom={startDate}
+          coverageTo={endDate}
         />
 
-        <p className="text-[11px] text-gray-300 leading-relaxed m-0">
-          For urgent concerns, please contact the Developer directly.
-        </p>
+        {/* Export PDF */}
+        <div className="flex w-full mt-4">
+          <button
+            onClick={handleExportPDF}
+            disabled={loading}
+            className="w-full sm:w-auto sm:ml-auto px-5 py-2 text-sm text-white font-medium rounded-xl bg-green-600 hover:bg-green-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Export PDF
+          </button>
+        </div>
+
       </div>
-
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@700;800&display=swap');
-
-        @keyframes pulse-orb {
-          0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.15; }
-          50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.25; }
-        }
-        @keyframes float-card {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-6px); }
-        }
-        @keyframes flicker {
-          0%, 100% { opacity: 1; }
-          92% { opacity: 1; }
-          93% { opacity: 0.4; }
-          94% { opacity: 1; }
-          96% { opacity: 0.6; }
-          97% { opacity: 1; }
-        }
-      `}</style>
-    </div>
+    </LocalizationProvider>
   );
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Car, FileText, User, LogOut, ChevronDown, ChevronUp, Menu, X } from "lucide-react"; 
+import { LayoutDashboard, Car, FileText, User, LogOut, ChevronDown, ChevronUp, Menu, X } from "lucide-react";
 import logo from "../assets/logo.png";
 import useAuth from "../context/auth/useAuth";
 import Swal from "sweetalert2";
@@ -10,7 +10,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const [openMenu, setOpenMenu] = useState("Dashboard");
-  const [isMobileOpen, setIsMobileOpen] = useState(false); 
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const menuItems = [
     { text: "Dashboard", icon: <LayoutDashboard size={20} />, path: "/dashboard" },
@@ -46,7 +46,7 @@ export default function Sidebar() {
     setOpenMenu(openMenu === text ? null : text);
   };
 
-  const closeMobile = () => setIsMobileOpen(false); 
+  const closeMobile = () => setIsMobileOpen(false);
 
   return (
     <>
@@ -84,8 +84,8 @@ export default function Sidebar() {
         </button>
 
         {/* Logo  */}
-        <div className="flex justify-center items-center px-3 py-2">
-          <img src={logo} alt="Parking Fee Logo" className="w-full max-w-[180px] h-auto" />
+        <div className="px-3 py-2 w-full">
+          <img src={logo} alt="Parking Fee Logo" className="mx-auto block max-w-[180px] w-full h-auto" />
         </div>
 
         {/* Profile Card  */}
@@ -113,7 +113,7 @@ export default function Sidebar() {
                 <NavLink
                   key={item.text}
                   to={item.path}
-                  onClick={closeMobile} 
+                  onClick={closeMobile}
                   className={`flex items-center gap-3 w-full px-4 py-3 rounded-2xl mb-1 text-sm font-medium transition-all duration-200 no-underline shadow-sm
                     ${isActive
                       ? "bg-[#D6D6D6] font-semibold text-gray-800"
@@ -149,7 +149,7 @@ export default function Sidebar() {
                         <NavLink
                           key={child.text}
                           to={child.path}
-                          onClick={closeMobile} 
+                          onClick={closeMobile}
                           className={`flex items-center justify-between px-4 py-2 rounded-xl text-sm transition-all duration-200 no-underline
                             ${isChildActive
                               ? "bg-[#E8E8E8] font-semibold text-gray-800"
@@ -177,7 +177,7 @@ export default function Sidebar() {
         <div className="px-2 mt-4">
           <NavLink
             to="/account"
-            onClick={closeMobile} 
+            onClick={closeMobile}
             className={`pl-10 flex items-center gap-3 w-full px-4 py-3 rounded-2xl mb-2 text-sm font-medium transition-all duration-200 no-underline shadow-sm
               ${isAccountActive ? "bg-[#e2e2e2] text-gray-800" : "bg-[#ededed] text-gray-800 hover:bg-[#E0E0E0]"}`}
           >

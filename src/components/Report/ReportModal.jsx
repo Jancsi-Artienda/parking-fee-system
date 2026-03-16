@@ -36,42 +36,42 @@ export default function AddReportModal({
   }, [open, hasSingleVehicle, singleVehicle]);
 
   useEffect(() => {
-  if (!open) return;
+    if (!open) return;
 
-  window.history.pushState({ modalOpen: true }, "");
+    window.history.pushState({ modalOpen: true }, "");
 
 
-   {/* to prevent lose data in the back browser */}
-  const handlePopState = () => {
-    Swal.fire({
-      title: "",
-      text: "Are you sure you want to close? Your changes will be lost.",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Yes",
-      cancelButtonText: "No",
-      confirmButtonColor: "#E60000",
-      cancelButtonColor: "#1a3a5c",
-      reverseButtons: true,
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setLocalError("");
-        setCalendarValue(null);
-        setSelectedDates([]);
-        setFormData({ vehicleId: "", amount: "50" });
-        setOpen(false);
-      } else {
-        window.history.pushState({ modalOpen: true }, "");
-      }
-    });
-  };
+    {/* to prevent lose data in the back browser */ }
+    const handlePopState = () => {
+      Swal.fire({
+        title: "",
+        text: "Are you sure you want to close? Your changes will be lost.",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Yes",
+        cancelButtonText: "No",
+        confirmButtonColor: "#E60000",
+        cancelButtonColor: "#1a3a5c",
+        reverseButtons: true,
+      }).then((result) => {
+        if (result.isConfirmed) {
+          setLocalError("");
+          setCalendarValue(null);
+          setSelectedDates([]);
+          setFormData({ vehicleId: "", amount: "50" });
+          setOpen(false);
+        } else {
+          window.history.pushState({ modalOpen: true }, "");
+        }
+      });
+    };
 
-  window.addEventListener("popstate", handlePopState);
+    window.addEventListener("popstate", handlePopState);
 
-  return () => {
-    window.removeEventListener("popstate", handlePopState);
-  };
-}, [open]);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [open]);
 
 
 
@@ -137,7 +137,7 @@ export default function AddReportModal({
     );
   };
 
- const handleClose = () => {
+  const handleClose = () => {
     if (submitting) return;
 
     Swal.fire({
@@ -163,7 +163,7 @@ export default function AddReportModal({
 
 
 
-const handleRefresh = async () => {
+  const handleRefresh = async () => {
     const result = await Swal.fire({
       title: "Refresh Form?",
       text: "This will clear all your selected dates and inputs.",
@@ -238,14 +238,15 @@ const handleRefresh = async () => {
 
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm  "
         onClick={handleClose}
       >
         {/* Modal */}
         <div
-          className="relative bg-white rounded-2xl shadow-xl flex flex-col max-h-[90vh] w-[700px]"
+          className="relative bg-white rounded-2xl shadow-xl flex flex-col max-h-[90vh] w-[500px] "
           onClick={(e) => e.stopPropagation()}
         >
+
 
           {/* Header */}
           <div className="flex items-center justify-between px-6 pt-5 pb-2 shrink-0">
@@ -257,6 +258,7 @@ const handleRefresh = async () => {
               <X size={20} />
             </button>
           </div>
+          <div className="h-1 w-full bg-gradient-to-r from-blue-500 via-cyan-400 to-teal-400" />
 
           {/* Content */}
           <div className="flex flex-col gap-4 px-6 pb-4 overflow-y-auto flex-1">
@@ -360,7 +362,7 @@ const handleRefresh = async () => {
               className="flex items-center gap-1 px-3 py-2 text-sm border text-gray-600 bg-gray-100 rounded-xl  hover:bg-gray-200 transition-colors duration-150"
             >
               <RefreshCw size={16} />
-              Refresh 
+              Refresh
             </button>
 
             <button
