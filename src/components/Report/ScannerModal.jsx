@@ -1,69 +1,128 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import dayjs from "dayjs";
+import { createWorker } from "tesseract.js";
 import {
   X, ScanLine, Upload, Camera, CheckCircle2, AlertCircle,
   RotateCcw, FileImage, Loader2, CalendarDays, PhilippinePeso,
   ArrowRight, Car,
 } from "lucide-react";
 
+import { preprocessImage } from "../../utils/imagePreprocess";
 
+// ── Date helpers ─────────────────────────────────────────────────────────────
+function formatDateMmDdYyyy(input) {
+  if (!input) return "";
+  const [mm, dd, yyyy] = input.split(/[./-]/).map((v) => v.trim());
+  if (!mm || !dd || !yyyy) return "";
+  const month = mm.padStart(2, "0");
+  const day   = dd.padStart(2, "0");
+  const year  = yyyy.length === 2 ? `20${yyyy}` : yyyy;
+  return `${year}-${month}-${day}`; // Return YYYY-MM-DD for dayjs compatibility
+}
+
+// ── Ticket parser ─────────────────────────────────────────────────────────────
+function parseTicket(text) {
+  const cleanedText = text
+    .replace(/O/g, "0")
+    .replace(/S/g, "5")
+    .replace(/I/g, "1");
+
+  let timePaidDate  = "";
+  let totalAmountDue = "";
+
+  const dateMatch = cleanedText.match(/(\d{2}[/-]\d{2}[/-]\d{4})\s+\d{2}:\d{2}:\d{2}/);
+
+  if (dateMatch) {
+    let rawDate = dateMatch[1];
+
+    // Year correction: OCR misreads '2' as '0' in thermal fonts e.g. 2006 → 2026
+    rawDate = rawDate.replace(
+      /(\d{2}[/-]\d{2}[/-])(20)(\d{2})/,
+      (_, prefix, century, yy) => `${prefix}${century}${yy.replace(/^0/, "2")}`
+    );
+
+    timePaidDate = formatDateMmDdYyyy(rawDate);
+  }
+
+  const amountMatch =
+    cleanedText.match(/total\s*amount.*?(\d+\.\d{2})/i) ||
+    cleanedText.match(/(\d+\.\d{2})\s*$/m);
+
+  if (amountMatch) {
+    totalAmountDue = amountMatch[1].split(".")[0];
+  }
+
+  return { timePaidDate, totalAmountDue };
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function ReceiptScannerModal({
   open,
   setOpen,
-  vehicles = [],
+  vehicles,
   onAddReport,
   existingReports = [],
   coverageFrom,
   coverageTo,
 }) {
-  // ── Steps: "capture" → "scanning" → "review" → "saving" → "done"
-  const [step, setStep] = useState("capture");
+  const [step, setStep]               = useState("capture");
   const [imagePreview, setImagePreview] = useState(null);
-  const [imageBase64, setImageBase64] = useState(null);
-  const [imageMime, setImageMime] = useState("image/jpeg");
-
-  // Extracted / editable fields
-  const [extractedDate, setExtractedDate] = useState("");
+  const [extractedDate, setExtractedDate]     = useState("");
   const [extractedAmount, setExtractedAmount] = useState("");
-  const [vehicleId, setVehicleId] = useState("");
-  const [scanError, setScanError] = useState("");
-  const [saveError, setSaveError] = useState("");
-  const [mounted, setMounted] = useState(false);
+  const [vehicleId, setVehicleId]     = useState("");
+  const [scanError, setScanError]     = useState("");
+  const [saveError, setSaveError]     = useState("");
+  const [scanProgress, setScanProgress] = useState(0);
+  const [mounted, setMounted]         = useState(false);
 
   // Camera state
   const [cameraActive, setCameraActive] = useState(false);
-  const videoRef = useRef(null);
-  const streamRef = useRef(null);
+  const videoRef    = useRef(null);
+  const streamRef   = useRef(null);
   const fileInputRef = useRef(null);
+  const workerRef   = useRef(null);
 
   const coverageStart = coverageFrom && dayjs(coverageFrom).isValid() ? dayjs(coverageFrom) : null;
-  const coverageEnd = coverageTo && dayjs(coverageTo).isValid() ? dayjs(coverageTo) : null;
+  const coverageEnd   = coverageTo   && dayjs(coverageTo).isValid()   ? dayjs(coverageTo)   : null;
   const minDate = coverageStart ? coverageStart.format("YYYY-MM-DD") : undefined;
-  const maxDate = coverageEnd ? coverageEnd.format("YYYY-MM-DD") : undefined;
+  const maxDate = coverageEnd   ? coverageEnd.format("YYYY-MM-DD")   : undefined;
 
-
-
-  const safeVehicles = vehicles ?? [];
+  const safeVehicles    = Array.isArray(vehicles) ? vehicles : [];
   const hasSingleVehicle = safeVehicles.length === 1;
-  const singleVehicle = safeVehicles[0];
+  const singleVehicle   = hasSingleVehicle ? safeVehicles[0] : null;
+
   // Reset on open/close
   useEffect(() => {
     if (open) {
       setStep("capture");
       setImagePreview(null);
-      setImageBase64(null);
       setExtractedDate(dayjs().format("YYYY-MM-DD"));
       setExtractedAmount("");
-      setVehicleId(vehicles[0]?.id ?? "");
+      if (hasSingleVehicle && singleVehicle?.id != null) {
+        setVehicleId(String(singleVehicle.id));
+      } else {
+        setVehicleId("");
+      }
       setScanError("");
       setSaveError("");
+      setScanProgress(0);
       setCameraActive(false);
       setMounted(true);
     } else {
       setMounted(false);
       stopCamera();
     }
-  }, [open, vehicles]);
+  }, [open, hasSingleVehicle, singleVehicle]);
+
+  // Terminate Tesseract worker on unmount
+  useEffect(() => {
+    return () => {
+      if (workerRef.current) {
+        workerRef.current.terminate();
+        workerRef.current = null;
+      }
+    };
+  }, []);
 
   // ── Camera helpers ──────────────────────────────────────────────────────────
   const startCamera = async () => {
@@ -91,15 +150,13 @@ export default function ReceiptScannerModal({
   const captureFromCamera = () => {
     if (!videoRef.current) return;
     const canvas = document.createElement("canvas");
-    canvas.width = videoRef.current.videoWidth;
+    canvas.width  = videoRef.current.videoWidth;
     canvas.height = videoRef.current.videoHeight;
     canvas.getContext("2d").drawImage(videoRef.current, 0, 0);
     const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
     setImagePreview(dataUrl);
-    setImageBase64(dataUrl.split(",")[1]);
-    setImageMime("image/jpeg");
     stopCamera();
-    runScan(dataUrl.split(",")[1], "image/jpeg");
+    runScan(dataUrl);
   };
 
   // ── File upload ─────────────────────────────────────────────────────────────
@@ -107,19 +164,14 @@ export default function ReceiptScannerModal({
     const file = e.target.files?.[0];
     if (!file) return;
     setScanError("");
-    const mime = file.type || "image/jpeg";
     const reader = new FileReader();
     reader.onload = (ev) => {
       const dataUrl = ev.target.result;
-      const b64 = dataUrl.split(",")[1];
       setImagePreview(dataUrl);
-      setImageBase64(b64);
-      setImageMime(mime);
       stopCamera();
-      runScan(b64, mime);
+      runScan(dataUrl);
     };
     reader.readAsDataURL(file);
-    // reset so same file can be re-selected
     e.target.value = "";
   };
 
@@ -128,82 +180,96 @@ export default function ReceiptScannerModal({
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (!file || !file.type.startsWith("image/")) return;
-    const evt = { target: { files: [file], value: "" } };
-    handleFileChange(evt);
+    handleFileChange({ target: { files: [file], value: "" } });
   };
 
-  // ── AI scan via Anthropic API ───────────────────────────────────────────────
-  const runScan = useCallback(async (b64, mime) => {
+  // ── Tesseract worker ────────────────────────────────────────────────────────
+  const ensureWorker = async () => {
+    if (workerRef.current) return workerRef.current;
+
+    const worker = await createWorker("eng", 1, {
+      logger: (m) => {
+        if (m.status === "recognizing text") {
+          setScanProgress(Math.round(m.progress * 100));
+        }
+      },
+    });
+
+    await worker.setParameters({
+      tessedit_pageseg_mode: 4,
+      preserve_interword_spaces: 1,
+      tessedit_char_whitelist:
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:./- ",
+    });
+
+    workerRef.current = worker;
+    return worker;
+  };
+
+  // ── Main scan: preprocess → OCR → parse ────────────────────────────────────
+  const runScan = useCallback(async (dataUrl) => {
     setStep("scanning");
     setScanError("");
+    setScanProgress(0);
+
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "image",
-                  source: { type: "base64", media_type: mime, data: b64 },
-                },
-                {
-                  type: "text",
-                  text: `You are a receipt data extractor. Analyze this parking fee receipt image and extract:
-1. Transaction date (the date the parking was paid)
-2. Amount paid (numeric value only, no currency symbols)
+      // 1. Preprocess image (resize, deskew, threshold)
+      const processedUrl = await preprocessImage(dataUrl);
 
-Respond ONLY with a valid JSON object, no markdown, no explanation:
-{"date": "YYYY-MM-DD", "amount": "numeric_value"}
+      // 2. Run Tesseract OCR
+      const worker = await ensureWorker();
+      const { data } = await worker.recognize(processedUrl);
+      const rawText = data.text.trim();
+      console.log("OCR RESULTS:", rawText);
 
-If you cannot find a value, use null for that field.
-If the date has no year, assume the current year ${dayjs().year()}.`,
-                },
-              ],
-            },
-          ],
-        }),
-      });
+      // 3. Parse date and amount (with year correction applied inside)
+      const { timePaidDate, totalAmountDue } = parseTicket(rawText);
 
-      const data = await response.json();
-      const raw = data?.content?.find((c) => c.type === "text")?.text ?? "";
-
-      let parsed;
-      try {
-        parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
-      } catch {
-        throw new Error("Could not parse receipt data. Please fill in the fields manually.");
+      if (!timePaidDate && !totalAmountDue) {
+        throw new Error("Could not extract data from receipt. Please fill in the fields manually.");
       }
 
-      setExtractedDate(parsed?.date && dayjs(parsed.date).isValid() ? parsed.date : dayjs().format("YYYY-MM-DD"));
-      setExtractedAmount(parsed?.amount != null ? String(parsed.amount) : "");
+      setExtractedDate(
+        timePaidDate && dayjs(timePaidDate).isValid()
+          ? timePaidDate
+          : dayjs().format("YYYY-MM-DD")
+      );
+      setExtractedAmount(totalAmountDue || "");
       setStep("review");
+
     } catch (err) {
       setScanError(err?.message || "Scan failed. Please fill in the details manually.");
       setStep("review"); // still go to review so user can enter manually
     }
   }, []);
 
+  // ── Save ────────────────────────────────────────────────────────────────────
   const handleSave = async () => {
     setSaveError("");
     if (!vehicleId) { setSaveError("Please select a vehicle."); return; }
-    if (!extractedAmount || isNaN(Number(extractedAmount)) || Number(extractedAmount) <= 0) { setSaveError("Enter a valid amount."); return; }
-    if (!extractedDate || !dayjs(extractedDate).isValid()) { setSaveError("Enter a valid transaction date."); return; }
+    if (!extractedAmount || isNaN(Number(extractedAmount)) || Number(extractedAmount) <= 0) {
+      setSaveError("Enter a valid amount."); return;
+    }
+    if (!extractedDate || !dayjs(extractedDate).isValid()) {
+      setSaveError("Enter a valid transaction date."); return;
+    }
 
     const existing = new Set(
       existingReports.map((r) =>
         dayjs(r.transDate).isValid() ? dayjs(r.transDate).format("YYYY-MM-DD") : ""
       )
     );
-    if (existing.has(extractedDate)) { setSaveError(`A report for ${extractedDate} already exists.`); return; }
+    if (existing.has(extractedDate)) {
+      setSaveError(`A report for ${extractedDate} already exists.`); return;
+    }
 
     setStep("saving");
     try {
-      await onAddReport({ transDates: [extractedDate], vehicleId, amount: Number(extractedAmount) });
+      await onAddReport({
+        transDates: [extractedDate],
+        vehicleId:  Number(vehicleId),
+        amount:     Number(extractedAmount),
+      });
       setStep("done");
       setTimeout(() => setOpen(false), 1400);
     } catch (err) {
@@ -215,9 +281,9 @@ If the date has no year, assume the current year ${dayjs().year()}.`,
   const resetToCapture = () => {
     setStep("capture");
     setImagePreview(null);
-    setImageBase64(null);
     setScanError("");
     setSaveError("");
+    setScanProgress(0);
     stopCamera();
   };
 
@@ -258,11 +324,11 @@ If the date has no year, assume the current year ${dayjs().year()}.`,
               <div>
                 <h3 className="text-sm font-semibold text-gray-900">Receipt Scanner</h3>
                 <p className="text-xs text-gray-400">
-                  {step === "capture" && "Upload or take a photo of your receipt"}
-                  {step === "scanning" && "Extracting receipt data…"}
-                  {step === "review" && "Review extracted data"}
-                  {step === "saving" && "Saving entry…"}
-                  {step === "done" && "Entry saved!"}
+                  {step === "capture"  && "Upload or take a photo of your receipt"}
+                  {step === "scanning" && "Reading receipt…"}
+                  {step === "review"   && "Review extracted data"}
+                  {step === "saving"   && "Saving entry…"}
+                  {step === "done"     && "Entry saved!"}
                 </p>
               </div>
             </div>
@@ -285,7 +351,6 @@ If the date has no year, assume the current year ${dayjs().year()}.`,
           {/* ── STEP: CAPTURE ─────────────────────────────────────────────── */}
           {step === "capture" && (
             <div className="px-5 py-4 space-y-3">
-              {/* Camera viewfinder */}
               {cameraActive ? (
                 <div className="relative rounded-xl overflow-hidden bg-black">
                   <video
@@ -311,13 +376,13 @@ If the date has no year, assume the current year ${dayjs().year()}.`,
                   <div className="absolute bottom-0 inset-x-0 flex gap-2 p-3">
                     <button
                       onClick={stopCamera}
-                      className="flex-1 py-2 text-xs font-medium text-white rounded-lg bg-[#E60000] rounded-xl hover:bg-[#cc0000] transition-colors"
+                      className="flex-1 py-2 text-xs font-medium text-white rounded-lg bg-[#E60000] hover:bg-[#cc0000] transition-colors"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={captureFromCamera}
-                      className="flex-1 py-2 text-xs font-medium text-white rounded-lg bg-[#1a3a5c] hover:bg-[#142d47]   transition-colors"
+                      className="flex-1 py-2 text-xs font-medium text-white rounded-lg bg-[#1a3a5c] hover:bg-[#142d47] transition-colors"
                     >
                       Capture
                     </button>
@@ -352,17 +417,17 @@ If the date has no year, assume the current year ${dayjs().year()}.`,
                     <div className="flex-1 h-px bg-gray-100" />
                   </div>
 
+                  {/* Vehicle selector shown early */}
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1.5">
                       <Car size={12} className="inline mr-1 text-gray-400" />
                       Vehicle
                     </label>
-
                     {hasSingleVehicle ? (
                       <input
                         type="text"
                         readOnly
-                        value={`${singleVehicle?.type || ""} - ${singleVehicle?.model || singleVehicle?.vehicleModel || ""} (${singleVehicle?.plateNumber || singleVehicle?.plate || ""})`}
+                        value={`${singleVehicle?.type || ""} - ${singleVehicle?.name || ""} (${singleVehicle?.plate || ""})`}
                         className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-700 cursor-not-allowed"
                       />
                     ) : (
@@ -371,16 +436,15 @@ If the date has no year, assume the current year ${dayjs().year()}.`,
                         onChange={(e) => setVehicleId(e.target.value)}
                         className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition"
                       >
-                        {safeVehicles.length === 0 && <option value="">No vehicles available</option>}
+                        <option value="" disabled>Select a vehicle</option>
                         {safeVehicles.map((v) => (
                           <option key={v.id} value={v.id}>
-                            {v.model || v.vehicleModel || "Unknown"}{v.plateNumber ? ` · ${v.plateNumber}` : ""}
+                            {v.type} - {v.name} ({v.plate})
                           </option>
                         ))}
                       </select>
                     )}
                   </div>
-
 
                   {/* Camera button */}
                   <button
@@ -413,11 +477,16 @@ If the date has no year, assume the current year ${dayjs().year()}.`,
               <div className="flex flex-col items-center gap-2">
                 <Loader2 size={22} className="text-blue-500 animate-spin" />
                 <p className="text-sm font-medium text-gray-700">Reading receipt…</p>
-                <p className="text-xs text-gray-400">Extracting date and amount</p>
+                <p className="text-xs text-gray-400">
+                  {scanProgress > 0 ? `Recognising text… ${scanProgress}%` : "Preprocessing image…"}
+                </p>
               </div>
-              {/* Animated scan line */}
+              {/* Animated scan bar */}
               <div className="w-48 h-1 rounded-full bg-gray-100 overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full" style={{ animation: "scanBar 1.4s ease-in-out infinite" }} />
+                <div
+                  className="h-full bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full"
+                  style={{ animation: "scanBar 1.4s ease-in-out infinite" }}
+                />
               </div>
             </div>
           )}
@@ -496,12 +565,11 @@ If the date has no year, assume the current year ${dayjs().year()}.`,
                   <Car size={12} className="inline mr-1 text-gray-400" />
                   Vehicle
                 </label>
-
                 {hasSingleVehicle ? (
                   <input
                     type="text"
                     readOnly
-                    value={`${singleVehicle?.type || ""} - ${singleVehicle?.model || singleVehicle?.vehicleModel || ""} (${singleVehicle?.plateNumber || singleVehicle?.plate || ""})`}
+                    value={`${singleVehicle?.type || ""} - ${singleVehicle?.name || ""} (${singleVehicle?.plate || ""})`}
                     className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-700 cursor-not-allowed"
                   />
                 ) : (
@@ -510,10 +578,10 @@ If the date has no year, assume the current year ${dayjs().year()}.`,
                     onChange={(e) => setVehicleId(e.target.value)}
                     className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition"
                   >
-                    {safeVehicles.length === 0 && <option value="">No vehicles available</option>}
+                    <option value="" disabled>Select a vehicle</option>
                     {safeVehicles.map((v) => (
                       <option key={v.id} value={v.id}>
-                        {v.model || v.vehicleModel || "Unknown"}{v.plateNumber ? ` · ${v.plateNumber}` : ""}
+                        {v.type} - {v.name} ({v.plate})
                       </option>
                     ))}
                   </select>
@@ -555,7 +623,7 @@ If the date has no year, assume the current year ${dayjs().year()}.`,
             <div className="px-5 pb-5 flex gap-2">
               <button
                 onClick={() => setOpen(false)}
-                className="flex-1 py-2 text-sm font-medium text-white rounded-xl border bg-[#E60000] rounded-xl hover:bg-[#cc0000] transition-colors"
+                className="flex-1 py-2 text-sm font-medium text-white rounded-xl bg-[#E60000] hover:bg-[#cc0000] transition-colors"
               >
                 Cancel
               </button>
@@ -583,9 +651,9 @@ If the date has no year, assume the current year ${dayjs().year()}.`,
           to   { opacity: 1; transform: translateY(0) scale(1); }
         }
         @keyframes scanBar {
-          0%   { width: 0%;   margin-left: 0; }
-          50%  { width: 60%;  margin-left: 20%; }
-          100% { width: 0%;   margin-left: 100%; }
+          0%   { width: 0%;  margin-left: 0; }
+          50%  { width: 60%; margin-left: 20%; }
+          100% { width: 0%;  margin-left: 100%; }
         }
       `}</style>
     </>
