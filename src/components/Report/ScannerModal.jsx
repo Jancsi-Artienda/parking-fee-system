@@ -15,8 +15,8 @@ function formatDateMmDdYyyy(input) {
   const [mm, dd, yyyy] = input.split(/[./-]/).map((v) => v.trim());
   if (!mm || !dd || !yyyy) return "";
   const month = mm.padStart(2, "0");
-  const day   = dd.padStart(2, "0");
-  const year  = yyyy.length === 2 ? `20${yyyy}` : yyyy;
+  const day = dd.padStart(2, "0");
+  const year = yyyy.length === 2 ? `20${yyyy}` : yyyy;
   return `${year}-${month}-${day}`; // Return YYYY-MM-DD for dayjs compatibility
 }
 
@@ -27,7 +27,7 @@ function parseTicket(text) {
     .replace(/S/g, "5")
     .replace(/I/g, "1");
 
-  let timePaidDate  = "";
+  let timePaidDate = "";
   let totalAmountDue = "";
 
   const dateMatch = cleanedText.match(/(\d{2}[/-]\d{2}[/-]\d{4})\s+\d{2}:\d{2}:\d{2}/);
@@ -65,31 +65,31 @@ export default function ReceiptScannerModal({
   coverageFrom,
   coverageTo,
 }) {
-  const [step, setStep]               = useState("capture");
+  const [step, setStep] = useState("capture");
   const [imagePreview, setImagePreview] = useState(null);
-  const [extractedDate, setExtractedDate]     = useState("");
+  const [extractedDate, setExtractedDate] = useState("");
   const [extractedAmount, setExtractedAmount] = useState("");
-  const [vehicleId, setVehicleId]     = useState("");
-  const [scanError, setScanError]     = useState("");
-  const [saveError, setSaveError]     = useState("");
+  const [vehicleId, setVehicleId] = useState("");
+  const [scanError, setScanError] = useState("");
+  const [saveError, setSaveError] = useState("");
   const [scanProgress, setScanProgress] = useState(0);
-  const [mounted, setMounted]         = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   // Camera state
   const [cameraActive, setCameraActive] = useState(false);
-  const videoRef    = useRef(null);
-  const streamRef   = useRef(null);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
   const fileInputRef = useRef(null);
-  const workerRef   = useRef(null);
+  const workerRef = useRef(null);
 
   const coverageStart = coverageFrom && dayjs(coverageFrom).isValid() ? dayjs(coverageFrom) : null;
-  const coverageEnd   = coverageTo   && dayjs(coverageTo).isValid()   ? dayjs(coverageTo)   : null;
+  const coverageEnd = coverageTo && dayjs(coverageTo).isValid() ? dayjs(coverageTo) : null;
   const minDate = coverageStart ? coverageStart.format("YYYY-MM-DD") : undefined;
-  const maxDate = coverageEnd   ? coverageEnd.format("YYYY-MM-DD")   : undefined;
+  const maxDate = coverageEnd ? coverageEnd.format("YYYY-MM-DD") : undefined;
 
-  const safeVehicles    = Array.isArray(vehicles) ? vehicles : [];
+  const safeVehicles = Array.isArray(vehicles) ? vehicles : [];
   const hasSingleVehicle = safeVehicles.length === 1;
-  const singleVehicle   = hasSingleVehicle ? safeVehicles[0] : null;
+  const singleVehicle = hasSingleVehicle ? safeVehicles[0] : null;
 
   // Reset on open/close
   useEffect(() => {
@@ -150,7 +150,7 @@ export default function ReceiptScannerModal({
   const captureFromCamera = () => {
     if (!videoRef.current) return;
     const canvas = document.createElement("canvas");
-    canvas.width  = videoRef.current.videoWidth;
+    canvas.width = videoRef.current.videoWidth;
     canvas.height = videoRef.current.videoHeight;
     canvas.getContext("2d").drawImage(videoRef.current, 0, 0);
     const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
@@ -267,8 +267,8 @@ export default function ReceiptScannerModal({
     try {
       await onAddReport({
         transDates: [extractedDate],
-        vehicleId:  Number(vehicleId),
-        amount:     Number(extractedAmount),
+        vehicleId: Number(vehicleId),
+        amount: Number(extractedAmount),
       });
       setStep("done");
       setTimeout(() => setOpen(false), 1400);
@@ -324,11 +324,11 @@ export default function ReceiptScannerModal({
               <div>
                 <h3 className="text-sm font-semibold text-gray-900">Receipt Scanner</h3>
                 <p className="text-xs text-gray-400">
-                  {step === "capture"  && "Upload or take a photo of your receipt"}
+                  {step === "capture" && "Upload or take a photo of your receipt"}
                   {step === "scanning" && "Reading receipt…"}
-                  {step === "review"   && "Review extracted data"}
-                  {step === "saving"   && "Saving entry…"}
-                  {step === "done"     && "Entry saved!"}
+                  {step === "review" && "Review extracted data"}
+                  {step === "saving" && "Saving entry…"}
+                  {step === "done" && "Entry saved!"}
                 </p>
               </div>
             </div>
@@ -358,11 +358,12 @@ export default function ReceiptScannerModal({
                     autoPlay
                     playsInline
                     muted
-                    className="w-full max-h-56 object-cover"
+                    className="w-full max-h-80 object-cover"
+
                   />
                   {/* Scan overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-48 h-64 border-2 border-white/70 rounded-lg relative">
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none ">
+                    <div className="w-56 h-72 border-2 border-white/70 rounded-lg relative">
                       <span className="absolute -top-px left-0 w-6 h-0.5 bg-cyan-400" />
                       <span className="absolute -top-px right-0 w-6 h-0.5 bg-cyan-400" />
                       <span className="absolute -bottom-px left-0 w-6 h-0.5 bg-cyan-400" />
