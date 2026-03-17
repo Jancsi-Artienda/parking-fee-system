@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { randomInt } from "crypto";
-import { Resend } from "resend";
+
 import pool from "../db.js";
 import { getJwtSecret } from "../jwt.js";
 import { AUTH_COOKIE_NAME, getBearerToken } from "../auth.js";
@@ -24,13 +24,7 @@ const PASSWORD_RULES = {
   minLength: 8,
 };
 
-function getResendClient() {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    return null;
-  }
-  return new Resend(apiKey);
-}
+
 
 function generateOtp() {
   const value = randomInt(0, 10 ** OTP_LENGTH);
@@ -344,14 +338,6 @@ export async function forgotPassword(req, res) {
   }
 
   try {
-    const resendFrom =
-      process.env.RESEND_FROM || (process.env.NODE_ENV !== "production" ? "onboarding@resend.dev" : "");
-    const resendClient = getResendClient();
-    if (!resendClient || !resendFrom) {
-      return res.status(500).json({
-        message: "Email service not configured.",
-      });
-    }
 
     const [rows] = await pool.query(
       "SELECT usertable_id FROM users WHERE company_email = ? LIMIT 1",
@@ -384,12 +370,6 @@ export async function forgotPassword(req, res) {
         updateParams
       );
 
-      await resendClient.emails.send({
-        from: resendFrom,
-        to: normalizedEmail,
-        subject: "Your password reset code",
-        text: `Your password reset code is ${resetToken}. It expires soon. If you did not request this, ignore this email.`,
-      });
     }
 
     return res.json({

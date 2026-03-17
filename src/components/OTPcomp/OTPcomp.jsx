@@ -1,4 +1,4 @@
-function OTPcomp({ otp, setOtp, onVerify, onResend, onBack, submitting, error }) {
+function OTPcomp({ otp, setOtp, onVerify, onBack, submitting, error }) {
   return (
     <div className="flex flex-col gap-4 mt-1 text-center w-full">
 
@@ -31,7 +31,7 @@ function OTPcomp({ otp, setOtp, onVerify, onResend, onBack, submitting, error })
       {/* Resend */}
       <button
         type="button"
-        onClick={onResend}
+        /*onClick={}*/ 
         disabled={submitting}
         className="text-sm text-blue-800 hover:underline self-center disabled:opacity-50 disabled:cursor-not-allowed"
       >
