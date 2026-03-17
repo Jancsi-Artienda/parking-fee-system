@@ -30,14 +30,19 @@ function parseTicket(text) {
   let timePaidDate  = "";
   let totalAmountDue = "";
 
-  const dateMatch = cleanedText.match(/(\d{2}[/-]\d{2}[/-]\d{4})\s+\d{2}:\d{2}:\d{2}/);
+  // Anchor to TIME PAID label — far more reliable than a bare date+timestamp.
+  // Loose timestamp separator ([:;]) handles OCR misreads on wrinkled receipts.
+  // Falls back to any date+timestamp if the label is not found.
+  const dateMatch =
+    cleanedText.match(/TIME\s*PAID\s*[:\s]+(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i) ||
+    cleanedText.match(/(\d{2}[\/\-]\d{2}[\/\-]\d{4})\s+\d{2}[:\;]\d{2}[:\;]\d{2}/);
 
   if (dateMatch) {
     let rawDate = dateMatch[1];
 
     // Year correction: OCR misreads '2' as '0' in thermal fonts e.g. 2006 → 2026
     rawDate = rawDate.replace(
-      /(\d{2}[/-]\d{2}[/-])(20)(\d{2})/,
+      /(\d{2}[\/\-]\d{2}[\/\-])(20)(\d{2})/,
       (_, prefix, century, yy) => `${prefix}${century}${yy.replace(/^0/, "2")}`
     );
 
@@ -72,7 +77,8 @@ export default function ReceiptScannerModal({
   const [vehicleId, setVehicleId]     = useState("");
   const [scanError, setScanError]     = useState("");
   const [saveError, setSaveError]     = useState("");
-  const [scanProgress, setScanProgress] = useState(0);
+  const [scanProgress, setScanProgress]   = useState(0);
+  const [scanConfidence, setScanConfidence] = useState(null);
   const [mounted, setMounted]         = useState(false);
 
   // Camera state
@@ -106,6 +112,7 @@ export default function ReceiptScannerModal({
       setScanError("");
       setSaveError("");
       setScanProgress(0);
+      setScanConfidence(null);
       setCameraActive(false);
       setMounted(true);
     } else {
@@ -189,46 +196,44 @@ export default function ReceiptScannerModal({
     handleFileChange({ target: { files: [file], value: "" } });
   };
 
-  // ── Tesseract worker ────────────────────────────────────────────────────────
-  const ensureWorker = async () => {
-    if (workerRef.current) return workerRef.current;
-
-    const worker = await createWorker("eng", 1, {
-      logger: (m) => {
-        if (m.status === "recognizing text") {
-          setScanProgress(Math.round(m.progress * 100));
-        }
-      },
-    });
-
-    await worker.setParameters({
-      tessedit_pageseg_mode: 4,
-      preserve_interword_spaces: 1,
-      tessedit_char_whitelist:
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:./- ",
-    });
-
-    workerRef.current = worker;
-    return worker;
-  };
-
   // ── Main scan: preprocess → OCR → parse ────────────────────────────────────
+  // Worker is created fresh every scan and terminated in finally —
+  // reusing the same worker causes Tesseract to "learn" across different
+  // receipts and produce worse results over time (documented v6+ behaviour)
   const runScan = useCallback(async (dataUrl) => {
     setStep("scanning");
     setScanError("");
     setScanProgress(0);
 
+    let worker = null;
     try {
       // 1. Preprocess image (resize, deskew, threshold)
       const processedUrl = await preprocessImage(dataUrl);
 
-      // 2. Run Tesseract OCR
-      const worker = await ensureWorker();
-      const { data } = await worker.recognize(processedUrl);
-      const rawText = data.text.trim();
-      console.log("OCR RESULTS:", rawText);
+      // 2. Create fresh Tesseract worker inline
+      // v7 API: createWorker(lang, oem, options) — logger goes in third arg
+      worker = await createWorker("eng", 1, {
+        logger: (m) => {
+          if (m.status === "recognizing text") {
+            setScanProgress(Math.round(m.progress * 100));
+          }
+        },
+      });
 
-      // 3. Parse date and amount (with year correction applied inside)
+      await worker.setParameters({
+        tessedit_pageseg_mode: 4,
+        preserve_interword_spaces: 1,
+        tessedit_char_whitelist:
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:./- ",
+      });
+
+      const { data } = await worker.recognize(processedUrl);
+      const rawText    = data.text.trim();
+      const confidence = Math.round(data.confidence);
+      console.log("OCR RESULTS:", rawText);
+      console.log("OCR CONFIDENCE:", confidence);
+
+      // 3. Parse date and amount
       const { timePaidDate, totalAmountDue } = parseTicket(rawText);
 
       if (!timePaidDate && !totalAmountDue) {
@@ -241,11 +246,18 @@ export default function ReceiptScannerModal({
           : dayjs().format("YYYY-MM-DD")
       );
       setExtractedAmount(totalAmountDue || "");
+      setScanConfidence(confidence);
       setStep("review");
 
     } catch (err) {
       setScanError(err?.message || "Scan failed. Please fill in the details manually.");
-      setStep("review"); // still go to review so user can enter manually
+      setStep("review");
+    } finally {
+      // Always terminate to free memory and prevent cross-scan learning
+      if (worker) {
+        await worker.terminate();
+        worker = null;
+      }
     }
   }, []);
 
@@ -290,6 +302,7 @@ export default function ReceiptScannerModal({
     setScanError("");
     setSaveError("");
     setScanProgress(0);
+    setScanConfidence(null);
     stopCamera();
   };
 
@@ -379,6 +392,15 @@ export default function ReceiptScannerModal({
                       <span className="absolute bottom-0 -right-px h-6 w-0.5 bg-cyan-400" />
                     </div>
                   </div>
+                  {/* Flatten tip */}
+                  <div className="absolute top-0 inset-x-0 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-black/50">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style={{flexShrink:0}}>
+                      <path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Z" fill="#FCD34D"/>
+                      <path d="M8 4.75a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4.75ZM8 11a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z" fill="#FCD34D"/>
+                    </svg>
+                    <p className="text-xs text-yellow-200">Flatten receipt · one ticket only · fingers clear</p>
+                  </div>
+
                   <div className="absolute bottom-0 inset-x-0 flex gap-2 p-3">
                     <button
                       onClick={stopCamera}
@@ -526,6 +548,21 @@ export default function ReceiptScannerModal({
                 <div className="flex items-start gap-2 px-3 py-2.5 bg-amber-50 rounded-lg border border-amber-100">
                   <AlertCircle size={14} className="text-amber-500 mt-0.5 shrink-0" />
                   <p className="text-xs text-amber-700">{scanError} Fill in manually below.</p>
+                </div>
+              )}
+
+              {/* Low confidence warning */}
+              {!scanError && scanConfidence !== null && scanConfidence < 70 && (
+                <div className="flex items-start gap-2 px-3 py-2.5 bg-amber-50 rounded-lg border border-amber-100">
+                  <AlertCircle size={14} className="text-amber-500 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-amber-700">
+                      Low scan confidence ({scanConfidence}%) — please verify the fields below.
+                    </p>
+                    <p className="text-xs text-amber-600 mt-0.5">
+                      Try retaking with the receipt flat, well-lit, and fingers clear.
+                    </p>
+                  </div>
                 </div>
               )}
 
