@@ -15,8 +15,8 @@ function formatDateMmDdYyyy(input) {
   const [mm, dd, yyyy] = input.split(/[./-]/).map((v) => v.trim());
   if (!mm || !dd || !yyyy) return "";
   const month = mm.padStart(2, "0");
-  const day   = dd.padStart(2, "0");
-  const year  = yyyy.length === 2 ? `20${yyyy}` : yyyy;
+  const day = dd.padStart(2, "0");
+  const year = yyyy.length === 2 ? `20${yyyy}` : yyyy;
   return `${year}-${month}-${day}`; // Return YYYY-MM-DD for dayjs compatibility
 }
 
@@ -27,7 +27,7 @@ function parseTicket(text) {
     .replace(/S/g, "5")
     .replace(/I/g, "1");
 
-  let timePaidDate  = "";
+  let timePaidDate = "";
   let totalAmountDue = "";
 
   // Anchor to TIME PAID label — far more reliable than a bare date+timestamp.
@@ -70,32 +70,32 @@ export default function ReceiptScannerModal({
   coverageFrom,
   coverageTo,
 }) {
-  const [step, setStep]               = useState("capture");
+  const [step, setStep] = useState("capture");
   const [imagePreview, setImagePreview] = useState(null);
-  const [extractedDate, setExtractedDate]     = useState("");
+  const [extractedDate, setExtractedDate] = useState("");
   const [extractedAmount, setExtractedAmount] = useState("");
-  const [vehicleId, setVehicleId]     = useState("");
-  const [scanError, setScanError]     = useState("");
-  const [saveError, setSaveError]     = useState("");
-  const [scanProgress, setScanProgress]   = useState(0);
+  const [vehicleId, setVehicleId] = useState("");
+  const [scanError, setScanError] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const [scanProgress, setScanProgress] = useState(0);
   const [scanConfidence, setScanConfidence] = useState(null);
-  const [mounted, setMounted]         = useState(false);
-
+  const [mounted, setMounted] = useState(false);
+  const [scanAttempts, setScanAttempts] = useState(0);
   // Camera state
   const [cameraActive, setCameraActive] = useState(false);
-  const videoRef    = useRef(null);
-  const streamRef   = useRef(null);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
   const fileInputRef = useRef(null);
-  const workerRef   = useRef(null);
+  const workerRef = useRef(null);
 
   const coverageStart = coverageFrom && dayjs(coverageFrom).isValid() ? dayjs(coverageFrom) : null;
-  const coverageEnd   = coverageTo   && dayjs(coverageTo).isValid()   ? dayjs(coverageTo)   : null;
+  const coverageEnd = coverageTo && dayjs(coverageTo).isValid() ? dayjs(coverageTo) : null;
   const minDate = coverageStart ? coverageStart.format("YYYY-MM-DD") : undefined;
-  const maxDate = coverageEnd   ? coverageEnd.format("YYYY-MM-DD")   : undefined;
+  const maxDate = coverageEnd ? coverageEnd.format("YYYY-MM-DD") : undefined;
 
-  const safeVehicles    = Array.isArray(vehicles) ? vehicles : [];
+  const safeVehicles = Array.isArray(vehicles) ? vehicles : [];
   const hasSingleVehicle = safeVehicles.length === 1;
-  const singleVehicle   = hasSingleVehicle ? safeVehicles[0] : null;
+  const singleVehicle = hasSingleVehicle ? safeVehicles[0] : null;
 
   // Reset on open/close
   useEffect(() => {
@@ -163,13 +163,13 @@ export default function ReceiptScannerModal({
   const captureFromCamera = () => {
     if (!videoRef.current) return;
     const canvas = document.createElement("canvas");
-    canvas.width  = videoRef.current.videoWidth;
+    canvas.width = videoRef.current.videoWidth;
     canvas.height = videoRef.current.videoHeight;
     canvas.getContext("2d").drawImage(videoRef.current, 0, 0);
     const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
     setImagePreview(dataUrl);
     stopCamera();
-    runScan(dataUrl);
+    runScan(dataUrl, true);
   };
 
   // ── File upload ─────────────────────────────────────────────────────────────
@@ -182,7 +182,7 @@ export default function ReceiptScannerModal({
       const dataUrl = ev.target.result;
       setImagePreview(dataUrl);
       stopCamera();
-      runScan(dataUrl);
+      runScan(dataUrl, false);
     };
     reader.readAsDataURL(file);
     e.target.value = "";
@@ -207,11 +207,8 @@ export default function ReceiptScannerModal({
 
     let worker = null;
     try {
-      // 1. Preprocess image (resize, deskew, threshold)
       const processedUrl = await preprocessImage(dataUrl);
 
-      // 2. Create fresh Tesseract worker inline
-      // v7 API: createWorker(lang, oem, options) — logger goes in third arg
       worker = await createWorker("eng", 1, {
         logger: (m) => {
           if (m.status === "recognizing text") {
@@ -223,43 +220,49 @@ export default function ReceiptScannerModal({
       await worker.setParameters({
         tessedit_pageseg_mode: 4,
         preserve_interword_spaces: 1,
-        tessedit_char_whitelist:
-          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:./- ",
+        tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:./- ",
       });
 
       const { data } = await worker.recognize(processedUrl);
-      const rawText    = data.text.trim();
-      const confidence = Math.round(data.confidence);
-      console.log("OCR RESULTS:", rawText);
-      console.log("OCR CONFIDENCE:", confidence);
+      const rawText = data.text.trim();
 
       // 3. Parse date and amount
       const { timePaidDate, totalAmountDue } = parseTicket(rawText);
 
+      // CHECK FOR SUCCESS
       if (!timePaidDate && !totalAmountDue) {
-        throw new Error("Could not extract data from receipt. Please fill in the fields manually.");
+        const nextAttempt = scanAttempts + 1;
+        setScanAttempts(nextAttempt);
+
+        if (nextAttempt >= 3) {
+          // After 3 failed attempts, force them to review/manual entry
+          setScanError("Multiple failed attempts. Please fill in details manually.");
+          setScanAttempts(0); // Reset counter for next time
+          setStep("review");
+        } else {
+          // Not enough data found, go back to capture to try again
+          setStep("capture");
+          setImagePreview(null);
+        }
+        return;
       }
 
-      setExtractedDate(
-        timePaidDate && dayjs(timePaidDate).isValid()
-          ? timePaidDate
-          : dayjs().format("YYYY-MM-DD")
-      );
+      // SUCCESS: Clear attempts and move to review
+      setScanAttempts(0);
+      setExtractedDate(timePaidDate && dayjs(timePaidDate).isValid() ? timePaidDate : dayjs().format("YYYY-MM-DD"));
       setExtractedAmount(totalAmountDue || "");
-      setScanConfidence(confidence);
+      setScanConfidence(Math.round(data.confidence));
       setStep("review");
 
     } catch (err) {
-      setScanError(err?.message || "Scan failed. Please fill in the details manually.");
+      setScanError("Scan failed. Please try again or enter manually.");
       setStep("review");
     } finally {
-      // Always terminate to free memory and prevent cross-scan learning
       if (worker) {
         await worker.terminate();
-        worker = null;
       }
     }
-  }, []);
+  }, [scanAttempts]); // Add scanAttempts to dependencies
 
   // ── Save ────────────────────────────────────────────────────────────────────
   const handleSave = async () => {
@@ -285,8 +288,8 @@ export default function ReceiptScannerModal({
     try {
       await onAddReport({
         transDates: [extractedDate],
-        vehicleId:  Number(vehicleId),
-        amount:     Number(extractedAmount),
+        vehicleId: Number(vehicleId),
+        amount: Number(extractedAmount),
       });
       setStep("done");
       setTimeout(() => setOpen(false), 1400);
@@ -343,11 +346,11 @@ export default function ReceiptScannerModal({
               <div>
                 <h3 className="text-sm font-semibold text-gray-900">Receipt Scanner</h3>
                 <p className="text-xs text-gray-400">
-                  {step === "capture"  && "Upload or take a photo of your receipt"}
+                  {step === "capture" && "Upload or take a photo of your receipt"}
                   {step === "scanning" && "Reading receipt…"}
-                  {step === "review"   && "Review extracted data"}
-                  {step === "saving"   && "Saving entry…"}
-                  {step === "done"     && "Entry saved!"}
+                  {step === "review" && "Review extracted data"}
+                  {step === "saving" && "Saving entry…"}
+                  {step === "done" && "Entry saved!"}
                 </p>
               </div>
             </div>
@@ -370,6 +373,22 @@ export default function ReceiptScannerModal({
           {/* ── STEP: CAPTURE ─────────────────────────────────────────────── */}
           {step === "capture" && (
             <div className="px-5 py-4 space-y-3">
+              {scanAttempts > 0 && (
+                <div className="flex items-center justify-between px-3 py-2 bg-amber-50 rounded-lg border border-amber-200 mb-1">
+                  <div className="flex items-center gap-2">
+                    <RotateCcw size={12} className="text-amber-600" />
+                    <span className="text-xs font-medium text-amber-700">Scan Attempt {scanAttempts}/3</span>
+                  </div>
+                  <div className="flex gap-1">
+                    {[1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className={`w-4 h-1.5 rounded-full transition-colors duration-300 ${i <= scanAttempts ? 'bg-amber-500' : 'bg-gray-200'}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
               {cameraActive ? (
                 <div className="relative rounded-xl overflow-hidden bg-black">
                   <video
@@ -394,9 +413,9 @@ export default function ReceiptScannerModal({
                   </div>
                   {/* Flatten tip */}
                   <div className="absolute top-0 inset-x-0 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-black/50">
-                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style={{flexShrink:0}}>
-                      <path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Z" fill="#FCD34D"/>
-                      <path d="M8 4.75a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4.75ZM8 11a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z" fill="#FCD34D"/>
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+                      <path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Z" fill="#FCD34D" />
+                      <path d="M8 4.75a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4.75ZM8 11a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z" fill="#FCD34D" />
                     </svg>
                     <p className="text-xs text-yellow-200">Flatten receipt · one ticket only · fingers clear</p>
                   </div>
