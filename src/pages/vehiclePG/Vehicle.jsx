@@ -3,6 +3,7 @@ import VehicleCard from "../../components/vehicleComp/VehicleCard";
 import AddVehicleModal from "../../components/vehicleComp/AddVehicleModal";
 import { useVehicles } from "../../context/vehicleContext/useVehicles";
 import Swal from "sweetalert2";
+import { Plus } from "lucide-react";
 
 export default function Vehicle() {
   const { vehicles, loading, error, deleteVehicle } = useVehicles();
@@ -45,50 +46,54 @@ export default function Vehicle() {
   };
 
   return (
-    <div>
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-normal text-black">My Vehicle</h1>
-          <p className="text-gray-500 mt-1">Manage your Registered Vehicle</p>
+    <div className="bg-white h-full w-full flex flex-col">
+      <div className="p-8 flex flex-col flex-1 min-h-0">
+
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8 flex-shrink-0">
+          <div>
+            <h1 className="text-3xl font-normal text-black">My Vehicle</h1>
+            <p className="text-gray-500 mt-1">Manage your Registered Vehicle</p>
+          </div>
+          <button
+            onClick={() => setOpen(true)}
+            className="flex items-center justify-center gap-1 px-4 py-2 text-sm border border-blue-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+          >
+            <Plus size={16} />
+            <span className="hidden sm:inline">Add Vehicle</span>
+            <span className="sm:hidden text-sm font-medium">Add</span>
+          </button>
         </div>
 
-        <button
-          onClick={() => setOpen(true)}
-          className="border border-blue-400 text-gray-700 rounded-full px-6 py-2 hover:bg-gray-50 hover:border-gray-600 transition-colors"
-        >
-          + Add Vehicle
-        </button>
+        <div className="flex-1 min-h-0 overflow-y-auto rounded-2xl border border-gray-100 bg-gray-100 p-6">
+          {loading && (
+            <p className="text-gray-600">Loading vehicles...</p>
+          )}
+
+          {!loading && error && (
+            <p className="text-red-600">{error}</p>
+          )}
+
+          {/* Vehicle Grid */}
+          {!loading && (
+            vehicles.length > 0 ? (
+              <div className="grid gap-6" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
+                {vehicles.map((vehicle) => (
+                  <VehicleCard
+                    key={vehicle.id}
+                    vehicle={vehicle}
+                    onDelete={handleDeleteVehicle}
+                    deleting={deletingId === vehicle.id}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500">No vehicles added yet.</p>
+            )
+          )}
+        </div>
+        <AddVehicleModal open={open} setOpen={setOpen} />
       </div>
-
-      {/* States */}
-      {loading && (
-        <p className="text-gray-600">Loading vehicles...</p>
-      )}
-
-      {!loading && error && (
-        <p className="text-red-600">{error}</p>
-      )}
-
-      {/* Vehicle Grid */}
-      {!loading && (
-        vehicles.length > 0 ? (
-          <div className="grid gap-6" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
-            {vehicles.map((vehicle) => (
-              <VehicleCard
-                key={vehicle.id}
-                vehicle={vehicle}
-                onDelete={handleDeleteVehicle}
-                deleting={deletingId === vehicle.id}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500">No vehicles added yet.</p>
-        )
-      )}
-
-      <AddVehicleModal open={open} setOpen={setOpen} />
     </div>
   );
 }

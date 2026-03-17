@@ -2,7 +2,8 @@
 
 export default function VehicleCard({ vehicle, onDelete, deleting }) {
   return (
-    <div className="bg-white rounded-2xl shadow-md p-6">
+     
+    <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col w-50">
 
       <h2 className="text-xl font-semibold text-black mb-3">
         {vehicle.name}
@@ -20,7 +21,7 @@ export default function VehicleCard({ vehicle, onDelete, deleting }) {
       >
         {deleting ? "Deleting..." : "Delete"}
       </button>
-
-    </div>
+</div>
+    
   );
 }

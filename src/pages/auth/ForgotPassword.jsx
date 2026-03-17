@@ -56,7 +56,20 @@ function ForgotPassword() {
       setError(err?.response?.data?.message || "Failed to reset password.");
     } finally { setLoading(false); }
   };
-
+  const handleResend = async () => {
+    setOtpError("");
+    setOtp("");
+    try {
+      await api.forgotPassword(email.trim().toLowerCase());
+      await Swal.fire({
+        title: "OTP Resent",
+        text: "A new code was sent to your email.",
+        icon: "success",
+      });
+    } catch (err) {
+      setOtpError("Failed to resend OTP. Please try again.");
+    }
+  };
 
   return (
     <div
@@ -137,6 +150,7 @@ function ForgotPassword() {
                 setOtp={setOtp}
                 onVerify={handleVerifyOtp}
                 onBack={() => setStep("email")}
+                onResend={handleResend}
                 submitting={submittingOtp}
                 error={otpError}
               />

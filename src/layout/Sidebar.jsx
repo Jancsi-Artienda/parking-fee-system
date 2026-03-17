@@ -113,7 +113,10 @@ export default function Sidebar() {
                 <NavLink
                   key={item.text}
                   to={item.path}
-                  onClick={closeMobile}
+                  onClick={() => {
+                    closeMobile();
+                    setOpenMenu(null);  
+                  }}
                   className={`flex items-center gap-3 w-full px-4 py-3 rounded-2xl mb-1 text-sm font-medium transition-all duration-200 no-underline shadow-sm
                     ${isActive
                       ? "bg-[#D6D6D6] font-semibold text-gray-800"

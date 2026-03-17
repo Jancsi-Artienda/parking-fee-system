@@ -2,7 +2,8 @@ import { Car } from "lucide-react";
 
 export default function VehicleStatCard({ totalVehicles }) {
   return (
-    <div className="pl-10  bg-white rounded-2xl shadow-md min-w-[250px] p-5 transition-transform duration-200 hover:-translate-y-1">
+    
+    <div className="pl-10  bg-white rounded-2xl shadow-md w-60 p-5 transition-transform duration-200 hover:-translate-y-1">
       <div className="flex items-center justify-between">
 
         <div>

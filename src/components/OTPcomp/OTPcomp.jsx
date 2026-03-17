@@ -31,7 +31,6 @@ function OTPcomp({ otp, setOtp, onVerify, onBack, submitting, error }) {
       {/* Resend */}
       <button
         type="button"
-        /*onClick={}*/ 
         disabled={submitting}
         className="text-sm text-blue-800 hover:underline self-center disabled:opacity-50 disabled:cursor-not-allowed"
       >
