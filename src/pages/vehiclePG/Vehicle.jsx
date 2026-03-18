@@ -77,7 +77,7 @@ export default function Vehicle() {
           {/* Vehicle Grid */}
           {!loading && (
             vehicles.length > 0 ? (
-              <div className="grid gap-6" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
+              <div className="grid gap-6" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
                 {vehicles.map((vehicle) => (
                   <VehicleCard
                     key={vehicle.id}
