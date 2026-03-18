@@ -8,57 +8,13 @@ import {
 } from "lucide-react";
 
 import { preprocessImage } from "../../utils/imagePreprocess";
-
-// ── Date helpers ─────────────────────────────────────────────────────────────
-function formatDateMmDdYyyy(input) {
-  if (!input) return "";
-  const [mm, dd, yyyy] = input.split(/[./-]/).map((v) => v.trim());
-  if (!mm || !dd || !yyyy) return "";
-  const month = mm.padStart(2, "0");
-  const day = dd.padStart(2, "0");
-  const year = yyyy.length === 2 ? `20${yyyy}` : yyyy;
-  return `${year}-${month}-${day}`; // Return YYYY-MM-DD for dayjs compatibility
-}
-
-// ── Ticket parser ─────────────────────────────────────────────────────────────
-function parseTicket(text) {
-  const cleanedText = text
-    .replace(/O/g, "0")
-    .replace(/S/g, "5")
-    .replace(/I/g, "1");
-
-  let timePaidDate = "";
-  let totalAmountDue = "";
-
-  // Anchor to TIME PAID label — far more reliable than a bare date+timestamp.
-  // Loose timestamp separator ([:;]) handles OCR misreads on wrinkled receipts.
-  // Falls back to any date+timestamp if the label is not found.
-  const dateMatch =
-    cleanedText.match(/TIME\s*PAID\s*[:\s]+(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i) ||
-    cleanedText.match(/(\d{2}[\/\-]\d{2}[\/\-]\d{4})\s+\d{2}[:\;]\d{2}[:\;]\d{2}/);
-
-  if (dateMatch) {
-    let rawDate = dateMatch[1];
-
-    // Year correction: OCR misreads '2' as '0' in thermal fonts e.g. 2006 → 2026
-    rawDate = rawDate.replace(
-      /(\d{2}[\/\-]\d{2}[\/\-])(20)(\d{2})/,
-      (_, prefix, century, yy) => `${prefix}${century}${yy.replace(/^0/, "2")}`
-    );
-
-    timePaidDate = formatDateMmDdYyyy(rawDate);
-  }
-
-  const amountMatch =
-    cleanedText.match(/total\s*amount.*?(\d+\.\d{2})/i) ||
-    cleanedText.match(/(\d+\.\d{2})\s*$/m);
-
-  if (amountMatch) {
-    totalAmountDue = amountMatch[1].split(".")[0];
-  }
-
-  return { timePaidDate, totalAmountDue };
-}
+import {
+  cropDataUrl,
+  findLineBBox,
+  groupWordsByLine,
+  loadImage,
+  parseTicket,
+} from "../../utils/receiptScanner";
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function ReceiptScannerModal({
@@ -207,7 +163,9 @@ export default function ReceiptScannerModal({
 
     let worker = null;
     try {
-      const processedUrl = await preprocessImage(dataUrl);
+      // Pass 1: legacy-style preprocessing (no exposure normalization) for well-taken shots
+      const processedUrl = await preprocessImage(dataUrl, { binarize: true, normalizeExposureEnabled: false });
+      const processedImg = await loadImage(processedUrl);
 
       worker = await createWorker("eng", 1, {
         logger: (m) => {
@@ -227,7 +185,76 @@ export default function ReceiptScannerModal({
       const rawText = data.text.trim();
 
       // 3. Parse date and amount
-      const { timePaidDate, totalAmountDue } = parseTicket(rawText);
+      let { timePaidDate, totalAmountDue } = parseTicket(rawText);
+      let lineWords = Array.isArray(data.words) ? data.words : null;
+      let lineImage = processedImg;
+
+      // 3b. If missing fields, try raw image OCR (best for well-taken shots)
+      if (!timePaidDate || !totalAmountDue) {
+        const rawResult = await worker.recognize(dataUrl);
+        const rawText = rawResult.data.text.trim();
+        const parsedRaw = parseTicket(rawText);
+        timePaidDate = timePaidDate || parsedRaw.timePaidDate;
+        totalAmountDue = totalAmountDue || parsedRaw.totalAmountDue;
+        lineWords = Array.isArray(rawResult.data.words) ? rawResult.data.words : lineWords;
+        lineImage = (await loadImage(dataUrl)) || lineImage;
+      }
+
+      // 3c. If still missing, run exposure-normalized grayscale for tough lighting
+      if (!timePaidDate || !totalAmountDue) {
+        const processedGrayUrl = await preprocessImage(dataUrl, { binarize: false, normalizeExposureEnabled: true });
+        const processedGrayImg = await loadImage(processedGrayUrl);
+        const grayResult = await worker.recognize(processedGrayUrl);
+        const grayText = grayResult.data.text.trim();
+        const parsedGray = parseTicket(grayText);
+        timePaidDate = timePaidDate || parsedGray.timePaidDate;
+        totalAmountDue = totalAmountDue || parsedGray.totalAmountDue;
+        lineWords = Array.isArray(grayResult.data.words) ? grayResult.data.words : lineWords;
+        lineImage = processedGrayImg || lineImage;
+      }
+
+      // 3d. Targeted line OCR for TIME PAID / TOTAL AMOUNT if still missing
+      if ((!timePaidDate || !totalAmountDue) && Array.isArray(lineWords)) {
+        const lines = groupWordsByLine(lineWords);
+
+        if (!timePaidDate) {
+          const timeBBox = findLineBBox(lines, [/time/i, /paid/i], /t[i1]me\s*pa[i1]d/i);
+          if (timeBBox) {
+            const timeCrop = cropDataUrl(lineImage, timeBBox, 12);
+            await worker.setParameters({
+              tessedit_pageseg_mode: 7,
+              preserve_interword_spaces: 1,
+              tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:./- ",
+            });
+            const timeResult = await worker.recognize(timeCrop);
+            const parsed = parseTicket(timeResult.data.text.trim());
+            if (parsed.timePaidDate) {
+              timePaidDate = parsed.timePaidDate;
+            }
+          }
+        }
+
+        if (!totalAmountDue) {
+          const amountBBox = findLineBBox(
+            lines,
+            [/t[o0]tal/i, /am[o0]unt/i],
+            /am[o0]unt\s*due/i
+          );
+          if (amountBBox) {
+            const amountCrop = cropDataUrl(lineImage, amountBBox, 12);
+            await worker.setParameters({
+              tessedit_pageseg_mode: 7,
+              preserve_interword_spaces: 1,
+              tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:./- ",
+            });
+            const amountResult = await worker.recognize(amountCrop);
+            const parsed = parseTicket(amountResult.data.text.trim());
+            if (parsed.totalAmountDue) {
+              totalAmountDue = parsed.totalAmountDue;
+            }
+          }
+        }
+      }
 
       // CHECK FOR SUCCESS
       if (!timePaidDate && !totalAmountDue) {
@@ -721,3 +748,5 @@ export default function ReceiptScannerModal({
     </>
   );
 }
+
+
