@@ -1,0 +1,194 @@
+import { jsPDF } from "jspdf";
+import dayjs from "dayjs";
+
+const MAX_TABLE_ROWS = 15;
+
+function truncateText(value, maxLength = 38) {
+  const text = String(value || "");
+  if (text.length <= maxLength) {
+    return text;
+  }
+  return `${text.slice(0, maxLength - 3)}...`;
+}
+
+function formatCoverageForFilename(coverageValue) {
+  const text = String(coverageValue || "").trim();
+  if (!text || text.toLowerCase() === "n/a") {
+    return "";
+  }
+
+  const formatPart = (value) => {
+    const parsed = dayjs(value.trim(), "MMMM D, YYYY", true);
+    if (!parsed.isValid()) {
+      return value.trim();
+    }
+    return parsed.format("MM/DD/YYYY");
+  };
+
+  if (text.includes(" - ")) {
+    const parts = text.split(" - ");
+    if (parts.length === 2) {
+      return `${formatPart(parts[0])} - ${formatPart(parts[1])}`;
+    }
+  }
+
+  return formatPart(text);
+}
+
+export const useParkingFeePDF = () => {
+  const generatePDF = ({
+    preparedBy = "",
+    coverage = "",
+    dateSubmitted = "",
+    rows = [],
+    totalAmount = "",
+  } = {}) => {
+    const doc = new jsPDF();
+
+    const leftMargin = 20;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const labelLineX = 75;
+    const labelLineWidth = 120;
+
+    let y = 20;
+
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("e-Konek Pilipinas, Inc", leftMargin, y);
+
+    y += 7;
+    doc.setFont("helvetica", "normal");
+    doc.text("Parking Fee Report", leftMargin, y);
+
+    y += 15;
+
+    const drawField = (label, value) => {
+      doc.setFont("helvetica", "bold");
+      doc.text(`${label}:`, leftMargin, y);
+      doc.setLineWidth(0.3);
+      doc.line(labelLineX, y, labelLineX + labelLineWidth, y);
+      if (value) {
+        doc.setFont("helvetica", "normal");
+        doc.text(truncateText(value, 42), labelLineX + 2, y - 1);
+      }
+      y += 10;
+    };
+
+    drawField("Name", preparedBy);
+    drawField("Coverage", coverage);
+    drawField("Date Submitted", dateSubmitted);
+
+    y += 5;
+
+    const tableX = leftMargin;
+    const tableWidth = pageWidth - tableX * 2;
+    const colWidths = [40, 90, 40];
+    const rowHeight = 5;
+    const tableStartY = y;
+
+    doc.setLineWidth(0.5);
+    doc.rect(tableX, tableStartY, tableWidth, rowHeight * (MAX_TABLE_ROWS + 1));
+
+    let currentX = tableX;
+    colWidths.forEach((width, index) => {
+      if (index < colWidths.length - 1) {
+        currentX += width;
+        doc.line(
+          currentX,
+          tableStartY,
+          currentX,
+          tableStartY + rowHeight * (MAX_TABLE_ROWS + 1)
+        );
+      }
+    });
+
+    for (let i = 1; i <= MAX_TABLE_ROWS + 1; i += 1) {
+      doc.line(
+        tableX,
+        tableStartY + rowHeight * i,
+        tableX + tableWidth,
+        tableStartY + rowHeight * i
+      );
+    }
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+
+    const headers = ["Date", "Car Model", "Amount"];
+    const headerY = tableStartY + rowHeight / 2 +1;
+    
+    currentX = tableX;
+    headers.forEach((header, index) => {
+      doc.text(header, currentX + colWidths[index] / 2, headerY, {
+        align: "center",
+      });
+      currentX += colWidths[index];
+    });
+
+    const printableRows = rows.slice(0, MAX_TABLE_ROWS);
+
+    if (printableRows.length > 0) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+
+      printableRows.forEach((entry, index) => {
+        const rowY = tableStartY + rowHeight * (index + 1) + 4;
+
+        currentX = tableX;
+        if (entry.date) {
+          doc.text(truncateText(entry.date, 14), currentX + colWidths[0]/2, rowY,{
+            align: "center"
+          });
+        }
+
+        currentX += colWidths[0];
+        if (entry.carModel) {
+          doc.text(truncateText(entry.carModel, 30), currentX + colWidths[1]/2, rowY,{
+            align: "center"
+          });
+        }
+
+        currentX += colWidths[1];
+        if (entry.amount) {
+          doc.text(truncateText(entry.amount, 12), currentX + colWidths[2]/2 - 0.5, rowY,{
+            align: "center"
+          });
+        }
+      });
+    }
+
+    //amount line
+    y = tableStartY + rowHeight *(MAX_TABLE_ROWS + 0.2) + 10;
+    doc.setFontSize(10);
+    if (totalAmount) {
+      doc.text(truncateText(totalAmount, 15), leftMargin + 150, y - 1, {
+        align: "center",
+      });
+    }
+    doc.setLineWidth(0.3);
+    doc.line(leftMargin + 130, y, leftMargin + 170, y);
+
+    y = tableStartY + rowHeight * (MAX_TABLE_ROWS + 1) + 20;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Certified true and correct:", leftMargin, y);
+    doc.setLineWidth(0.3);
+    doc.line(leftMargin + 75, y, leftMargin + 155, y);
+
+    const safeUserName = String(preparedBy || "")
+      .trim()
+      .replace(/[<>:"/\\|?*]/g, "")
+      .replace(/\s+/g, " ");
+    const coverageForFilename = formatCoverageForFilename(coverage);
+    const safeCoverage = String(coverageForFilename || "")
+      .trim()
+      .replace(/[<>:"\\|?*]/g, "")
+      .replace(/\//g, "-")
+      .replace(/\s+/g, " ");
+    doc.save(`${safeUserName || "user"}-${safeCoverage || "coverage"}.pdf`);
+  };
+
+  return { generatePDF, maxRows: MAX_TABLE_ROWS };
+};
+
+export default useParkingFeePDF;

@@ -1,12 +1,23 @@
 const GMAIL_REGEX = /^[a-z0-9](\.?[a-z0-9]){4,29}@gmail\.com$/i;
 
+function capitalizeFirstLetter(value) {
+  if (typeof value !== "string") return value;
+  const noLeadingSpace = value.replace(/^\s+/, "");
+  if (!noLeadingSpace) return "";
+  return noLeadingSpace.charAt(0).toUpperCase() + noLeadingSpace.slice(1);
+}
+
 export function sanitizeRegistrationField(name, value) {
   if (name === "contactNumber") {
     return value.replace(/\D/g, "").slice(0, 11);
   }
 
+  if (name === "vehicleNumber") {
+    return value.replace(/\D/g, "").slice(0, 2);
+  }
+
   if (name === "firstName" || name === "lastName") {
-    return value.replace(/\d/g, "");
+    return capitalizeFirstLetter(value.replace(/\d/g, ""));
   }
 
   return value;
@@ -15,20 +26,52 @@ export function sanitizeRegistrationField(name, value) {
 export function validateRegistrationField(name, value) {
   const trimmedValue = typeof value === "string" ? value.trim() : value;
 
-  if (!trimmedValue) {
-    return "This field is required";
+  if (name === "firstName" || name === "lastName") {
+    if (!trimmedValue) return "This field is required";
+    if (/\d/.test(trimmedValue)) return "This field cannot contain numbers";
+    return "";
   }
 
-  if ((name === "firstName" || name === "lastName") && /\d/.test(trimmedValue)) {
-    return "This field cannot contain numbers";
+  if (name === "email") {
+    if (!trimmedValue) return "This field is required";
+    if (!GMAIL_REGEX.test(trimmedValue)) return "Email must be a valid @gmail.com address";
+    return "";
   }
 
-  if (name === "email" && !GMAIL_REGEX.test(trimmedValue)) {
-    return "Email must be a valid @gmail.com address";
+  if (name === "contactNumber") {
+    if (!trimmedValue) return "This field is required";
+    if (!/^\d{11}$/.test(trimmedValue)) return "Contact number must be exactly 11 digits";
+    return "";
   }
 
-  if (name === "contactNumber" && !/^\d{11}$/.test(trimmedValue)) {
-    return "Contact number must be exactly 11 digits";
+  if (name === "username") {
+    if (!trimmedValue) return "This field is required";
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(trimmedValue)) {
+      return "Username must be 3-20 characters using letters, numbers, or underscore";
+    }
+    return "";
+  }
+
+  if (name === "password") {
+    if (!trimmedValue) return "This field is required";
+    const strength = getPasswordStrength(trimmedValue);
+    if (!strength.hasUppercase || !strength.hasLowercase || !strength.hasNumber || !strength.hasMinLength) {
+      return "Password must include uppercase, lowercase, number, and at least 8 characters";
+    }
+    return "";
+  }
+
+  if (name === "confirmPassword") {
+    if (!trimmedValue) return "This field is required";
+    return "";
+  }
+
+  if (name === "vehicleNumber") {
+    if (!trimmedValue) return "This field is required";
+    if (!/^\d+$/.test(trimmedValue) || Number(trimmedValue) < 1) {
+      return "Number of vehicles must be at least 1";
+    }
+    return "";
   }
 
   return "";
@@ -44,6 +87,14 @@ export function validateRegistrationForm(formData) {
     }
   });
 
+  if (
+    !errors.password &&
+    !errors.confirmPassword &&
+    formData.password !== formData.confirmPassword
+  ) {
+    errors.confirmPassword = "Passwords do not match";
+  }
+
   return errors;
 }
 
@@ -53,7 +104,11 @@ export function sanitizeAccountField(name, value) {
   }
 
   if (name === "name") {
-    return value.replace(/\d/g, "");
+    const sanitized = value.replace(/\d/g, "");
+    return sanitized
+      .split(" ")
+      .map((part) => capitalizeFirstLetter(part))
+      .join(" ");
   }
 
   return value;
@@ -61,6 +116,16 @@ export function sanitizeAccountField(name, value) {
 
 export function validateAccountField(name, value) {
   const trimmedValue = typeof value === "string" ? value.trim() : value;
+
+  if (name === "username") {
+    if (!trimmedValue) {
+      return "This field is required";
+    }
+
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(trimmedValue)) {
+      return "Username must be 3-20 characters using letters, numbers, or underscore";
+    }
+  }
 
   if (name === "name") {
     if (!trimmedValue) {
@@ -96,7 +161,7 @@ export function validateAccountField(name, value) {
 }
 
 export function validateAccountForm(formData) {
-  const fieldsToValidate = ["name", "email", "contactNumber"];
+  const fieldsToValidate = ["username", "name", "email", "contactNumber"];
   const errors = {};
 
   fieldsToValidate.forEach((field) => {
@@ -107,4 +172,67 @@ export function validateAccountForm(formData) {
   });
 
   return errors;
+
+
 }
+
+export function validateAccountPasswordFields(formData) {
+  const currentPassword = formData?.currentPassword || "";
+  const newPassword = formData?.newPassword || "";
+  const confirmPassword = formData?.confirmPassword || "";
+  const hasAnyPassword = Boolean(currentPassword || newPassword || confirmPassword);
+  const errors = {};
+
+  if (!hasAnyPassword) {
+    return errors;
+  }
+
+  if (!currentPassword.trim()) {
+    errors.currentPassword = "Current password is required";
+  }
+
+  if (!newPassword.trim()) {
+    errors.newPassword = "New password is required";
+  } else {
+    const strength = getPasswordStrength(newPassword);
+    if (!strength.hasUppercase || !strength.hasLowercase || !strength.hasNumber || !strength.hasMinLength) {
+      errors.newPassword = "Password must include uppercase, lowercase, number, and at least 8 characters";
+    }
+  }
+
+  if (!confirmPassword.trim()) {
+    errors.confirmPassword = "Confirm password is required";
+  }
+
+  if (!errors.newPassword && !errors.confirmPassword && newPassword !== confirmPassword) {
+    errors.confirmPassword = "Passwords do not match";
+  }
+
+  if (currentPassword && newPassword && currentPassword === newPassword) {
+    errors.newPassword = "New password must be different from current password";
+  }
+
+  return errors;
+}
+
+export function validateAddvehicleForm(formData) {
+  const fieldsToCheck = ["type", "name", "plate", "color"];
+
+  for (const field of fieldsToCheck) {
+    if (formData[field] && formData[field] !== formData[field].toUpperCase()) {
+      return `${field} must be uppercase only.`;
+    }
+  }
+
+  return "";
+}
+
+
+export const getPasswordStrength = (password) => {
+  return {
+    hasUppercase: /[A-Z]/.test(password),
+    hasLowercase: /[a-z]/.test(password),
+    hasNumber: /[0-9]/.test(password),
+    hasMinLength: password.length >= 8,
+  };
+};

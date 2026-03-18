@@ -1,115 +1,168 @@
-import React, { useState } from "react";
-import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-
-} from "@mui/material";
+import { useMemo } from "react";
 import { DataGrid } from "@mui/x-data-grid";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { useVehicles } from "../../context/vehicleContext/useVehicles";
+import dayjs from "dayjs";
 
-// Initial empty rows
-const createInitialRows = () =>
-  Array.from({ length: 15 }, (_, i) => ({
-    id: i + 1,
-    parkingDate: null,
-    vehicleId: "",
-    amount: "",
-  }));
+function formatReportDate(value) {
+  if (!value) return "";
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const parsed = dayjs(value, "YYYY-MM-DD", true);
+    return parsed.isValid() ? parsed.format("M/D/YYYY") : value;
+  }
+  const parsed = dayjs(value);
+  return parsed.isValid() ? parsed.format("M/D/YYYY") : "";
+}
 
-export default function ParkingReportTable() {
-  const { vehicles } = useVehicles();
-  const [rows] = useState(createInitialRows());
+export default function ParkingReportTable({
+  rows = [],
+  loading = false,
+  title = "Parking Fee Report",
+  emptyMessage = "No reports found.",
+  withPaper = true,
+  maxRows,
+  onRowSelectionChange,
+  onDeleteRow,
+}) {
+  const hasControlledSelection = typeof onRowSelectionChange === "function";
 
-  // Function to update the state when an input changes
+  const normalizedRows = useMemo(
+    () =>
+      (rows || [])
+        .filter(Boolean)
+        .map((row, index) => ({
+          ...row,
+          _rowId:
+            row.id ??
+            `${index}-${row.transDate || ""}-${row.vehicleModel || ""}-${row.amount || ""}`,
+        })),
+    [rows]
+  );
 
+  const displayRows = useMemo(() => {
+    if (!Number.isInteger(maxRows) || maxRows <= 0) return normalizedRows;
+    return normalizedRows.slice(0, maxRows);
+  }, [normalizedRows, maxRows]);
 
-  const columns = [
-    {
-      field: "parkingDate",
-      headerName: "Date",
-      flex: 1,
-      headerAlign: "center",
-      renderCell: (params) => (
-        <Box sx={{ display: "flex", alignItems: "center", height: "100%" }}>
-      
-        
-        </Box>
-      ),
-    },
-    {
-      field: "vehicleId",
-      headerName: "Vehicle",
-      flex: 1.5,
-      headerAlign: "center",
-      align: "center",
-      valueGetter: (value, row) => {
-        
-        const vehicle = vehicles.find((v) => v.id === value);
-        return vehicle ? `${vehicle.type} - ${vehicle.name}` : "";
+  const columns = useMemo(() => {
+    const baseColumns = [
+      {
+        field: "transDate",
+        headerName: "Date",
+        flex: 1,
+        minWidth: 90,          
+        resizable: false,
+        headerAlign: "center",
+        align: "center",
+        valueGetter: (_value, row) => formatReportDate(row.transDate),
       },
-    }, 
-    { 
-      field: "amount",
-      headerName: "Amount",
-      flex: 1,
-      headerAlign: "center",
-      align: "center",
-      editable: true,
-    }, 
-  ];
-  return (
-    <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Paper sx={{ width: "100%", p: 3, borderRadius: "15px" }}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 4,
-          }}
-        >
-          <Typography variant="h5" sx={{ fontWeight: "500" }}>
-            Parking Fee Report
-          </Typography>
+      {
+        field: "vehicleModel",
+        headerName: "Vehicle Model",
+        flex: 1.2,
+        minWidth: 110,       
+        resizable: false,
+        headerAlign: "center",
+        align: "center",
+      },
+      {
+        field: "amount",
+        headerName: "Amount",
+        flex: 1,
+        minWidth: 90,          
+        resizable: false,
+        headerAlign: "center",
+        align: "center",
+        valueGetter: (value) => `PHP ${Number(value || 0).toLocaleString()}`,
+      },
+    ];
 
-          <Button
-            variant="outlined"
-            startIcon={<span>🖨️</span>}
-            onClick={() => window.print()}
-            sx={{
-              borderRadius: "10px",
-              color: "black",
-              borderColor: "#7dc9ff",
-              textTransform: "none",
+    if (typeof onDeleteRow !== "function") return baseColumns;
+
+    return [
+      ...baseColumns,
+      {
+        field: "__actions",
+        headerName: "",
+        width: 130,
+        resizable: false,
+        sortable: false,
+        filterable: false,
+        disableColumnMenu: true,
+        align: "right",
+        renderCell: (params) => (
+          <button
+            className="row-delete-btn px-4 py-1 text-sm text-red-500 border border-red-500 rounded-lg hover:bg-red-50 transition-colors duration-150"
+            onClick={(event) => {
+              event.stopPropagation();
+              onDeleteRow(params.row);
             }}
           >
-            Print
-          </Button>
-        </Box>
+            Delete
+          </button>
+        ),
+      },
+    ];
+  }, [onDeleteRow]);
 
-        <Box sx={{ height: 500, width: "100%" }}>
+  const gridContent = (
+    <>
+      {title && (
+        <h2 className="text-lg md:text-xl font-medium mb-4 md:mb-6">{title}</h2>
+       
+      )}
+
+      <div className="overflow-x-auto">
+        <div className="min-w-[320px] h-[500px]">
+          
           <DataGrid
-            rows={rows}
+            rows={displayRows}
             columns={columns}
+            loading={loading}
             rowHeight={70}
+            getRowId={(row) => row._rowId}
+            disableColumnResize
             disableColumnSorting
             disableColumnMenu
             hideFooterPagination
-            
+            localeText={{ noRowsLabel: emptyMessage }}
+            {...(hasControlledSelection
+              ? { onRowSelectionModelChange: onRowSelectionChange }
+              : {})}
             sx={{
               border: "none",
               "& .MuiDataGrid-columnHeaders": {
                 backgroundColor: "#f5f5f5",
                 fontWeight: "bold",
               },
+              "& .MuiDataGrid-columnSeparator": {
+                pointerEvents: "none",
+                opacity: 0,
+              },
+              "& .row-delete-btn": {
+                opacity: 0,
+                pointerEvents: "none",
+                transition: "opacity 0.18s ease",
+              },
+              "& .MuiDataGrid-row:hover .row-delete-btn": {
+                opacity: 1,
+                pointerEvents: "auto",
+              },
+              "& .MuiDataGrid-row.Mui-selected .row-delete-btn": {
+                opacity: 1,
+                pointerEvents: "auto",
+              },
             }}
           />
-        </Box>
-      </Paper>
-    </LocalizationProvider>
+        </div>
+      </div>
+    </>
+  );
+
+  if (!withPaper) return gridContent;
+
+  return (
+   
+    <div className="w-full p-4 md:p-6 rounded-2xl shadow-lg bg-white">
+      {gridContent}
+    </div>
   );
 }

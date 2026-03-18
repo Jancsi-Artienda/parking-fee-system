@@ -1,19 +1,42 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.routes.js";
 import vehicleRoutes from "./routes/vehicles.routes.js";
+import reportRoutes from "./routes/reports.routes.js";
 import pool from "./db.js";
+import { getJwtSecret } from "./jwt.js";
 
-dotenv.config();
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const envPath = path.resolve(__dirname, "../.env");
+dotenv.config({ path: envPath });
+console.log(`Loaded environment from ${envPath}`);
+getJwtSecret();
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
 
+const allowedOrigins = (process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
-    credentials: false,
+    origin: (origin, callback) => {
+      if (!origin) {
+        return callback(null, true);
+      }
+      if (allowedOrigins.length === 0) {
+        return callback(null, origin === "http://localhost:5173");
+      }
+      return callback(null, allowedOrigins.includes(origin));
+    },
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
   })
 );
 app.use(express.json());
@@ -29,6 +52,7 @@ app.get("/health", async (_req, res) => {
 
 app.use("/auth", authRoutes);
 app.use("/vehicles", vehicleRoutes);
+app.use("/reports", reportRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: `Route not found: ${req.method} ${req.originalUrl}` });

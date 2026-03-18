@@ -1,43 +1,64 @@
-import { Typography, Box, Container } from "@mui/material";
+import { useEffect, useState } from "react";
 import ParkingReportTable from "../../components/dashboard/ParkingReportTable";
 import VehicleStatCard from "../../components/dashboard/VehicleStatCard";
 import { useVehicles } from "../../context/vehicleContext/useVehicles";
+import api from "../../services/api";
 
 export default function Dashboard() {
   const { vehicles, error } = useVehicles();
+  const [reportRows, setReportRows] = useState([]);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportError, setReportError] = useState("");
   const totalVehicles = vehicles.length;
 
+  useEffect(() => {
+    const loadReports = async () => {
+      setReportLoading(true);
+      setReportError("");
+
+      try {
+        const data = await api.getReports();
+        setReportRows(data.slice(0, 5));
+      } catch (err) {
+        setReportError(err?.data?.message || "Failed to load dashboard reports.");
+      } finally {
+        setReportLoading(false);
+      }
+    };
+
+    loadReports();
+  }, []);
+
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ mt: 4, mb: 6 }}>
-        <Typography
-          variant="h4"
-          fontWeight="bold"
-          gutterBottom
-          color="black"
-        >
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 md:pt-0">
+      <div className="mt-8 mb-12 rounded-2xl">
+
+        <h1 className="text-2xl md:text-3xl font-bold mb-6 text-indigo-900">
           Dashboard
-        </Typography>
+        </h1>
 
-        <Box
-          sx={{
-            display: "flex",
-            gap: 3,
-            mb: 4,
-            flexWrap: "wrap"
-          }}
-        >
+        <div className="flex flex-col sm:flex-row flex-wrap gap-6 mb-8">
           <VehicleStatCard totalVehicles={totalVehicles} />
-        </Box>
+        </div>
 
-        {error ? (
-          <Typography color="error" mb={2}>
-            {error}
-          </Typography>
-        ) : null}
+        {error && (
+          <p className="text-red-600 mb-4">{error}</p>
+        )}
 
-        <ParkingReportTable />
-      </Box>
-    </Container>
+        {reportError && (
+          <p className="text-red-600 mb-4">{reportError}</p>
+        )}
+
+
+        <div className="overflow-x-auto">
+          <ParkingReportTable
+            rows={reportRows}
+            loading={reportLoading}
+            title="Recent Parking Reports"
+            emptyMessage="No reports yet."
+          />
+        </div>
+      </div>
+    </div>
   );
 }
