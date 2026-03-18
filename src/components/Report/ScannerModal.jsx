@@ -34,7 +34,8 @@ function parseTicket(text) {
   // Loose timestamp separator ([:;]) handles OCR misreads on wrinkled receipts.
   // Falls back to any date+timestamp if the label is not found.
   const dateMatch =
-    cleanedText.match(/TIME\s*PAID\s*[:\s]+(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i) ||
+    text.match(/T[I1]ME\s*PA[I1]D\s*[:\s]+(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i) ||
+    cleanedText.match(/T[I1]ME\s*PA[I1]D\s*[:\s]+(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i) ||
     cleanedText.match(/(\d{2}[\/\-]\d{2}[\/\-]\d{4})\s+\d{2}[:\;]\d{2}[:\;]\d{2}/);
 
   if (dateMatch) {
@@ -50,7 +51,8 @@ function parseTicket(text) {
   }
 
   const amountMatch =
-    cleanedText.match(/total\s*amount.*?(\d+\.\d{2})/i) ||
+    cleanedText.match(/t[o0]tal\s*am[o0]unt.*?(\d+\.\d{2})/i) ||
+    cleanedText.match(/am[o0]unt\s*due.*?(\d+\.\d{2})/i) ||
     cleanedText.match(/(\d+\.\d{2})\s*$/m);
 
   if (amountMatch) {
@@ -58,6 +60,92 @@ function parseTicket(text) {
   }
 
   return { timePaidDate, totalAmountDue };
+}
+
+function loadImage(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+
+function cropDataUrl(img, bbox, pad = 10) {
+  const x0 = Math.max(0, Math.floor(bbox.x0 - pad));
+  const y0 = Math.max(0, Math.floor(bbox.y0 - pad));
+  const x1 = Math.min(img.width, Math.ceil(bbox.x1 + pad));
+  const y1 = Math.min(img.height, Math.ceil(bbox.y1 + pad));
+
+  const w = Math.max(1, x1 - x0);
+  const h = Math.max(1, y1 - y0);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, x0, y0, w, h, 0, 0, w, h);
+  return canvas.toDataURL("image/png");
+}
+
+function groupWordsByLine(words) {
+  const lines = [];
+  const withBoxes = words.filter((w) => w.text && w.bbox);
+
+  withBoxes.sort((a, b) => {
+    const ay = a.bbox?.y0 ?? 0;
+    const by = b.bbox?.y0 ?? 0;
+    return ay - by;
+  });
+
+  for (const w of withBoxes) {
+    const box = w.bbox;
+    if (!box) continue;
+    const cy = (box.y0 + box.y1) / 2;
+    const height = Math.max(1, box.y1 - box.y0);
+    const tol = Math.max(8, height * 0.6);
+
+    let line = lines.find((l) => Math.abs(cy - l.cy) <= Math.max(l.tol, tol));
+    if (!line) {
+      line = {
+        words: [],
+        text: "",
+        x0: box.x0,
+        y0: box.y0,
+        x1: box.x1,
+        y1: box.y1,
+        cy,
+        tol,
+      };
+      lines.push(line);
+    }
+
+    line.words.push(w);
+    line.text = line.words.map((ww) => ww.text).join(" ");
+    line.x0 = Math.min(line.x0, box.x0);
+    line.y0 = Math.min(line.y0, box.y0);
+    line.x1 = Math.max(line.x1, box.x1);
+    line.y1 = Math.max(line.y1, box.y1);
+    line.cy = (line.cy + cy) / 2;
+    line.tol = Math.max(line.tol, tol);
+  }
+
+  return lines;
+}
+
+function findLineBBox(lines, requiredRegexes, fallbackRegex) {
+  let best = null;
+  for (const line of lines) {
+    const text = line.text || "";
+    const matchesRequired = requiredRegexes.every((re) => re.test(text));
+    const matchesFallback = fallbackRegex ? fallbackRegex.test(text) : false;
+    if (matchesRequired || matchesFallback) {
+      if (!best || text.length > best.text.length) {
+        best = { ...line, text };
+      }
+    }
+  }
+  return best ? { x0: best.x0, y0: best.y0, x1: best.x1, y1: best.y1 } : null;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -207,7 +295,9 @@ export default function ReceiptScannerModal({
 
     let worker = null;
     try {
-      const processedUrl = await preprocessImage(dataUrl);
+      // Pass 1: legacy-style preprocessing (no exposure normalization) for well-taken shots
+      const processedUrl = await preprocessImage(dataUrl, { binarize: true, normalizeExposureEnabled: false });
+      const processedImg = await loadImage(processedUrl);
 
       worker = await createWorker("eng", 1, {
         logger: (m) => {
@@ -227,7 +317,76 @@ export default function ReceiptScannerModal({
       const rawText = data.text.trim();
 
       // 3. Parse date and amount
-      const { timePaidDate, totalAmountDue } = parseTicket(rawText);
+      let { timePaidDate, totalAmountDue } = parseTicket(rawText);
+      let lineWords = Array.isArray(data.words) ? data.words : null;
+      let lineImage = processedImg;
+
+      // 3b. If missing fields, try raw image OCR (best for well-taken shots)
+      if (!timePaidDate || !totalAmountDue) {
+        const rawResult = await worker.recognize(dataUrl);
+        const rawText = rawResult.data.text.trim();
+        const parsedRaw = parseTicket(rawText);
+        timePaidDate = timePaidDate || parsedRaw.timePaidDate;
+        totalAmountDue = totalAmountDue || parsedRaw.totalAmountDue;
+        lineWords = Array.isArray(rawResult.data.words) ? rawResult.data.words : lineWords;
+        lineImage = (await loadImage(dataUrl)) || lineImage;
+      }
+
+      // 3c. If still missing, run exposure-normalized grayscale for tough lighting
+      if (!timePaidDate || !totalAmountDue) {
+        const processedGrayUrl = await preprocessImage(dataUrl, { binarize: false, normalizeExposureEnabled: true });
+        const processedGrayImg = await loadImage(processedGrayUrl);
+        const grayResult = await worker.recognize(processedGrayUrl);
+        const grayText = grayResult.data.text.trim();
+        const parsedGray = parseTicket(grayText);
+        timePaidDate = timePaidDate || parsedGray.timePaidDate;
+        totalAmountDue = totalAmountDue || parsedGray.totalAmountDue;
+        lineWords = Array.isArray(grayResult.data.words) ? grayResult.data.words : lineWords;
+        lineImage = processedGrayImg || lineImage;
+      }
+
+      // 3d. Targeted line OCR for TIME PAID / TOTAL AMOUNT if still missing
+      if ((!timePaidDate || !totalAmountDue) && Array.isArray(lineWords)) {
+        const lines = groupWordsByLine(lineWords);
+
+        if (!timePaidDate) {
+          const timeBBox = findLineBBox(lines, [/time/i, /paid/i], /t[i1]me\s*pa[i1]d/i);
+          if (timeBBox) {
+            const timeCrop = cropDataUrl(lineImage, timeBBox, 12);
+            await worker.setParameters({
+              tessedit_pageseg_mode: 7,
+              preserve_interword_spaces: 1,
+              tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:./- ",
+            });
+            const timeResult = await worker.recognize(timeCrop);
+            const parsed = parseTicket(timeResult.data.text.trim());
+            if (parsed.timePaidDate) {
+              timePaidDate = parsed.timePaidDate;
+            }
+          }
+        }
+
+        if (!totalAmountDue) {
+          const amountBBox = findLineBBox(
+            lines,
+            [/t[o0]tal/i, /am[o0]unt/i],
+            /am[o0]unt\s*due/i
+          );
+          if (amountBBox) {
+            const amountCrop = cropDataUrl(lineImage, amountBBox, 12);
+            await worker.setParameters({
+              tessedit_pageseg_mode: 7,
+              preserve_interword_spaces: 1,
+              tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:./- ",
+            });
+            const amountResult = await worker.recognize(amountCrop);
+            const parsed = parseTicket(amountResult.data.text.trim());
+            if (parsed.totalAmountDue) {
+              totalAmountDue = parsed.totalAmountDue;
+            }
+          }
+        }
+      }
 
       // CHECK FOR SUCCESS
       if (!timePaidDate && !totalAmountDue) {

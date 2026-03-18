@@ -6,6 +6,15 @@ const ADAPTIVE_T      = 0.15;
 const OUTPUT_WHITE    = 245;
 const OUTPUT_BLACK    = 30;
 const SHARPEN_AMOUNT  = 5;
+const BRIGHT_THRESHOLD = 180;
+const LOW_THRESHOLD    = 105;
+const TARGET_MEAN      = 140;
+const MAX_GAMMA        = 2.0;
+const MIN_GAMMA        = 0.6;
+const HIGHLIGHT_KNEE   = 200;
+const HIGHLIGHT_ROLL   = 0.45;
+const SHADOW_KNEE      = 60;
+const SHADOW_BOOST     = 0.35;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function clamp(value) {
@@ -14,6 +23,39 @@ function clamp(value) {
 
 function adjustContrast(value, contrast) {
   return clamp((value - 25) * contrast + 25);
+}
+
+function applyContrastToGray(gray, contrast) {
+  const out = new Uint8ClampedArray(gray.length);
+  for (let i = 0; i < gray.length; i++) {
+    out[i] = adjustContrast(gray[i], contrast);
+  }
+  return out;
+}
+
+function normalizeExposureGray(gray, mean) {
+  if (mean <= BRIGHT_THRESHOLD && mean >= LOW_THRESHOLD) return gray;
+
+  let gamma = 1;
+  if (mean > BRIGHT_THRESHOLD) {
+    gamma = Math.min(MAX_GAMMA, mean / TARGET_MEAN);
+  } else if (mean < LOW_THRESHOLD) {
+    gamma = Math.max(MIN_GAMMA, mean / TARGET_MEAN);
+  }
+  const out = new Uint8ClampedArray(gray.length);
+
+  for (let i = 0; i < gray.length; i++) {
+    let v = 255 * Math.pow(gray[i] / 255, gamma);
+    if (v > HIGHLIGHT_KNEE) {
+      v = HIGHLIGHT_KNEE + (v - HIGHLIGHT_KNEE) * HIGHLIGHT_ROLL;
+    }
+    if (v < SHADOW_KNEE) {
+      v = v + (SHADOW_KNEE - v) * SHADOW_BOOST;
+    }
+    out[i] = clamp(v);
+  }
+
+  return out;
 }
 
 function applySharpen(gray, width, height, amount) {
@@ -97,7 +139,8 @@ function rotateCanvas(canvas, angle) {
  * @param {string} dataUrl - The image as a base64 data URL
  * @returns {Promise<string>} - Processed image as a base64 data URL (PNG)
  */
-export async function preprocessImage(dataUrl) {
+export async function preprocessImage(dataUrl, options = {}) {
+  const { binarize = true, normalizeExposureEnabled = true } = options;
   const img = new Image();
   await new Promise((resolve, reject) => {
     img.onload = resolve;
@@ -120,13 +163,20 @@ export async function preprocessImage(dataUrl) {
   // Grayscale + contrast
   const imageData = ctx.getImageData(0, 0, width, height);
   const data      = imageData.data;
-  const gray      = new Uint8ClampedArray(width * height);
+  const grayRaw   = new Uint8ClampedArray(width * height);
+  let sumGray     = 0;
 
   for (let i = 0, p = 0; i < data.length; i += 4, p++) {
     // ITU-R BT.601 luminance weights
     const grayscale = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-    gray[p] = adjustContrast(grayscale, CONTRAST);
+    grayRaw[p] = grayscale;
+    sumGray += grayscale;
   }
+
+  const meanGray = sumGray / grayRaw.length;
+  const gray = normalizeExposureEnabled
+    ? applyContrastToGray(normalizeExposureGray(grayRaw, meanGray), CONTRAST)
+    : applyContrastToGray(grayRaw, CONTRAST);
 
   // Deskew
   const angle         = detectSkewAngle(gray, width, height);
@@ -134,15 +184,33 @@ export async function preprocessImage(dataUrl) {
   const rctx          = rotatedCanvas.getContext("2d", { willReadFrequently: true });
   const rotated       = rctx.getImageData(0, 0, width, height);
   const rotatedPixels = rotated.data;
-  const rotatedGray   = new Uint8ClampedArray(width * height);
+  const rotatedRaw    = new Uint8ClampedArray(width * height);
+  let sumRotated      = 0;
 
   for (let i = 0, p = 0; i < rotatedPixels.length; i += 4, p++) {
     const grayscale = 0.299 * rotatedPixels[i] + 0.587 * rotatedPixels[i + 1] + 0.114 * rotatedPixels[i + 2];
-    rotatedGray[p] = adjustContrast(grayscale, CONTRAST);
+    rotatedRaw[p] = grayscale;
+    sumRotated += grayscale;
   }
+
+  const meanRotated = sumRotated / rotatedRaw.length;
+  const rotatedGray = normalizeExposureEnabled
+    ? applyContrastToGray(normalizeExposureGray(rotatedRaw, meanRotated), CONTRAST)
+    : applyContrastToGray(rotatedRaw, CONTRAST);
 
   // Sharpen
   const sharpened = applySharpen(rotatedGray, width, height, SHARPEN_AMOUNT);
+
+  if (!binarize) {
+    for (let i = 0, p = 0; i < rotated.data.length; i += 4, p++) {
+      const v = sharpened[p];
+      rotated.data[i] = v;
+      rotated.data[i + 1] = v;
+      rotated.data[i + 2] = v;
+    }
+    rctx.putImageData(rotated, 0, 0);
+    return rotatedCanvas.toDataURL("image/png");
+  }
 
   // Adaptive threshold (integral image method)
   const integral = new Uint32Array((width + 1) * (height + 1));
