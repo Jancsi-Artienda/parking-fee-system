@@ -71,33 +71,31 @@ function ForgotPassword() {
     }
   };
 
-  return (
-    <div
-      className=" relative w-half min-h-screen  flex justify-center items-center"
-    >
-      <div className="absolute inset-0 overflow-hidden ">
-        <img src={background} alt="background" className="absolute inset-0 -z-10 h-full w-full object-cover   " />
+ 
+   return (
+    <div className="relative w-full min-h-screen flex justify-center items-center px-4">
+      <div className="absolute inset-0 overflow-hidden">
+        <img src={background} alt="background" className="absolute inset-0 -z-10 h-full w-full object-cover" />
       </div>
 
-
-      <div className="w-full max-w-lg mx-auto px-4 ">
-        <div className="p-8 rounded-3xl border border-white/30 bg-white/80 shadow-lg backdrop-blur-xl">
+      <div className="w-full max-w-lg mx-auto">
+        <div className="p-6 sm:p-8 rounded-3xl border border-white/30 bg-white/80 shadow-lg backdrop-blur-xl">
           <div className="flex flex-col items-center mb-6">
 
             {/* Logo */}
             <img
               src={logo}
               alt="Parking Fee Logo"
-              className=" max-w-[220px] h-auto mb-4 drop-shadow-md"
+              className="w-full max-w-[180px] sm:max-w-[220px] h-auto mb-4 drop-shadow-md"
             />
 
             {/* Header — hidden on reset step */}
             {step !== "reset" && (
               <>
-                <h1 className="text-3xl font-bold mb-1 text-black-900">
+                <h1 className="text-2xl sm:text-3xl font-bold mb-1 text-black-900">
                   Forgot Password
                 </h1>
-                <p className="text-gray-500 mb-4 text-center">
+                <p className="text-gray-500 mb-4 text-center text-sm sm:text-base">
                   Enter your email address to reset your password.
                 </p>
               </>

@@ -3,7 +3,7 @@ import useAuth from "../../context/auth/useAuth";
 import { Link, useNavigate } from "react-router-dom";
 import background from "../../assets/background.png";
 import logo from "../../assets/logo.png";
-import {toastSuccess, toastError} from "../../utils/swalToast";
+import { toastSuccess, toastError } from "../../utils/swalToast";
 import { Eye, EyeOff } from "lucide-react";
 
 const Login = () => {
@@ -46,7 +46,7 @@ const Login = () => {
   };
 
   return (
-    <div className="  relative w-full min-h-screen flex justify-center items-center ">
+    <div className="relative w-full min-h-screen flex justify-center items-center px-4">
 
       {/* Background */}
       <div className="absolute inset-0 overflow-hidden">
@@ -57,32 +57,33 @@ const Login = () => {
         />
       </div>
 
-      <div className="w-full max-w-lg mx-auto px-4">
-        <div className="p-8 rounded-3xl border border-white/30 bg-white/80 shadow-lg backdrop-blur-xl">
+      <div className="w-full max-w-lg mx-auto">
+        <div className="p-6 sm:p-8 rounded-3xl border border-white/30 bg-white/80 shadow-lg backdrop-blur-xl">
           <div className="flex flex-col items-center mb-6">
 
             {/* Logo */}
             <img
               src={logo}
               alt="Parking Fee Logo"
-              className="w-full max-w-[220px] h-auto mb-4 drop-shadow-md"
+              className="w-full max-w-[180px] sm:max-w-[220px] h-auto mb-4 drop-shadow-md"
             />
 
             {/* Error */}
             {error && (
               <p className="text-red-500 text-sm mb-3 text-center">{error}</p>
-            )} 
-            <>
-              <h1 className="text-3xl font-bold mb-1 text-black-900">
-                 Login
-              </h1>
-              <p className="text-gray-500 mb-4 text-center">
-                Please sign in to continue.
-              </p>
-            </>
-            {/* ONE single form */}
+            )}
+
+            <h1 className="text-2xl sm:text-3xl font-bold mb-1 text-black-900">
+              Login
+            </h1>
+            <p className="text-gray-500 mb-4 text-center text-sm sm:text-base">
+              Please sign in to continue.
+            </p>
+
+            {/* Form */}
             <form onSubmit={handleSubmit} className="w-full">
-              {/* email*/}
+
+              {/* Email */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Email
@@ -119,9 +120,8 @@ const Login = () => {
                 </div>
               </div>
 
-
-
-              <div className="flex items-center justify-between mb-6">
+              {/* Remember me + Forgot password */}
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-6">
                 <div className="flex items-center">
                   <input
                     type="checkbox"
@@ -152,21 +152,13 @@ const Login = () => {
               </button>
 
               <div className="mb-4 text-center mt-4">
-
                 <Link
-
                   to="/register"
-
                   className="text-sm text-blue-800 hover:underline"
-
                 >
-
                   Don't have an account? Register
-
                 </Link>
-
               </div>
-
 
             </form>
           </div>
@@ -176,4 +168,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Login; 

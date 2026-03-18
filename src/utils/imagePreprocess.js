@@ -132,13 +132,13 @@ function rotateCanvas(canvas, angle) {
 
 // ── Main export ───────────────────────────────────────────────────────────────
 
-
-//Preprocesses an image data URL for OCR.
-//Steps: resize → grayscale → deskew → sharpen → adaptive threshold
+/**
+Preprocesses an image data URL for OCR.
+  Steps: resize → grayscale → deskew → sharpen → adaptive threshold
  
-  @param {string} dataUrl //- The image as a base64 data URL
-  @returns {Promise<string>} //- Processed image as a base64 data URL (PNG)
- 
+  @param {string} dataUrl - The image as a base64 data URL
+  @returns {Promise<string>} - Processed image as a base64 data URL (PNG)
+ */
 export async function preprocessImage(dataUrl, options = {}) {
   const { binarize = true, normalizeExposureEnabled = true } = options;
   const img = new Image();
