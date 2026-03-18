@@ -6,7 +6,7 @@ import { PickersDay } from "@mui/x-date-pickers/PickersDay";
 import dayjs from "dayjs";
 import Swal from "sweetalert2";
 import { X } from "lucide-react";
-import { RefreshCw, Plus } from "lucide-react";
+import { RefreshCw, } from "lucide-react";
 
 export default function AddReportModal({
   open,
@@ -251,12 +251,7 @@ export default function AddReportModal({
           {/* Header */}
           <div className="flex items-center justify-between px-6 pt-5 pb-2 shrink-0">
             <h2 className="text-lg font-bold text-gray-900"> + Add Report Record</h2>
-            <button
-              onClick={handleClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <X size={20} />
-            </button>
+          
           </div>
           <div className="h-1 w-full bg-gradient-to-r from-blue-500 via-cyan-400 to-teal-400" />
 
@@ -328,15 +323,20 @@ export default function AddReportModal({
 
             {/* Amount */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+               <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  <div className="inline mr-1 text-gray-400" />Amount 
+                </label>
+             <div className="relative">
+               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium select-none">₱</span>
               <input
                 type="number"
                 name="amount"
                 min={1}
                 value={formData.amount}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800"
+                className="w-full px-4 py-3 pl-7 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800"
               />
+              </div>
             </div>
 
             {/* Error */}

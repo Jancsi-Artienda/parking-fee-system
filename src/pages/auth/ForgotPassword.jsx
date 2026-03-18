@@ -89,7 +89,7 @@ function ForgotPassword() {
               className="w-full max-w-[180px] sm:max-w-[220px] h-auto mb-4 drop-shadow-md"
             />
 
-            {/* Header — hidden on reset step */}
+            {/* Header  */}
             {step !== "reset" && (
               <>
                 <h1 className="text-2xl sm:text-3xl font-bold mb-1 text-black-900">

@@ -120,7 +120,7 @@ const Register = () => {
   };
 
   return (
-    <div className="relative w-full min-h-screen flex justify-center items-center px-4">
+    <div className="relative w-full min-h-screen flex justify-center items-center px-4 py-6">
 
       {/* Background */}
       <div className="absolute inset-0 overflow-hidden">
@@ -132,71 +132,65 @@ const Register = () => {
       </div>
 
       <div className="w-full max-w-lg mx-auto">
-        <div className="p-6 sm:p-8 rounded-3xl border border-white/30 bg-white/80 shadow-lg backdrop-blur-xl">
-          <div className="flex flex-col items-center mb-6">
+        <div className="p-4 sm:p-8 rounded-3xl border border-white/30 bg-white/80 shadow-lg backdrop-blur-xl">
+          <div className="flex flex-col items-center">
 
-            {/* Logo */}
+            {/* Logo  */}
             <img
               src={logo}
               alt="Parking Fee Logo"
-              className="w-full max-w-[180px] sm:max-w-[220px] h-auto mb-4 drop-shadow-md"
+              className="w-full max-w-[130px] sm:max-w-[180px] h-auto mb-2 drop-shadow-md"
             />
 
             {/* Error */}
             {error && (
-              <p className="text-red-500 text-sm mb-3 text-center">{error}</p>
+              <p className="text-red-500 text-sm mb-2 text-center">{error}</p>
             )}
 
-            <h1 className="text-2xl sm:text-3xl font-bold mb-1 text-black-900">
+            <h1 className="text-xl sm:text-3xl font-bold mb-0.5 text-black-900">
               Register your account
             </h1>
-            <p className="text-gray-500 mb-4 text-center text-sm sm:text-base">
-              Please sign in to continue.
+            <p className="text-gray-500 mb-3 text-center text-xs sm:text-base">
+              Please fill in the details to continue.
             </p>
 
             <form onSubmit={handleSubmit} className="w-full">
 
-              {/* First Name and Last Name — stacks on mobile */}
-              <div className="flex flex-col sm:flex-row gap-4 mb-4">
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    First Name
-                  </label>
+              {/* First Name */}
+              <div className="flex flex-row gap-3 mb-2">
+                <div className="flex-1 min-w-0">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">First Name</label>
                   <input
                     name="firstName"
                     placeholder="John"
                     value={formData.firstName}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400 text-sm"
                   />
                   {touchedFields.firstName && fieldErrors.firstName && (
-                    <p className="text-red-500 text-xs mt-1">{fieldErrors.firstName}</p>
+                    <p className="text-red-500 text-xs mt-0.5">{fieldErrors.firstName}</p>
                   )}
                 </div>
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Last Name
-                  </label>
+                <div className="flex-1 min-w-0">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Last Name</label>
                   <input
                     name="lastName"
                     placeholder="Paul"
                     value={formData.lastName}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400 text-sm"
                   />
                   {touchedFields.lastName && fieldErrors.lastName && (
-                    <p className="text-red-500 text-xs mt-1">{fieldErrors.lastName}</p>
+                    <p className="text-red-500 text-xs mt-0.5">{fieldErrors.lastName}</p>
                   )}
                 </div>
               </div>
 
               {/* Email */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address:
-                </label>
+              <div className="mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Email Address</label>
                 <input
                   type="email"
                   name="email"
@@ -204,56 +198,50 @@ const Register = () => {
                   value={formData.email}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400 text-sm"
                 />
                 {touchedFields.email && fieldErrors.email && (
-                  <p className="text-red-500 text-xs mt-1">{fieldErrors.email}</p>
+                  <p className="text-red-500 text-xs mt-0.5">{fieldErrors.email}</p>
                 )}
               </div>
 
               {/* Contact Number */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Number:
-                </label>
-                <input
-                  type="tel"
-                  name="contactNumber"
-                  placeholder="09XXXXXXXXX"
-                  value={formData.contactNumber}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400"
-                />
-                {touchedFields.contactNumber && fieldErrors.contactNumber && (
-                  <p className="text-red-500 text-xs mt-1">{fieldErrors.contactNumber}</p>
-                )}
+              <div className="  mb-2">
+                <div className="flex-1 min-w-0">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Contact Number</label>
+                  <input
+                    type="tel"
+                    name="contactNumber"
+                    placeholder="09XXXXXXXXX"
+                    value={formData.contactNumber}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400 text-sm"
+                  />
+                  {touchedFields.contactNumber && fieldErrors.contactNumber && (
+                    <p className="text-red-500 text-xs mt-0.5">{fieldErrors.contactNumber}</p>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Username</label>
+                  <input
+                    name="username"
+                    placeholder="Enter username"
+                    value={formData.username}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400 text-sm"
+                  />
+                  {touchedFields.username && fieldErrors.username && (
+                    <p className="text-red-500 text-xs mt-0.5">{fieldErrors.username}</p>
+                  )}
+                </div>
               </div>
 
-              {/* Username */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Username:
-                </label>
-                <input
-                  name="username"
-                  placeholder="Enter your username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400"
-                />
-                {touchedFields.username && fieldErrors.username && (
-                  <p className="text-red-500 text-xs mt-1">{fieldErrors.username}</p>
-                )}
-              </div>
-
-              {/* Password and Confirm Password — stacks on mobile */}
-              <div className="flex flex-col sm:flex-row gap-4 mb-4">
-
-                {/* Password */}
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              {/* Password  */}
+              <div className="flex flex-row gap-3 mb-2">
+                <div className="flex-1 min-w-0">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Password</label>
                   <div className="relative">
                     <input
                       type={showPassword ? "text" : "password"}
@@ -262,24 +250,19 @@ const Register = () => {
                       value={formData.password}
                       onChange={handleChange}
                       onBlur={handleBlur}
-                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400"
+                      className="w-full px-3 py-2 pr-9 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400 text-sm"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
-                    >
-                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    <button type="button" onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
+                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
                   {touchedFields.password && fieldErrors.password && (
-                    <p className="text-red-500 text-xs mt-1">{fieldErrors.password}</p>
+                    <p className="text-red-500 text-xs mt-0.5">{fieldErrors.password}</p>
                   )}
                 </div>
-
-                {/* Confirm Password */}
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                <div className="flex-1 min-w-0">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Confirm Password</label>
                   <div className="relative">
                     <input
                       type={showConfirmPassword ? "text" : "password"}
@@ -288,37 +271,30 @@ const Register = () => {
                       value={formData.confirmPassword}
                       onChange={handleChange}
                       onBlur={handleBlur}
-                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400"
+                      className="w-full px-3 py-2 pr-9 border border-gray-300 rounded-xl bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800 placeholder-gray-400 text-sm"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
-                    >
-                      {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
+                      {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
                   {touchedFields.confirmPassword && fieldErrors.confirmPassword && (
-                    <p className="text-red-500 text-xs mt-1">{fieldErrors.confirmPassword}</p>
+                    <p className="text-red-500 text-xs mt-0.5">{fieldErrors.confirmPassword}</p>
                   )}
                 </div>
-
               </div>
 
               {/* Submit */}
               <button
                 type="submit"
-                className="w-full py-3 rounded-2xl text-white font-semibold text-sm transition-colors duration-200 bg-[#1a237e] hover:bg-[#0d47a1] mt-6"
+                className="w-full py-2.5 rounded-2xl text-white font-semibold text-sm transition-colors duration-200 bg-[#1a237e] hover:bg-[#0d47a1] mt-3"
               >
                 {loading ? "Registering..." : "Register"}
               </button>
 
-              <div className="mt-3 text-center">
-                <button
-                  type="button"
-                  onClick={() => navigate("/")}
-                  className="text-sm text-blue-800 hover:underline"
-                >
+              <div className="mt-2 text-center">
+                <button type="button" onClick={() => navigate("/")}
+                  className="text-sm text-blue-800 hover:underline">
                   Back to Login
                 </button>
               </div>
