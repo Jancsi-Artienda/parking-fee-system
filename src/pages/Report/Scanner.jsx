@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, Suspense, lazy } from "react";
 import dayjs from "dayjs";
 import Swal from "sweetalert2";
 import { toastError, toastSuccess, toastWarning } from "../../utils/swalToast";
@@ -12,7 +12,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Plus } from "lucide-react";
-import ScannerModal from "../../components/Report/ScannerModal";
+const ScannerModal = lazy(() => import("../../components/Report/ScannerModal"));
 import { ScanLine } from "lucide-react";
 
 export default function Report() {
@@ -106,7 +106,7 @@ export default function Report() {
     loadReports();
   }, [loadReports]);
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     if (loading) return;
     if (!filteredRows.length) { toastError("No reports to export."); return; }
     const normalizedRows = filteredRows.map((row) => {
@@ -129,7 +129,12 @@ export default function Report() {
     const printableFilteredRows = filteredRows.slice(0, maxRows);
     const totalAmountValue = printableFilteredRows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
     const totalAmount = `PHP ${totalAmountValue.toLocaleString("en-US")}`;
-    generatePDF({ preparedBy, coverage, dateSubmitted: dayjs().format("MMMM D, YYYY"), rows: normalizedRows, totalAmount });
+    try {
+      await generatePDF({ preparedBy, coverage, dateSubmitted: dayjs().format("MMMM D, YYYY"), rows: normalizedRows, totalAmount });
+    } catch (err) {
+      toastError("Failed to generate PDF. Please try again.");
+      return;
+    }
     if (filteredRows.length > maxRows) {
       toastWarning(`Exported first ${maxRows} rows only.`);
     } else {
@@ -309,15 +314,17 @@ export default function Report() {
         </div>
 
         {/* Modal  */}
-        <ScannerModal
-          open={openModal}
-          setOpen={setOpenModal}
-          vehicles={vehicles}
-          onAddReport={handleAddReport}
-          existingReports={rows}
-          coverageFrom={startDate}
-          coverageTo={endDate}
-        />
+        <Suspense fallback={null}>
+          <ScannerModal
+            open={openModal}
+            setOpen={setOpenModal}
+            vehicles={vehicles}
+            onAddReport={handleAddReport}
+            existingReports={rows}
+            coverageFrom={startDate}
+            coverageTo={endDate}
+          />
+        </Suspense>
 
         {/* Export PDF */}
         <div className="flex w-full mt-4">

@@ -1,4 +1,3 @@
-import { jsPDF } from "jspdf";
 import dayjs from "dayjs";
 
 const MAX_TABLE_ROWS = 15;
@@ -36,13 +35,14 @@ function formatCoverageForFilename(coverageValue) {
 }
 
 export const useParkingFeePDF = () => {
-  const generatePDF = ({
+  const generatePDF = async ({
     preparedBy = "",
     coverage = "",
     dateSubmitted = "",
     rows = [],
     totalAmount = "",
   } = {}) => {
+    const { jsPDF } = await import("jspdf");
     const doc = new jsPDF();
 
     const leftMargin = 20;

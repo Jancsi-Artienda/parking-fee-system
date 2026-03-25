@@ -23,16 +23,16 @@ export function parseTicket(text) {
   // Loose timestamp separator ([:;]) handles OCR misreads on wrinkled receipts.
   // Falls back to any date+timestamp if the label is not found.
   const dateMatch =
-    text.match(/T[I1]ME\s*PA[I1]D\s*[:\s]+(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i) ||
-    cleanedText.match(/T[I1]ME\s*PA[I1]D\s*[:\s]+(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i) ||
-    cleanedText.match(/(\d{2}[\/\-]\d{2}[\/\-]\d{4})\s+\d{2}[:\;]\d{2}[:\;]\d{2}/);
+    text.match(/T[I1]ME\s*PA[I1]D\s*[:\s]+(\d{2}[/-]\d{2}[/-]\d{4})/i) ||
+    cleanedText.match(/T[I1]ME\s*PA[I1]D\s*[:\s]+(\d{2}[/-]\d{2}[/-]\d{4})/i) ||
+    cleanedText.match(/(\d{2}[/-]\d{2}[/-]\d{4})\s+\d{2}[:;]\d{2}[:;]\d{2}/);
 
   if (dateMatch) {
     let rawDate = dateMatch[1];
 
     // Year correction: OCR misreads '2' as '0' in thermal fonts e.g. 2006 → 2026
     rawDate = rawDate.replace(
-      /(\d{2}[\/\-]\d{2}[\/\-])(20)(\d{2})/,
+      /(\d{2}[/-]\d{2}[/-])(20)(\d{2})/,
       (_, prefix, century, yy) => `${prefix}${century}${yy.replace(/^0/, "2")}`
     );
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import api from "../../services/api";
@@ -16,9 +16,29 @@ function ForgotPassword() {
   const [otp, setOtp] = useState("");
   const [otpError, setOtpError] = useState("");
   const [submittingOtp, setSubmittingOtp] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const RESEND_COOLDOWN_SECONDS = 60;
+
+  const maskEmail = (value = "") => {
+    const [name, domain] = value.split("@");
+    if (!name || !domain) return value;
+    const head = name.slice(0, 2);
+    const tail = name.slice(-1);
+    const masked = name.length <= 3 ? `${head}*` : `${head}***${tail}`;
+    return `${masked}@${domain}`;
+  };
+
+  useEffect(() => {
+    if (step !== "otp" || resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [step, resendCooldown]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
     setError("");
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail) { setError("Email is required."); return; }
@@ -28,10 +48,19 @@ function ForgotPassword() {
     setLoading(true);
     try {
       await api.forgotPassword(normalizedEmail);
-      await Swal.fire({ title: "OTP Sent", text: "Check your email for the verification code.", icon: "success" });
       setStep("otp");
+      setOtp("");
+      setOtpError("");
+      setResendCooldown(RESEND_COOLDOWN_SECONDS);
+      Swal.fire({
+        title: "OTP Sent",
+        text: "Check your email for the verification code.",
+        icon: "success",
+      });
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to send reset request.");
+      const retryAfter = Number(err?.data?.retryAfterSeconds || 0);
+      if (retryAfter > 0) setResendCooldown(retryAfter);
+      setError(err?.data?.message || "Failed to send reset request.");
     } finally { setLoading(false); }
   };
 
@@ -59,6 +88,7 @@ function ForgotPassword() {
   const handleResend = async () => {
     setOtpError("");
     setOtp("");
+    if (resendCooldown > 0) return;
     try {
       await api.forgotPassword(email.trim().toLowerCase());
       await Swal.fire({
@@ -66,8 +96,11 @@ function ForgotPassword() {
         text: "A new code was sent to your email.",
         icon: "success",
       });
+      setResendCooldown(RESEND_COOLDOWN_SECONDS);
     } catch (err) {
-      setOtpError("Failed to resend OTP. Please try again.");
+      const retryAfter = Number(err?.data?.retryAfterSeconds || 0);
+      if (retryAfter > 0) setResendCooldown(retryAfter);
+      setOtpError(err?.data?.message || "Failed to resend OTP. Please try again.");
     }
   };
 
@@ -151,6 +184,8 @@ function ForgotPassword() {
                 onResend={handleResend}
                 submitting={submittingOtp}
                 error={otpError}
+                resendCooldown={resendCooldown}
+                emailHint={maskEmail(email.trim().toLowerCase())}
               />
             )}
 

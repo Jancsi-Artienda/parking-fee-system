@@ -1,10 +1,21 @@
-function OTPcomp({ otp, setOtp, onVerify, onBack, submitting, error }) {
+function OTPcomp({
+  otp,
+  setOtp,
+  onVerify,
+  onBack,
+  onResend,
+  submitting,
+  error,
+  resendCooldown = 0,
+  emailHint = "",
+}) {
   return (
     <div className="flex flex-col gap-4 mt-1 text-center w-full">
 
-      <p className="text-sm text-gray-500">
-        A verification code was sent to your email. Please enter it below.
-      </p>
+      <div className="text-sm text-gray-500 space-y-1">
+        <p>A verification code was sent to your email. Please enter it below.</p>
+        {emailHint && <p className="text-xs text-gray-400">Sent to {emailHint} â€” check inbox/spam.</p>}
+      </div>
 
       {/* OTP Input */}
       <div>
@@ -31,10 +42,11 @@ function OTPcomp({ otp, setOtp, onVerify, onBack, submitting, error }) {
       {/* Resend */}
       <button
         type="button"
-        disabled={submitting}
+        onClick={onResend}
+        disabled={submitting || resendCooldown > 0}
         className="text-sm text-blue-800 hover:underline self-center disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Didn't get a code? Resend
+        {resendCooldown > 0 ? `Resend available in ${resendCooldown}s` : "Didn't get a code? Resend"}
       </button>
 
       {/* Back & Verify */}

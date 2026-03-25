@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import dayjs from "dayjs";
-import { createWorker } from "tesseract.js";
 import Swal from "sweetalert2";
 import {
   X, ScanLine, Upload, Camera, CheckCircle2, AlertCircle,
@@ -38,10 +37,13 @@ export default function ReceiptScannerModal({
   const [mounted, setMounted] = useState(false);
   const [scanAttempts, setScanAttempts] = useState(0);
   const [cameraActive, setCameraActive] = useState(false);
+  const [pipelineStages, setPipelineStages] = useState([]);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const fileInputRef = useRef(null);
   const workerRef = useRef(null);
+  const workerInitRef = useRef(null);
+  const isAliveRef = useRef(true);
 
 
   const isConfirmingRef = useRef(false);
@@ -93,7 +95,6 @@ export default function ReceiptScannerModal({
         if (result.isConfirmed) {
           setOpen(false);
         } else {
-         e
           window.history.pushState({ modalOpen: true }, "");
         }
       };
@@ -119,6 +120,7 @@ export default function ReceiptScannerModal({
       setScanProgress(0);
       setScanConfidence(null);
       setCameraActive(false);
+      setPipelineStages([]);
       setMounted(true);
     } else {
       setMounted(false);
@@ -128,9 +130,11 @@ export default function ReceiptScannerModal({
 
   useEffect(() => {
     return () => {
+      isAliveRef.current = false;
       if (workerRef.current) {
         workerRef.current.terminate();
         workerRef.current = null;
+        workerInitRef.current = null;
       }
     };
   }, []);
@@ -220,29 +224,49 @@ export default function ReceiptScannerModal({
     handleFileChange({ target: { files: [file], value: "" } });
   };
 
+  const getWorker = useCallback(async () => {
+    if (workerRef.current) return workerRef.current;
+    if (!workerInitRef.current) {
+      workerInitRef.current = (async () => {
+        const { createWorker } = await import("tesseract.js");
+        const worker = await createWorker("eng", 1, {
+          logger: (m) => {
+            if (m.status === "recognizing text" && isAliveRef.current) {
+              setScanProgress(Math.round(m.progress * 100));
+            }
+          },
+        });
+        await worker.setParameters({
+          tessedit_pageseg_mode: 4,
+          preserve_interword_spaces: 1,
+          tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:./- ",
+        });
+        workerRef.current = worker;
+        return worker;
+      })();
+    }
+    return workerInitRef.current;
+  }, []);
+
   const runScan = useCallback(async (dataUrl) => {
     setStep("scanning");
     setScanError("");
     setScanProgress(0);
+    setPipelineStages([]);
 
-    let worker = null;
+    const pipelineDebug = [];
+    pipelineDebug.push({
+      key: "original",
+      label: "Original capture",
+      detail: "Input photo (JPEG/PNG) before any preprocessing.",
+      url: dataUrl,
+    });
+
     try {
       const processedUrl = await preprocessImage(dataUrl, { binarize: true, normalizeExposureEnabled: false });
       const processedImg = await loadImage(processedUrl);
 
-      worker = await createWorker("eng", 1, {
-        logger: (m) => {
-          if (m.status === "recognizing text") {
-            setScanProgress(Math.round(m.progress * 100));
-          }
-        },
-      });
-
-      await worker.setParameters({
-        tessedit_pageseg_mode: 4,
-        preserve_interword_spaces: 1,
-        tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:./- ",
-      });
+      const worker = await getWorker();
 
       const { data } = await worker.recognize(processedUrl);
       const rawText = data.text.trim();
@@ -329,11 +353,10 @@ export default function ReceiptScannerModal({
 
     } catch (err) {
       setScanError("Scan failed. Please try again or enter manually.");
+      setPipelineStages(pipelineDebug);
       setStep("review");
-    } finally {
-      if (worker) await worker.terminate();
     }
-  }, [scanAttempts]);
+  }, [getWorker, scanAttempts]);
 
   const handleSave = async () => {
     setSaveError("");
@@ -376,6 +399,7 @@ export default function ReceiptScannerModal({
     setSaveError("");
     setScanProgress(0);
     setScanConfidence(null);
+    setPipelineStages([]);
     stopCamera();
   };
 
@@ -499,6 +523,9 @@ export default function ReceiptScannerModal({
                     </div>
                     <p className="text-sm font-medium text-gray-700">Upload receipt image</p>
                     <p className="text-xs text-gray-400">Drag & drop or click to browse · JPG, PNG, WEBP</p>
+                    <p className="text-[11px] text-amber-700/90 text-center leading-snug px-1">
+                      Tip: flatten receipt, one ticket only, fingers clear — better OCR.
+                    </p>
                     <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
                   </div>
 
@@ -595,6 +622,33 @@ export default function ReceiptScannerModal({
                 </div>
               )}
 
+              {pipelineStages.length > 0 && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 space-y-2">
+                  <p className="text-xs font-semibold text-slate-700">Image processing &amp; OCR tries</p>
+                  <p className="text-[11px] text-slate-500 leading-snug">
+                    Each image below is what was sent to Tesseract at that step (or the preprocess output). Try 2 and Try 3 only run if the previous step did not find both date and amount.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[min(420px,50vh)] overflow-y-auto pr-1">
+                    {pipelineStages.map((stage) => (
+                      <div
+                        key={stage.key}
+                        className="rounded-lg border border-white bg-white p-2 shadow-sm ring-1 ring-slate-100"
+                      >
+                        <p className="text-[11px] font-medium text-slate-800 mb-0.5">{stage.label}</p>
+                        <p className="text-[10px] text-slate-500 mb-2 leading-snug">{stage.detail}</p>
+                        <div className="rounded-md overflow-hidden bg-slate-100 border border-slate-200 aspect-[3/4] max-h-48 flex items-center justify-center">
+                          <img
+                            src={stage.url}
+                            alt={stage.label}
+                            className="max-w-full max-h-full w-auto h-auto object-contain"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {!scanError && scanConfidence !== null && scanConfidence < 70 && (
                 <div className="flex items-start gap-2 px-3 py-2.5 bg-amber-50 rounded-lg border border-amber-100">
                   <AlertCircle size={14} className="text-amber-500 mt-0.5 shrink-0" />
@@ -682,7 +736,7 @@ export default function ReceiptScannerModal({
             </div>
           )}
 
-          {/* Footer */}
+          {/* Footer — hidden during live camera so in-viewfinder Cancel/Capture are the only actions */}
           {(step === "capture" || step === "review") && (
             <div className="px-5 pb-5 flex gap-2">
               <button onClick={handleCancel}

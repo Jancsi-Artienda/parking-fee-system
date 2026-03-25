@@ -6,6 +6,7 @@ import pool from "../db.js";
 import { getJwtSecret } from "../jwt.js";
 import { AUTH_COOKIE_NAME, getBearerToken } from "../auth.js";
 import { createCsrfToken, setCsrfCookie, clearCsrfCookie } from "../csrf.js";
+import { sendOtpEmail } from "../mailer.js";
 
 const GMAIL_REGEX = /^[^\s@]+@gmail\.com$/i;
 const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
@@ -16,6 +17,8 @@ const REMEMBER_ME_DAYS = 30;
 const OTP_LENGTH = 6;
 const OTP_EXPIRES_MINUTES = 10;
 const OTP_MAX_ATTEMPTS = 5;
+const OTP_RESEND_COOLDOWN_SECONDS = 60;
+const OTP_MAX_REQUESTS_PER_HOUR = 5;
 const RESET_VERIFIED_TOKEN = "VERIFIED";
 const PASSWORD_RULES = {
   uppercase: /[A-Z]/,
@@ -24,6 +27,54 @@ const PASSWORD_RULES = {
   minLength: 8,
 };
 
+const otpRequestTracker = new Map();
+
+function getOtpRateLimit(email) {
+  const now = Date.now();
+  const entry = otpRequestTracker.get(email);
+  if (!entry) {
+    const nextEntry = {
+      lastSentAt: 0,
+      windowStart: now,
+      count: 0,
+    };
+    otpRequestTracker.set(email, nextEntry);
+    return { entry: nextEntry, now };
+  }
+  return { entry, now };
+}
+
+function enforceOtpRateLimit(email) {
+  const { entry, now } = getOtpRateLimit(email);
+
+  if (now - entry.windowStart >= 60 * 60 * 1000) {
+    entry.windowStart = now;
+    entry.count = 0;
+  }
+
+  if (entry.lastSentAt && now - entry.lastSentAt < OTP_RESEND_COOLDOWN_SECONDS * 1000) {
+    const retryAfterSeconds = Math.ceil(
+      (OTP_RESEND_COOLDOWN_SECONDS * 1000 - (now - entry.lastSentAt)) / 1000
+    );
+    return {
+      allowed: false,
+      message: `Please wait ${retryAfterSeconds}s before requesting another OTP.`,
+      retryAfterSeconds,
+    };
+  }
+
+  if (entry.count >= OTP_MAX_REQUESTS_PER_HOUR) {
+    return {
+      allowed: false,
+      message: "Too many OTP requests. Please try again later.",
+      retryAfterSeconds: 3600,
+    };
+  }
+
+  entry.count += 1;
+  entry.lastSentAt = now;
+  return { allowed: true };
+}
 
 
 function generateOtp() {
@@ -338,6 +389,13 @@ export async function forgotPassword(req, res) {
   }
 
   try {
+    const rateLimit = enforceOtpRateLimit(normalizedEmail);
+    if (!rateLimit.allowed) {
+      return res.status(429).json({
+        message: rateLimit.message,
+        retryAfterSeconds: rateLimit.retryAfterSeconds,
+      });
+    }
 
     const [rows] = await pool.query(
       "SELECT usertable_id FROM users WHERE company_email = ? LIMIT 1",
@@ -369,6 +427,20 @@ export async function forgotPassword(req, res) {
         `UPDATE users SET ${updateFields.join(", ")} WHERE company_email = ? LIMIT 1`,
         updateParams
       );
+
+      try {
+        await sendOtpEmail({
+          to: normalizedEmail,
+          otp: resetToken,
+          expiresMinutes: OTP_EXPIRES_MINUTES,
+        });
+      } catch (mailError) {
+        console.error("OTP email failed:", mailError?.message || mailError);
+        return res.status(500).json({
+          message: "Failed to send OTP email.",
+          detail: mailError?.message || "Unknown mail error",
+        });
+      }
 
     }
 
