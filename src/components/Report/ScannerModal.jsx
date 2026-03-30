@@ -156,10 +156,10 @@ export default function ReceiptScannerModal({
         text: "Your scanned data will not be saved.",
         icon: "warning",
         showCancelButton: true,
-        confirmButtonText: "discard",
-        cancelButtonText: "Go back",
-        confirmButtonColor: "#E60000",
-        cancelButtonColor: "#1a3a5c",
+        confirmButtonText: "Yes",
+        cancelButtonText: "No",
+        confirmButtonColor: "#1a3a5c",
+        cancelButtonColor: "#E60000",
         reverseButtons: true,
       });
       isConfirmingRef.current = false;

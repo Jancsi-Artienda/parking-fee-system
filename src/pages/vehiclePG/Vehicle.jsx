@@ -46,7 +46,7 @@ export default function Vehicle() {
   };
 
   return (
-    <div className="bg-white h-full w-full flex flex-col">
+    <div className="bg-white h-175 w-full flex flex-col rounded-2xl ">
       <div className="p-8 flex flex-col flex-1 min-h-0">
 
         {/* Header */}

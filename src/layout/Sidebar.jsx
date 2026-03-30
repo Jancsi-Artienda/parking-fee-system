@@ -5,6 +5,7 @@ import logo from "../assets/logo.png";
 import useAuth from "../context/auth/useAuth";
 import Swal from "sweetalert2";
 
+
 export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -85,7 +86,7 @@ export default function Sidebar() {
 
         {/* Logo  */}
         <div className="px-3 py-2 w-full">
-          <img src={logo} alt="Parking Fee Logo" className="mx-auto block max-w-[180px] w-full h-auto" />
+          <img src={logo} alt="Parking Fee Logo" className="mx-auto block max-w-[180px] w-20 h-auto" />
         </div>
 
         {/* Profile Card  */}

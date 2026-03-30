@@ -8,6 +8,7 @@ import Swal from "sweetalert2";
 import { X } from "lucide-react";
 import { RefreshCw, } from "lucide-react";
 
+
 export default function AddReportModal({
   open,
   setOpen,
@@ -50,8 +51,8 @@ export default function AddReportModal({
         showCancelButton: true,
         confirmButtonText: "Yes",
         cancelButtonText: "No",
-        confirmButtonColor: "#E60000",
-        cancelButtonColor: "#1a3a5c",
+        confirmButtonColor: "#1a3a5c",
+        cancelButtonColor: "#E60000",
         reverseButtons: true,
       }).then((result) => {
         if (result.isConfirmed) {
@@ -147,8 +148,8 @@ export default function AddReportModal({
       showCancelButton: true,
       confirmButtonText: "Yes",
       cancelButtonText: "No",
-      confirmButtonColor: "#E60000",
-      cancelButtonColor: "#1a3a5c",
+      confirmButtonColor: "#1a3a5c",
+      cancelButtonColor: "#E60000",
       reverseButtons: true,
     }).then((result) => {
       if (result.isConfirmed) {
@@ -169,10 +170,10 @@ export default function AddReportModal({
       text: "This will clear all your selected dates and inputs.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Refresh",
-      cancelButtonText: "Cancel",
-      confirmButtonColor: "#6b7280",
-      cancelButtonColor: "#1a3a5c",
+      confirmButtonText: "Yes",
+      cancelButtonText: "No",
+      confirmButtonColor: "#1a3a5c",
+      cancelButtonColor: "#E60000",
       reverseButtons: true,
     });
 
@@ -233,150 +234,162 @@ export default function AddReportModal({
 
   if (!open) return null;
 
+
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm  "
+        className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
         onClick={handleClose}
       >
-        {/* Modal */}
+        {/* Modal box */}
         <div
-          className="relative bg-white rounded-2xl shadow-xl flex flex-col max-h-[90vh] w-[500px] "
+          className="bg-white rounded-2xl overflow-hidden w-full max-w-4xl"
           onClick={(e) => e.stopPropagation()}
         >
-
-
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 pt-5 pb-2 shrink-0">
-            <h2 className="text-lg font-bold text-gray-900"> + Add Report Record</h2>
           
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <h2 className="text-base font-medium text-gray-900">+ Add Report Record</h2>
           </div>
-          <div className="h-1 w-full bg-gradient-to-r from-blue-500 via-cyan-400 to-teal-400" />
 
-          {/* Content */}
-          <div className="flex flex-col gap-4 px-6 pb-4 overflow-y-auto flex-1">
+          {/* Body */}
+          <div className="flex flex-col md:flex-row max-h-[80vh]">
 
-            {/* Calendar — must stay as MUI */}
-            <DateCalendar
-              value={calendarValue}
-              onChange={handleDateAdd}
-              shouldDisableDate={isDateDisabled}
-              slots={{ day: HighlightedDay }}
-            />
+            {/* Left panel — Calendar */}
+            <div className="w-full md:w-100 bg-gray-50 flex flex-col shrink-0 p-1">
+              <DateCalendar
+                value={calendarValue}
+                onChange={handleDateAdd}
+                shouldDisableDate={isDateDisabled}
+                slots={{ day: HighlightedDay }}
 
-            <p className="text-sm text-gray-500">
-              Click a date to select or unselect it.
-            </p>
-
-            {/* Selected Date Chips */}
-            {selectedDates.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {selectedDates.map((dateStr) => (
-                  <span
-                    key={dateStr}
-                    className="flex items-center gap-1 px-3 py-1 text-sm text-blue-700 border border-blue-400 rounded-full bg-blue-50"
-                  >
-                    {dayjs(dateStr).format("MMM D, YYYY")}
-                    <button
-                      type="button"
-                      onClick={() => handleDateRemove(dateStr)}
-                      className="text-blue-400 hover:text-blue-700 ml-1"
-                    >
-                      <X size={14} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* Vehicle — single or dropdown */}
-            {hasSingleVehicle ? (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle</label>
-                <input
-                  type="text"
-                  readOnly
-                  value={`${singleVehicle?.type || ""} - ${singleVehicle?.name || ""} (${singleVehicle?.plate || ""})`}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100 text-gray-700 cursor-not-allowed"
-                />
-              </div>
-            ) : (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle</label>
-                <select
-                  name="vehicleId"
-                  value={formData.vehicleId}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800"
-                >
-                  <option value="" disabled>Select a vehicle</option>
-                  {safeVehicles.map((vehicle) => (
-                    <option key={vehicle.id} value={vehicle.id}>
-                      {vehicle.type} - {vehicle.name} ({vehicle.plate})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Amount */}
-            <div>
-               <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                  <div className="inline mr-1 text-gray-400" />Amount 
-                </label>
-             <div className="relative">
-               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium select-none">₱</span>
-              <input
-                type="number"
-                name="amount"
-                min={1}
-                value={formData.amount}
-                onChange={handleChange}
-                className="w-full px-4 py-3 pl-7 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-900 text-gray-800"
               />
+
+            </div>
+
+            {/* Right panel — Form + chips */}
+            <div className="flex-1 flex flex-col p-5 overflow-y-auto bg-gray-50">
+              <p className="text-sm text-gray-500 mb-4">
+                Fill in the details and select dates to log parking records.
+              </p>
+
+              <div className="flex flex-col gap-4 flex-1">
+
+                {/* Vehicle */}
+                {!hasSingleVehicle ? (
+                  <div>
+                    <label className="text-sm text-gray-500">Vehicle</label>
+                    <select
+                      name="vehicleId"
+                      value={formData.vehicleId}
+                      onChange={handleChange}
+                      className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    >
+                      <option value="">Select vehicle</option>
+                      {safeVehicles.map((v) => (
+                        <option key={v.id} value={String(v.id)}>
+                          {v.type} / {v.model} / {v.plateNumber}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="text-sm text-gray-500">Vehicle</label>
+                    <p className="mt-1 text-sm font-medium text-gray-900">
+                      {singleVehicle.type} / {singleVehicle.model} / {singleVehicle.plateNumber}
+                    </p>
+                  </div>
+                )}
+
+                {/* Amount */}
+                <div>
+                  <label className="text-sm text-gray-500">Amount</label>
+                  <input
+                    type="number"
+                    name="amount"
+                    value={formData.amount}
+                    onChange={handleChange}
+                    className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                </div>
+
+                {/* Selected dates */}
+                <div>
+                  
+                  <p className="text-xs text-blue-600 text-center ">
+                    Click a date to select or unselect it.
+                  </p>
+                  <label className="text-sm text-gray-500">Selected Dates</label>
+                  {selectedDates.length === 0 ? (
+                    <p className="text-sm text-gray-400 mt-1">No dates selected yet.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 mt-2 max-h-32 overflow-y-auto">
+                      {selectedDates.map((dateStr) => (
+                        <span
+                          key={dateStr}
+                          className="flex items-center gap-1 px-3 py-1 text-sm text-blue-700 border border-blue-400 rounded-full bg-blue-50"
+                        >
+                          {dayjs(dateStr).format("MMM D, YYYY")}
+                          <button
+                            type="button"
+                            onClick={() => handleDateRemove(dateStr)}
+                            className="text-blue-400 hover:text-blue-700 ml-1"
+                          >
+                            <X size={14} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Summary row */}
+                {selectedDates.length > 0 && (
+                  <div className="flex justify-between text-sm pt-3 border-t border-gray-100">
+                    <span className="font-medium text-gray-900">Total Records</span>
+                    <span className="font-medium text-gray-900">{selectedDates.length} day(s)</span>
+                  </div>
+                )}
+
+                {/* Error */}
+                {localError && (
+                  <p className="text-sm text-red-500">{localError}</p>
+                )}
+              </div>
+
+              {/* Footer buttons */}
+              <div className="flex gap-2 mt-6">
+                <button
+                  onClick={handleRefresh}
+                  className="flex items-center gap-1 px-3 py-2 text-sm border text-white rounded-xl  bg-[#1a3a5c] hover:bg-[#cc0000]"
+                >
+                  <RefreshCw size={15} />
+
+                </button>
+                <button
+                  onClick={handleClose}
+                  disabled={submitting}
+                  className="flex-1 py-2 text-sm rounded-xl border border-gray-200 text-white bg-[#E60000] hover:bg-[#cc0000] "
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddReport}
+                  disabled={submitting}
+                  className="flex-1 py-2 text-sm font-medium rounded-xl bg-[#1a3a5c] text-white hover:bg-[#142d47] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? "Adding..." : "Add Record"}
+                </button>
               </div>
             </div>
 
-            {/* Error */}
-            {localError && (
-              <p className="text-red-500 text-sm">{localError}</p>
-            )}
-
           </div>
-
-          {/* Footer */}
-          <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100 shrink-0">
-
-            <button
-              onClick={handleAddReport}
-              disabled={submitting}
-              className="px-6 py-2 text-sm text-white font-semibold rounded-xl bg-[#1a3a5c] hover:bg-[#142d47] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {submitting ? "Adding..." : "Add Record"}
-            </button>
-
-            <button
-              onClick={handleRefresh}
-              className="flex items-center gap-1 px-3 py-2 text-sm border text-gray-600 bg-gray-100 rounded-xl  hover:bg-gray-200 transition-colors duration-150"
-            >
-              <RefreshCw size={16} />
-              Refresh
-            </button>
-
-            <button
-              onClick={handleClose}
-              disabled={submitting}
-              className="flex items-center gap-1 px-3 py-2 text-sm border  text-white  bg-[#E60000] rounded-xl hover:bg-[#cc0000] transition-colors duration-150"
-            >
-              Cancel
-            </button>
-
-          </div>
-
         </div>
       </div>
+
 
     </LocalizationProvider>
   );

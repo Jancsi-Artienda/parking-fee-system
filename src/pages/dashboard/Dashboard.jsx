@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import ParkingReportTable from "../../components/dashboard/ParkingReportTable";
 import VehicleStatCard from "../../components/dashboard/VehicleStatCard";
+import TotalFeeStatCard from "../../components/dashboard/TotalFee";
 import { useVehicles } from "../../context/vehicleContext/useVehicles";
 import api from "../../services/api";
+
 
 export default function Dashboard() {
   const { vehicles, error } = useVehicles();
@@ -30,16 +32,19 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 md:pt-0">
-      <div className="mt-8 mb-12 rounded-2xl">
-
-        <h1 className="text-2xl md:text-3xl font-bold mb-6 text-indigo-900">
+    <div className=" mx-auto px-4 mb-10 ">
+      <div className=" mt-8 rounded-2xl ">
+        
+        <h1 className="text-2xl md:text-3xl font-bold mb-6 text-blue-50">
           Dashboard
         </h1>
 
-        <div className="flex flex-col sm:flex-row flex-wrap gap-6 mb-8">
+        <div className="grid grid-cols-2 gap-4 mb-8">
           <VehicleStatCard totalVehicles={totalVehicles} />
+          <TotalFeeStatCard totalFee={totalVehicles} />
         </div>
+
+
 
         {error && (
           <p className="text-red-600 mb-4">{error}</p>
@@ -54,7 +59,7 @@ export default function Dashboard() {
           <ParkingReportTable
             rows={reportRows}
             loading={reportLoading}
-            title="Recent Parking Reports"
+            title="RECENT REPORTS"
             emptyMessage="No reports yet."
           />
         </div>

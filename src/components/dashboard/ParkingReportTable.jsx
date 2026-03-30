@@ -111,7 +111,7 @@ export default function ParkingReportTable({
       )}
 
       <div className="overflow-x-auto">
-        <div className="min-w-[320px] h-[500px]">
+        <div className="min-w-[320px] h-[450px]">
           
           <DataGrid
             rows={displayRows}

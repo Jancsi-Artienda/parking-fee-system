@@ -139,7 +139,7 @@ const Register = () => {
             <img
               src={logo}
               alt="Parking Fee Logo"
-              className="w-full max-w-[130px] sm:max-w-[180px] h-auto mb-2 drop-shadow-md"
+              className="w-full max-w-[180px] sm:max-w-[150px] h-auto  drop-shadow-md justify-center"
             />
 
             {/* Error */}

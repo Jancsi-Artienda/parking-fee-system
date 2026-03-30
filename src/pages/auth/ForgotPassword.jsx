@@ -119,7 +119,7 @@ function ForgotPassword() {
             <img
               src={logo}
               alt="Parking Fee Logo"
-              className="w-full max-w-[180px] sm:max-w-[220px] h-auto mb-4 drop-shadow-md"
+              className="w-full max-w-[180px] sm:max-w-[150px] h-auto  drop-shadow-md justify-center"
             />
 
             {/* Header  */}

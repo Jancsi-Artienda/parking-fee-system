@@ -230,12 +230,12 @@ export default function Report() {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <div className="w-full p-4 md:p-6 pt-16 md:pt-6 rounded-2xl shadow-lg bg-white">
+      <div className="w-full p-3 md:p-6 pt-14 md:pt-6 rounded-2xl shadow-lg bg-white">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
-          <div className="flex flex-col gap-2 p-1">
-            <h2 className="text-lg md:text-xl font-medium text-gray-900">Parking Fee Report</h2>
-            <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-start sm:items-center p-1">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-4 mb-3 sm:mb-6">
+          <div className="flex flex-col gap-1 sm:gap-2 p-0 sm:p-1">
+            <h2 className="text-base md:text-xl font-medium text-gray-900">Parking Fee Report</h2>
+            <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3 items-start sm:items-center p-0 sm:p-1">
               <span className="text-sm text-gray-700 font-medium">Coverage:</span>
               <div className="w-full sm:w-auto">
                 <DatePicker
@@ -287,7 +287,7 @@ export default function Report() {
               {/* Add Button */}
               <button
                 onClick={() => setOpenModal(true)}
-                className="flex items-center justify-center gap-1 w-full sm:w-auto px-3 py-2 text-sm border border-red-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 active:scale-[0.97] rounded-xl transition-all duration-150 w-full sm:w-auto justify-center"
               >
                 <ScanLine size={16} />
                 Scan
@@ -331,9 +331,9 @@ export default function Report() {
           <button
             onClick={handleExportPDF}
             disabled={loading}
-            className="w-full sm:w-auto sm:ml-auto px-5 py-2 text-sm text-white font-medium rounded-xl bg-green-600 hover:bg-green-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto sm:ml-auto px-5 py-2 text-sm text-white font-medium rounded-xl bg-blue-600 hover:bg-blue-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Export PDF
+            Print
           </button>
         </div>
 
