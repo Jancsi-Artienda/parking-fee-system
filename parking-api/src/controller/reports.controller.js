@@ -166,6 +166,20 @@ export async function updateReportCoverage(req, res) {
   }
 }
 
+function formatRow(row, index, employeeId){
+  return{
+    id: `${employeeId}-${index + 1}-${row.created_date || row.trans_date || Date.now()}`,
+    transDate: row.trans_date || "",
+    coverageFrom: row.coverage_from || "",
+    coverageTo: row.coverage_to || "",
+    vehicleModel: row.vehicle_model || "",
+    amount: Number(row.amount || 0),
+    tempName: row.temp_name || "",
+    createdDate: row.created_date || "",
+    status: row.status ?? false,
+  };
+}
+
 export async function getReports(req, res) {
   try {
     const employeeId = await getEmployeeIdByUserId(req.user.id);
@@ -177,6 +191,7 @@ export async function getReports(req, res) {
     const hasCoverageTo = tempTicketColumns.has("coverage_to");
     const hasTempName = tempTicketColumns.has("temp_name");
     const hasCreatedDate = tempTicketColumns.has("created_date");
+    const hasStatus = tempTicketColumns.has("status");
 
     const [rows] = await pool.query(
       `SELECT
@@ -186,27 +201,62 @@ export async function getReports(req, res) {
         vehicle_model,
         amount,
         ${hasTempName ? "temp_name" : "NULL AS temp_name"},
-        ${hasCreatedDate ? "created_date" : "NULL AS created_date"}
+        ${hasCreatedDate ? "created_date" : "NULL AS created_date"},
+        ${hasStatus ? "status" : "NULL AS status"}  
       FROM temp_ticket
       WHERE employee_id = ?
       ORDER BY ${hasCreatedDate ? "created_date DESC," : ""} trans_date DESC`,
       [employeeId]
     );
 
-    return res.json(
-      rows.map((row, index) => ({
-        id: `${employeeId}-${index + 1}-${row.created_date || row.trans_date || Date.now()}`,
-        transDate: row.trans_date || "",
-        coverageFrom: row.coverage_from || "",
-        coverageTo: row.coverage_to || "",
-        vehicleModel: row.vehicle_model || "",
-        amount: Number(row.amount || 0),
-        tempName: row.temp_name || "",
-        createdDate: row.created_date || "",
-      }))
-    );
+    return res.json(rows.map((row, index) => formatRow(row, index, employeeId)));
   } catch (error) {
     return res.status(500).json({ message: "Failed to fetch reports.", detail: error.message });
+  }
+}
+
+export async function getPrintedReports(req, res){
+  try {
+    const employeeId =  await getEmployeeIdByUserId(req.user.id);
+    if(!employeeId) {
+      return res.status(404).json({message: "User record not found"});
+    }
+
+    const {coverageFrom,coverageTo} = req.query;
+    if (!coverageFrom || !coverageTo) {
+      return res.status(400).json({message: "coverage are required."});
+    }
+    if (!isValidDateInput(coverageFrom) || !isValidDateInput(coverageTo)) {
+      return res.status(400).json({ message: "Coverage dates must use YYYY-MM-DD format." });
+    }
+    if (!parseYmdUtc(coverageFrom) || !parseYmdUtc(coverageTo)) {
+      return res.status(400).json({ message: "Coverage dates must be valid calendar dates." });
+    }
+    if (coverageFrom > coverageTo) {
+      return res.status(400).json({ message: "Coverage end date cannot be before coverage start date." });
+    }
+
+    const [rows] = await pool.query(
+      `SELECT
+        trans_date,
+        coverage_from,
+        coverage_to,
+        vehicle_model,
+        amount,
+        temp_name,
+        created_date,
+        status
+      FROM temp_ticket
+      WHERE employee_id = ?
+        AND status = TRUE
+        AND coverage_from >= ?
+        AND coverage_to <= ?
+      ORDER BY created_date DESC, trans_date DESC`,
+      [employeeId, coverageFrom, coverageTo]);
+
+      return res.json(rows.map((row, index) => formatRow(row, index,employeeId)));
+  } catch (error){
+    return res.status(500).json({ message: "No previous printed reports", detail: error.message});
   }
 }
 
@@ -419,5 +469,55 @@ export async function deleteReport(req, res) {
     return res.json({ message: "Report deleted successfully." });
   } catch (error) {
     return res.status(500).json({ message: "Failed to delete report.", detail: error.message });
+  }
+}
+
+export async function markPrintedReports(req, res) {
+  try {
+    const employeeId = await getEmployeeIdByUserId(req.user.id);
+    if (!employeeId) {
+      return res.status(404).json({ message: "User record not found." });
+    }
+
+    const { coverageFrom = "", coverageTo = "" } = req.body || {};
+    const normalizedCoverageFrom = String(coverageFrom).trim();
+    const normalizedCoverageTo = String(coverageTo).trim();
+
+    if (!normalizedCoverageFrom || !normalizedCoverageTo) {
+      return res.status(400).json({ message: "Coverage dates are required." });
+    }
+    if (
+      !isValidDateInput(normalizedCoverageFrom) ||
+      !isValidDateInput(normalizedCoverageTo)
+    ) {
+      return res.status(400).json({ message: "Coverage dates must use YYYY-MM-DD format." });
+    }
+    if (!parseYmdUtc(normalizedCoverageFrom) || !parseYmdUtc(normalizedCoverageTo)) {
+      return res.status(400).json({ message: "Coverage dates must be valid calendar dates." });
+    }
+    if (normalizedCoverageFrom > normalizedCoverageTo) {
+      return res
+        .status(400)
+        .json({ message: "Coverage end date cannot be before coverage start date." });
+    }
+
+    const [result] = await pool.query(
+      `UPDATE temp_ticket
+       SET status = TRUE
+       WHERE employee_id = ?
+         AND coverage_from >= ?
+         AND coverage_to <= ?
+         AND status = FALSE`,
+      [employeeId, normalizedCoverageFrom, normalizedCoverageTo]
+    );
+
+    return res.json({
+      message: "Printed reports updated.",
+      updated: Number(result.affectedRows || 0),
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Failed to update printed reports.", detail: error.message });
   }
 }
