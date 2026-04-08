@@ -205,6 +205,7 @@ export async function getReports(req, res) {
         ${hasStatus ? "status" : "NULL AS status"}  
       FROM temp_ticket
       WHERE employee_id = ?
+        ${hasStatus ? "AND status = FALSE" : ""}
       ORDER BY ${hasCreatedDate ? "created_date DESC," : ""} trans_date DESC`,
       [employeeId]
     );
@@ -290,11 +291,13 @@ export async function addReport(req, res) {
     const hasCoverageTo = tempTicketColumns.has("coverage_to");
     const hasTempName = tempTicketColumns.has("temp_name");
     const hasCreatedDate = tempTicketColumns.has("created_date");
+    const hasStatus = tempTicketColumns.has("status");
 
     const [countRows] = await pool.query(
       `SELECT COUNT(*) AS total
        FROM temp_ticket
-       WHERE employee_id = ?`,
+       WHERE employee_id = ?
+       ${hasStatus ? "AND status = FALSE" : ""}`,
       [employeeId]
     );
     const reportCount = Number(countRows[0]?.total || 0);

@@ -143,7 +143,7 @@ export const useParkingFeePDF = () => {
 
         currentX += colWidths[0];
         if (entry.carModel) {
-          doc.text(truncateText(entry.carModel, 30), currentX + colWidths[1]/2, rowY,{
+          doc.text(truncateText(entry.carModel, 60), currentX + colWidths[1]/2, rowY,{
             align: "center"
           });
         }

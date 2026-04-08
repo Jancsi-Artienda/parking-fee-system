@@ -372,6 +372,26 @@ const api = {
 
     const response = await apiClient.delete(`/reports/${encodeURIComponent(normalizeDate)}`);
     return response.data;
+  },
+
+  async markPrintedReports({ coverageFrom, coverageTo }) {
+    const normalizedFrom = toApiDate(coverageFrom);
+    const normalizedTo = toApiDate(coverageTo);
+
+    if (!normalizedFrom || !normalizedTo) {
+      throw new Error("Coverage dates are required.");
+    }
+
+    if (!import.meta.env.VITE_API_URL) {
+      await delay(150);
+      return { message: "Printed reports updated.", updated: 0 };
+    }
+
+    const response = await apiClient.patch("/reports/printed", {
+      coverageFrom: normalizedFrom,
+      coverageTo: normalizedTo,
+    });
+    return response.data;
   }
 
 

@@ -299,7 +299,7 @@ export default function AddReportModal({
                   <div>
                     <label className="text-sm text-gray-500">Vehicle</label>
                     <p className="mt-1 text-sm font-medium text-gray-900">
-                      {singleVehicle.type} / {singleVehicle.model} / {singleVehicle.plateNumber}
+                      {singleVehicle.type}  {singleVehicle.model}  {singleVehicle.plateNumber}
                     </p>
                   </div>
                 )}

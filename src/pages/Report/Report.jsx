@@ -104,7 +104,7 @@ export default function Report() {
     loadReports();
   }, [loadReports]);
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     if (loading) return;
     if (!filteredRows.length) { toastError("No reports to export."); return; }
     const normalizedRows = filteredRows.map((row) => {
@@ -123,11 +123,30 @@ export default function Report() {
         ? coverageStart.format("MMMM D, YYYY")
         : `${coverageStart.format("MMMM D, YYYY")} - ${coverageEnd.format("MMMM D, YYYY")}`;
     }
+    if (!coverageStart.isValid() || !coverageEnd.isValid()) {
+      toastError("Select a valid coverage range before printing.");
+      return;
+    }
     const preparedBy = user?.name || user?.username || user?.email || "N/A";
     const printableFilteredRows = filteredRows.slice(0, maxRows);
     const totalAmountValue = printableFilteredRows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
     const totalAmount = `PHP ${totalAmountValue.toLocaleString("en-US")}`;
-    generatePDF({ preparedBy, coverage, dateSubmitted: dayjs().format("MMMM D, YYYY"), rows: normalizedRows, totalAmount });
+    try {
+      await generatePDF({ preparedBy, coverage, dateSubmitted: dayjs().format("MMMM D, YYYY"), rows: normalizedRows, totalAmount });
+      await api.markPrintedReports({
+        coverageFrom: coverageStart.format("YYYY-MM-DD"),
+        coverageTo: coverageEnd.format("YYYY-MM-DD"),
+      });
+      try {
+        localStorage.setItem("reportsPrintedAt", String(Date.now()));
+      } catch {
+        // ignore storage errors (private mode, quota, etc.)
+      }
+      window.dispatchEvent(new Event("reports:printed"));
+    } catch (err) {
+      toastError(err?.data?.message || err?.message || "Failed to print reports.");
+      return;
+    }
     if (filteredRows.length > maxRows) {
       toastWarning(`Exported first ${maxRows} rows only.`);
     } else {
@@ -165,7 +184,9 @@ export default function Report() {
 
   const filteredRows = useMemo(() => {
     const baseRows = Array.isArray(rows) ? rows : [];
-    const filtered = baseRows.filter((row) => {
+    const filtered = baseRows
+      .filter((row) => row?.status !== true && row?.status !== "true" && row?.status !== 1)
+      .filter((row) => {
       if (!row) return false;
       const rowDate = dayjs(row.transDate);
       return (
