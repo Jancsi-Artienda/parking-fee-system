@@ -16,9 +16,10 @@ export default function Vehicle() {
       text: "This vehicle will be removed from your account.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Delete",
-      cancelButtonText: "Cancel",
-      confirmButtonColor: "#d32f2f",
+      confirmButtonText: "Yes",
+      cancelButtonText: "No",
+      confirmButtonColor: "#1a3a5c",
+      cancelButtonColor: "#E60000",
       reverseButtons: true,
     });
 
@@ -57,7 +58,7 @@ export default function Vehicle() {
           </div>
           <button
             onClick={() => setOpen(true)}
-            className="flex items-center justify-center gap-1 px-4 py-2 text-sm border border-blue-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+            className="flex items-center justify-center gap-1 px-4 py-2 text-sm border bg-[#1a3a5c] rounded-xl text-white hover:bg-gray-50 transition-colors duration-150"
           >
             <Plus size={16} />
             <span className="hidden sm:inline">Add Vehicle</span>

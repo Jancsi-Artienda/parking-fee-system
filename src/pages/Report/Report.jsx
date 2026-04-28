@@ -244,13 +244,13 @@ export default function Report() {
         return showPrinted ? isPrintedRow : !isPrintedRow;
       })
       .filter((row) => {
-      if (!row) return false;
-      const rowDate = dayjs(row.transDate);
-      return (
-        (!startDate || rowDate.isAfter(startDate, "day") || rowDate.isSame(startDate, "day")) &&
-        (!endDate || rowDate.isBefore(endDate, "day") || rowDate.isSame(endDate, "day"))
-      );
-    });
+        if (!row) return false;
+        const rowDate = dayjs(row.transDate);
+        return (
+          (!startDate || rowDate.isAfter(startDate, "day") || rowDate.isSame(startDate, "day")) &&
+          (!endDate || rowDate.isBefore(endDate, "day") || rowDate.isSame(endDate, "day"))
+        );
+      });
     return filtered
       .map((row, index) => ({
         row,
@@ -271,9 +271,10 @@ export default function Report() {
       text: "This action cannot be undone.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Delete",
-      cancelButtonText: "Cancel",
-      confirmButtonColor: "#d32f2f",
+      confirmButtonText: "Yes",
+      cancelButtonText: "No",
+      confirmButtonColor: "#1a3a5c",
+      cancelButtonColor: "#E60000",
       reverseButtons: true,
     });
     if (!confirmResult.isConfirmed) return;
@@ -358,7 +359,7 @@ export default function Report() {
               {/* Add Button */}
               <button
                 onClick={() => setOpenModal(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 active:scale-[0.97] rounded-xl transition-all duration-150 w-full sm:w-auto justify-center"
+                className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-white bg-[#1a3a5c] hover:bg-[#1a3a5c] active:scale-[0.97] rounded-xl transition-all duration-150 w-full sm:w-auto justify-center"
               >
                 <Plus size={14} />
                 Report
@@ -366,11 +367,10 @@ export default function Report() {
 
               <button
                 onClick={showPrinted ? handleShowActiveReports : handleShowPrintedReports}
-                className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-xl transition-all duration-150 w-full sm:w-auto justify-center ${
-                  showPrinted
+                className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-xl transition-all duration-150 w-full sm:w-auto justify-center ${showPrinted
                     ? "bg-slate-200 text-slate-800 hover:bg-slate-300"
-                    : "bg-amber-500 text-white hover:bg-amber-600"
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    : "bg-[#1a3a5c] text-white hover:bg-[#1a3a5c]"
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 <Clock3 size={14} />
                 {showPrinted ? "Active Reports" : "Printed Reports"}

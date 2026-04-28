@@ -198,123 +198,124 @@ export default function Account() {
     }
   };
 
-  return (
-    <div className="max-w-4xl mx-auto px-4 py-8 flex flex-col gap-6">
 
-      {/* Account Details Card */}
-      <div className="bg-white rounded-2xl shadow-md p-8 flex flex-col items-center gap-3">
-        <div className="w-20 h-20 rounded-full bg-gray-800 flex items-center justify-center">
-          <User size={44} className="text-white" />
-        </div>
-        <h2 className="text-xl font-bold text-gray-800">Account Details</h2>
-        <div className="text-center text-sm text-gray-600 space-y-1">
-          <p>Username: <span className="font-medium text-gray-800">{user?.username || "-"}</span></p>
-          <p>Full name: <span className="font-medium text-gray-800">{user?.name || "-"}</span></p>
-          <p>Email address: <span className="font-medium text-gray-800">{user?.email || "-"}</span></p>
-          <p>Contact number: <span className="font-medium text-gray-800">{user?.contactNumber || "-"}</span></p>
-        </div>
+   return (
+  <div className="w-full px-6 py-6 flex flex-col gap-6">
+
+    {/* Account Details Card */}
+    <div className="bg-white rounded-2xl shadow-md p-8 flex flex-col items-center gap-3">
+      <div className="w-20 h-20 rounded-full bg-gray-800 flex items-center justify-center">
+        <User size={44} className="text-white" />
       </div>
-
-      {/* Change Account Details Card */}
-      <div className="bg-white rounded-2xl shadow-md p-8">
-        <h2 className="text-xl font-bold text-gray-800 mb-6">Change Account Details</h2>
-
-        {/* Basic Info */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <InputField
-            label="Username:"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            error={Boolean(touchedFields.username && fieldErrors.username)}
-            helperText={fieldErrors.username}
-          />
-          <InputField
-            label="Full Name:"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            error={Boolean(touchedFields.name && fieldErrors.name)}
-            helperText={fieldErrors.name}
-          />
-          <InputField
-            label="Email address:"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            error={Boolean(touchedFields.email && fieldErrors.email)}
-            helperText={fieldErrors.email}
-          />
-          <InputField
-            label="Contact number:"
-            name="contactNumber"
-            value={formData.contactNumber}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            error={Boolean(touchedFields.contactNumber && fieldErrors.contactNumber)}
-            helperText={fieldErrors.contactNumber}
-            inputProps={{ maxLength: 11, inputMode: "numeric" }}
-          />
-        </div>
-
-        {/* Password Fields */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-5">
-          <PasswordField
-            label="Current Password:"
-            name="currentPassword"
-            value={formData.currentPassword}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            error={Boolean(touchedFields.currentPassword && fieldErrors.currentPassword)}
-            helperText={fieldErrors.currentPassword}
-            show={showCurrent}
-            onToggle={() => setShowCurrent((p) => !p)}
-          />
-          <PasswordField
-            label="New Password:"
-            name="newPassword"
-            value={formData.newPassword}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            error={Boolean(touchedFields.newPassword && fieldErrors.newPassword)}
-            helperText={fieldErrors.newPassword}
-            show={showNew}
-            onToggle={() => setShowNew((p) => !p)}
-          />
-          <PasswordField
-            label="Confirm Password:"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            error={Boolean(touchedFields.confirmPassword && fieldErrors.confirmPassword)}
-            helperText={fieldErrors.confirmPassword}
-            show={showConfirm}
-            onToggle={() => setShowConfirm((p) => !p)}
-          />
-        </div>
-
-        {/* Error */}
-        {saveError && (
-          <p className="text-sm text-red-500 mt-4">{saveError}</p>
-        )}
-
-        {/* Save Button */}
-        <div className="flex justify-end mt-8">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="px-8 py-2.5 rounded-2xl bg-[#1a237e] hover:bg-[#0d47a1] text-white text-sm font-semibold transition-colors duration-200 disabled:opacity-60"
-          >
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
-        </div>
+      <h2 className="text-xl font-bold text-gray-800">Account Details</h2>
+      <div className="text-center text-sm text-gray-600 space-y-1">
+        <p>Username: <span className="font-medium text-gray-800">{user?.username || "-"}</span></p>
+        <p>Full name: <span className="font-medium text-gray-800">{user?.name || "-"}</span></p>
+        <p>Email address: <span className="font-medium text-gray-800">{user?.email || "-"}</span></p>
+        <p>Contact number: <span className="font-medium text-gray-800">{user?.contactNumber || "-"}</span></p>
       </div>
-
     </div>
-  );
+
+    {/* Change Account Details Card */}
+    <div className="bg-white rounded-2xl shadow-md p-8">
+      <h2 className="text-xl font-bold text-gray-800 mb-6">Change Account Details</h2>
+
+      {/* Basic Info */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <InputField
+          label="Username:"
+          name="username"
+          value={formData.username}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          error={Boolean(touchedFields.username && fieldErrors.username)}
+          helperText={fieldErrors.username}
+        />
+        <InputField
+          label="Full Name:"
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          error={Boolean(touchedFields.name && fieldErrors.name)}
+          helperText={fieldErrors.name}
+        />
+        <InputField
+          label="Email address:"
+          name="email"
+          type="email"
+          value={formData.email}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          error={Boolean(touchedFields.email && fieldErrors.email)}
+          helperText={fieldErrors.email}
+        />
+        <InputField
+          label="Contact number:"
+          name="contactNumber"
+          value={formData.contactNumber}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          error={Boolean(touchedFields.contactNumber && fieldErrors.contactNumber)}
+          helperText={fieldErrors.contactNumber}
+          inputProps={{ maxLength: 11, inputMode: "numeric" }}
+        />
+      </div>
+
+      {/* Password Fields */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-5">
+        <PasswordField
+          label="Current Password:"
+          name="currentPassword"
+          value={formData.currentPassword}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          error={Boolean(touchedFields.currentPassword && fieldErrors.currentPassword)}
+          helperText={fieldErrors.currentPassword}
+          show={showCurrent}
+          onToggle={() => setShowCurrent((p) => !p)}
+        />
+        <PasswordField
+          label="New Password:"
+          name="newPassword"
+          value={formData.newPassword}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          error={Boolean(touchedFields.newPassword && fieldErrors.newPassword)}
+          helperText={fieldErrors.newPassword}
+          show={showNew}
+          onToggle={() => setShowNew((p) => !p)}
+        />
+        <PasswordField
+          label="Confirm Password:"
+          name="confirmPassword"
+          value={formData.confirmPassword}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          error={Boolean(touchedFields.confirmPassword && fieldErrors.confirmPassword)}
+          helperText={fieldErrors.confirmPassword}
+          show={showConfirm}
+          onToggle={() => setShowConfirm((p) => !p)}
+        />
+      </div>
+
+      {/* Error */}
+      {saveError && (
+        <p className="text-sm text-red-500 mt-4">{saveError}</p>
+      )}
+
+      {/* Save Button */}
+      <div className="flex justify-end mt-8">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-8 py-2.5 rounded-2xl bg-[#1a3a5c] hover:bg-[#1a3a5c] text-white text-sm font-semibold transition-colors duration-200 disabled:opacity-60"
+        >
+          {saving ? "Saving..." : "Save Changes"}
+        </button>
+      </div>
+    </div>
+
+  </div>
+);
 }

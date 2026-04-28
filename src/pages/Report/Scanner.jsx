@@ -297,7 +297,7 @@ export default function Report() {
               {/* Add Button */}
               <button
                 onClick={() => setOpenModal(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 active:scale-[0.97] rounded-xl transition-all duration-150 w-full sm:w-auto justify-center"
+                className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-white bg-[#1a3a5c] hover:bg-[#1a3a5c] active:scale-[0.97] rounded-xl transition-all duration-150 w-full sm:w-auto justify-center"
               >
                 <ScanLine size={16} />
                 Scan
@@ -341,7 +341,7 @@ export default function Report() {
           <button
             onClick={handleExportPDF}
             disabled={loading}
-            className="w-full sm:w-auto sm:ml-auto px-5 py-2 text-sm text-white font-medium rounded-xl bg-blue-600 hover:bg-blue-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto sm:ml-auto px-5 py-2 text-sm text-white font-medium rounded-xl bg-[#1a3a5c] hover:bg-[#1a3a5c] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Print
           </button>
