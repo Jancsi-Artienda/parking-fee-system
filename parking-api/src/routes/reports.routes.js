@@ -3,6 +3,7 @@ import {
   addReport,
   deleteReport,
   getReportCoverage,
+  getPrintedReports,
   getReports,
   markPrintedReports,
   updateReportCoverage,
@@ -13,6 +14,7 @@ import { requireCsrf } from "../csrf.js";
 const router = express.Router();
 
 router.get("/", requireAuth, getReports);
+router.get("/printed", requireAuth, getPrintedReports);
 router.post("/", requireAuth, requireCsrf, addReport);
 router.delete("/:transDate", requireAuth, requireCsrf, deleteReport);
 router.get("/coverage", requireAuth, getReportCoverage);
