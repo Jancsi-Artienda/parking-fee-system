@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ParkingReportTable from "../../components/dashboard/ParkingReportTable";
 import VehicleStatCard from "../../components/dashboard/VehicleStatCard";
-import TotalFeeStatCard from "../../components/dashboard/TotalFee";
+
 import { useVehicles } from "../../context/vehicleContext/useVehicles";
 import api from "../../services/api";
 
@@ -80,7 +80,7 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-2 gap-4 mb-8">
           <VehicleStatCard totalVehicles={totalVehicles} />
-          <TotalFeeStatCard totalFee={totalFee} />
+     
         </div>
 
 
