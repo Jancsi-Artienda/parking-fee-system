@@ -11,7 +11,7 @@ import useParkingFeePDF from "../../hooks/useParkingFeePDF";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { Plus } from "lucide-react";
+import { Clock3, Plus } from "lucide-react";
 
 export default function Report() {
   const { vehicles } = useVehicles();
@@ -26,6 +26,7 @@ export default function Report() {
   const [coverageLoaded, setCoverageLoaded] = useState(false);
   const [coverageTouched, setCoverageTouched] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showPrinted, setShowPrinted] = useState(false);
 
   const MIN_COVERAGE_DAYS = 14;
 
@@ -86,23 +87,54 @@ export default function Report() {
     saveCoveragePreference();
   }, [coverageLoaded, coverageTouched, startDate, endDate, isCoverageValid]);
 
+  const normalizeRows = useCallback((data) => (
+    Array.isArray(data) ? data : Array.isArray(data?.reports) ? data.reports : []
+  ), []);
+
   const loadReports = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
       const data = await api.getReports();
-      const normalizedRows = Array.isArray(data) ? data : Array.isArray(data?.reports) ? data.reports : [];
-      setRows(normalizedRows);
+      setRows(normalizeRows(data));
     } catch (err) {
       setError(err?.data?.message || "Failed to load reports.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [normalizeRows]);
+
+  const loadPrintedReports = useCallback(async () => {
+    const coverageStart = dayjs(startDate);
+    const coverageEnd = dayjs(endDate);
+
+    if (!coverageStart.isValid() || !coverageEnd.isValid()) {
+      setError("Select a valid coverage range first.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    try {
+      const data = await api.getPrintedReports({
+        coverageFrom: coverageStart.format("YYYY-MM-DD"),
+        coverageTo: coverageEnd.format("YYYY-MM-DD"),
+      });
+      setRows(normalizeRows(data));
+    } catch (err) {
+      setError(err?.data?.message || err?.message || "Failed to load printed reports.");
+    } finally {
+      setLoading(false);
+    }
+  }, [endDate, normalizeRows, startDate]);
 
   useEffect(() => {
+    if (showPrinted) {
+      loadPrintedReports();
+      return;
+    }
     loadReports();
-  }, [loadReports]);
+  }, [loadPrintedReports, loadReports, showPrinted]);
 
   const handleExportPDF = async () => {
     if (loading) return;
@@ -133,10 +165,22 @@ export default function Report() {
     const totalAmount = `PHP ${totalAmountValue.toLocaleString("en-US")}`;
     try {
       await generatePDF({ preparedBy, coverage, dateSubmitted: dayjs().format("MMMM D, YYYY"), rows: normalizedRows, totalAmount });
-      await api.markPrintedReports({
-        coverageFrom: coverageStart.format("YYYY-MM-DD"),
-        coverageTo: coverageEnd.format("YYYY-MM-DD"),
-      });
+      if (!showPrinted) {
+        await api.markPrintedReports({
+          coverageFrom: coverageStart.format("YYYY-MM-DD"),
+          coverageTo: coverageEnd.format("YYYY-MM-DD"),
+        });
+        setRows((prev) =>
+          prev.filter((row) => {
+            const rowFrom = dayjs(row?.coverageFrom);
+            const rowTo = dayjs(row?.coverageTo);
+            if (!rowFrom.isValid() || !rowTo.isValid()) {
+              return true;
+            }
+            return rowFrom.isBefore(coverageStart, "day") || rowTo.isAfter(coverageEnd, "day");
+          })
+        );
+      }
       try {
         localStorage.setItem("reportsPrintedAt", String(Date.now()));
       } catch {
@@ -182,10 +226,23 @@ export default function Report() {
     ]);
   };
 
+  const handleShowActiveReports = async () => {
+    if (loading) return;
+    setShowPrinted(false);
+  };
+
+  const handleShowPrintedReports = async () => {
+    if (loading) return;
+    setShowPrinted(true);
+  };
+
   const filteredRows = useMemo(() => {
     const baseRows = Array.isArray(rows) ? rows : [];
     const filtered = baseRows
-      .filter((row) => row?.status !== true && row?.status !== "true" && row?.status !== 1)
+      .filter((row) => {
+        const isPrintedRow = row?.status === true || row?.status === "true" || row?.status === 1;
+        return showPrinted ? isPrintedRow : !isPrintedRow;
+      })
       .filter((row) => {
       if (!row) return false;
       const rowDate = dayjs(row.transDate);
@@ -205,7 +262,7 @@ export default function Report() {
         return a.index - b.index;
       })
       .map((item) => item.row);
-  }, [rows, startDate, endDate]);
+  }, [rows, showPrinted, startDate, endDate]);
 
   const handleDeleteReport = async (reportRow) => {
     if (!reportRow || deleting) return;
@@ -307,6 +364,18 @@ export default function Report() {
                 Report
               </button>
 
+              <button
+                onClick={showPrinted ? handleShowActiveReports : handleShowPrintedReports}
+                className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-xl transition-all duration-150 w-full sm:w-auto justify-center ${
+                  showPrinted
+                    ? "bg-slate-200 text-slate-800 hover:bg-slate-300"
+                    : "bg-amber-500 text-white hover:bg-amber-600"
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                <Clock3 size={14} />
+                {showPrinted ? "Active Reports" : "Printed Reports"}
+              </button>
+
             </div>
           </div>
         </div>
@@ -320,10 +389,10 @@ export default function Report() {
             rows={filteredRows}
             loading={loading}
             title={null}
-            emptyMessage="No reports yet."
+            emptyMessage={showPrinted ? "No printed reports found for this coverage." : "No reports yet."}
             withPaper={false}
             maxRows={15}
-            onDeleteRow={handleDeleteReport}
+            onDeleteRow={showPrinted ? undefined : handleDeleteReport}
           />
         </div>
 

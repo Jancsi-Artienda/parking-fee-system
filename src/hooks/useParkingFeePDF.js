@@ -78,7 +78,7 @@ export const useParkingFeePDF = () => {
     drawField("Coverage", coverage);
     drawField("Date Submitted", dateSubmitted);
 
-    y += 5;
+    // Removed y += 5 gap — table now sits closer to Date Submitted
 
     const tableX = leftMargin;
     const tableWidth = pageWidth - tableX * 2;
@@ -115,8 +115,8 @@ export const useParkingFeePDF = () => {
     doc.setFontSize(11);
 
     const headers = ["Date", "Car Model", "Amount"];
-    const headerY = tableStartY + rowHeight / 2 +1;
-    
+    const headerY = tableStartY + rowHeight / 2 + 1;
+
     currentX = tableX;
     headers.forEach((header, index) => {
       doc.text(header, currentX + colWidths[index] / 2, headerY, {
@@ -136,29 +136,29 @@ export const useParkingFeePDF = () => {
 
         currentX = tableX;
         if (entry.date) {
-          doc.text(truncateText(entry.date, 14), currentX + colWidths[0]/2, rowY,{
-            align: "center"
+          doc.text(truncateText(entry.date, 14), currentX + colWidths[0] / 2, rowY, {
+            align: "center",
           });
         }
 
         currentX += colWidths[0];
         if (entry.carModel) {
-          doc.text(truncateText(entry.carModel, 60), currentX + colWidths[1]/2, rowY,{
-            align: "center"
+          doc.text(truncateText(entry.carModel, 60), currentX + colWidths[1] / 2, rowY, {
+            align: "center",
           });
         }
 
         currentX += colWidths[1];
         if (entry.amount) {
-          doc.text(truncateText(entry.amount, 12), currentX + colWidths[2]/2 - 0.5, rowY,{
-            align: "center"
+          doc.text(truncateText(entry.amount, 12), currentX + colWidths[2] / 2 - 0.5, rowY, {
+            align: "center",
           });
         }
       });
     }
 
-    //amount line
-    y = tableStartY + rowHeight *(MAX_TABLE_ROWS + 0.2) + 10;
+    // Amount line
+    y = tableStartY + rowHeight * (MAX_TABLE_ROWS + 0.2) + 10;
     doc.setFontSize(10);
     if (totalAmount) {
       doc.text(truncateText(totalAmount, 15), leftMargin + 150, y - 1, {
@@ -168,12 +168,33 @@ export const useParkingFeePDF = () => {
     doc.setLineWidth(0.3);
     doc.line(leftMargin + 130, y, leftMargin + 170, y);
 
+    // Certified true and correct line
     y = tableStartY + rowHeight * (MAX_TABLE_ROWS + 1) + 20;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.text("Certified true and correct:", leftMargin, y);
     doc.setLineWidth(0.3);
     doc.line(leftMargin + 75, y, leftMargin + 155, y);
+
+    // 12 rectangle placeholders — 4 columns x 3 rows, centered, below Certified line
+    const gridStartY = y + 8;
+    const gridCols = 4;
+    const gridRows = 3;
+    const cellWidth = 38;
+    const cellHeight = 20;
+    const gapX = 6;
+    const gapY = 20;
+    const totalGridWidth = gridCols * cellWidth + (gridCols - 1) * gapX;
+    const gridStartX = leftMargin + (pageWidth - leftMargin * 2 - totalGridWidth) / 2;
+
+    doc.setLineWidth(0.3);
+    for (let r = 0; r < gridRows; r++) {
+      for (let c = 0; c < gridCols; c++) {
+        const cellX = gridStartX + c * (cellWidth + gapX);
+        const cellY = gridStartY + r * (cellHeight + gapY);
+        doc.rect(cellX, cellY, cellWidth, cellHeight);
+      }
+    }
 
     const safeUserName = String(preparedBy || "")
       .trim()

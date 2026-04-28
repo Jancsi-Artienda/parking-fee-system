@@ -329,7 +329,7 @@ const api = {
   async getReports() {
     if(!import.meta.env.VITE_API_URL) {
       await delay(200);
-      return [...reports];
+      return reports.filter((row) => row?.status !== true);
     }
 
     const response = await apiClient.get("/reports");
@@ -340,6 +340,39 @@ const api = {
     if (Array.isArray(response.data?.reports)){
       return response.data.reports;
     }
+    return [];
+  },
+
+  async getPrintedReports({ coverageFrom, coverageTo }) {
+    const normalizedFrom = toApiDate(coverageFrom);
+    const normalizedTo = toApiDate(coverageTo);
+
+    if (!normalizedFrom || !normalizedTo) {
+      throw new Error("Coverage dates are required.");
+    }
+
+    if (!import.meta.env.VITE_API_URL) {
+      await delay(200);
+      return reports.filter(
+        (row) =>
+          row?.status === true &&
+          toApiDate(row.coverageFrom) >= normalizedFrom &&
+          toApiDate(row.coverageTo) <= normalizedTo
+      );
+    }
+
+    const response = await apiClient.get(
+      `/reports/printed?coverageFrom=${encodeURIComponent(normalizedFrom)}&coverageTo=${encodeURIComponent(normalizedTo)}`
+    );
+
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+
+    if (Array.isArray(response.data?.reports)) {
+      return response.data.reports;
+    }
+
     return [];
   },
 
@@ -384,7 +417,23 @@ const api = {
 
     if (!import.meta.env.VITE_API_URL) {
       await delay(150);
-      return { message: "Printed reports updated.", updated: 0 };
+      let updated = 0;
+      reports = reports.map((row) => {
+        const rowFrom = toApiDate(row?.coverageFrom);
+        const rowTo = toApiDate(row?.coverageTo);
+        const shouldMarkPrinted =
+          row?.status !== true &&
+          rowFrom >= normalizedFrom &&
+          rowTo <= normalizedTo;
+
+        if (!shouldMarkPrinted) {
+          return row;
+        }
+
+        updated += 1;
+        return { ...row, status: true };
+      });
+      return { message: "Printed reports updated.", updated };
     }
 
     const response = await apiClient.patch("/reports/printed", {
